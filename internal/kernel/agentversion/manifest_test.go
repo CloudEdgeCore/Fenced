@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
 )
 
 func validManifest() Manifest {
@@ -19,7 +19,7 @@ func validManifest() Manifest {
 			RuntimeClassPolicy: RuntimeClassPolicy{Allowed: []string{"oci"}, Preferred: "oci"},
 			Runtimes: []RuntimeTarget{{
 				Class: "oci", Interface: RuntimeInterfaceV1,
-				RuntimeABI: "agentos.oci/v1", Entrypoint: []string{"/agent/bin/research", "serve"},
+				RuntimeABI: "fenced.oci/v1", Entrypoint: []string{"/agent/bin/research", "serve"},
 			}},
 			Capabilities: &Capabilities{
 				Tools: []string{"search@v1"}, Models: []string{"quality"},
@@ -55,6 +55,34 @@ func TestDecodeManifestCanonicalRoundTrip(t *testing.T) {
 	}
 	if string(canonical) != string(replay) || digest != replayDigest {
 		t.Fatalf("canonical replay changed: %s vs %s", canonical, replay)
+	}
+}
+
+func TestLegacyAgentOSIdentifiersAreNormalizedOnDecode(t *testing.T) {
+	legacy := validManifest()
+	legacy.APIVersion = "agentos.dev/v1"
+	legacy.Spec.Runtimes[0].Interface = "agentos.runtime.interface/v1"
+	legacy.Spec.Runtimes[0].RuntimeABI = "agentos.oci/v1"
+
+	encoded, err := json.Marshal(legacy)
+	if err != nil {
+		t.Fatalf("marshal legacy manifest: %v", err)
+	}
+	decoded, canonical, _, err := DecodeManifest(encoded)
+	if err != nil {
+		t.Fatalf("a manifest published under the former name must remain readable: %v", err)
+	}
+	if decoded.APIVersion != ManifestAPIVersion {
+		t.Fatalf("apiVersion = %q, want %q", decoded.APIVersion, ManifestAPIVersion)
+	}
+	if got := decoded.Spec.Runtimes[0].Interface; got != RuntimeInterfaceV1 {
+		t.Fatalf("interface = %q, want %q", got, RuntimeInterfaceV1)
+	}
+	if got := decoded.Spec.Runtimes[0].RuntimeABI; got != "fenced.oci/v1" {
+		t.Fatalf("runtimeABI = %q, want %q", got, "fenced.oci/v1")
+	}
+	if strings.Contains(string(canonical), "agentos") {
+		t.Fatalf("canonical manifest still carries a legacy identifier: %s", canonical)
 	}
 }
 
@@ -105,7 +133,7 @@ func TestManifestRuntimeAndCapabilityValidation(t *testing.T) {
 			manifest.Spec.RuntimeClassPolicy.Allowed = []string{"oci", "oci"}
 		},
 		"wrong interface": func(manifest *Manifest) {
-			manifest.Spec.Runtimes[0].Interface = "agentos.runtime/v2"
+			manifest.Spec.Runtimes[0].Interface = "fenced.runtime/v2"
 		},
 		"empty entrypoint": func(manifest *Manifest) {
 			manifest.Spec.Runtimes[0].Entrypoint = nil

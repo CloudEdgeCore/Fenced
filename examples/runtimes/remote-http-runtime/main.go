@@ -1,5 +1,5 @@
-// Remote HTTP Runtime: An official AgentOS runtime adapter that bridges remote HTTP/REST
-// microservice agents to the AgentOS Runtime Interface v1 specification.
+// Remote HTTP Runtime: An official Fenced runtime adapter that bridges remote HTTP/REST
+// microservice agents to the Fenced Runtime Interface v1 specification.
 package main
 
 import (
@@ -11,10 +11,12 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/compat"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 )
 
 type RemoteHTTPRuntime struct {
@@ -93,6 +95,7 @@ func (r *RemoteHTTPRuntime) Restore(ctx context.Context, req agent.RestoreReques
 }
 
 func main() {
+	compat.WarnLegacyEnv(os.Stderr, compat.AliasLegacyEnv())
 	port := flag.Int("port", 8086, "listen port for runtime interface")
 	remoteTarget := flag.String("target", "", "upstream remote agent webhook endpoint")
 	flag.Parse()

@@ -13,11 +13,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/version"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/compat"
+	"github.com/CloudEdgeCore/Fenced/internal/version"
 	"gopkg.in/yaml.v3"
 )
 
 func main() {
+	compat.WarnLegacyEnv(os.Stderr, compat.AliasLegacyEnv())
 	if len(os.Args) < 2 {
 		printHelp()
 		return
@@ -51,7 +53,7 @@ func main() {
 }
 
 func printHelp() {
-	fmt.Print(`AgentOS Developer Core CLI: agent (v1.3.0)
+	fmt.Print(`Fenced Developer Core CLI: agent (v1.3.0)
 
 Usage:
   agent [command] [flags]
@@ -270,8 +272,8 @@ func runTestLLM() {
 	fmt.Printf("[info] probing [%s] %s (%s)...\n",
 		cfg.LLM.DefaultProvider, provider.BaseURL, provider.Model)
 	t0 := time.Now()
-	testPrompt := "Respond with one brief sentence confirming connectivity to AgentOS kernel."
-	tokens, err := StreamLLM(cfg, "You are a professional AI agent managed by the AgentOS kernel.", testPrompt)
+	testPrompt := "Respond with one brief sentence confirming connectivity to Fenced kernel."
+	tokens, err := StreamLLM(cfg, "You are a professional AI agent managed by the Fenced kernel.", testPrompt)
 	if err != nil {
 		fmt.Printf("[error] connection test failed: %v\n", err)
 		return
@@ -384,7 +386,7 @@ func runAgent(args []string) {
 
 	dir := filepath.Dir(manifestPath)
 	promptPath := filepath.Join(dir, "prompt.md")
-	sysPrompt := "You are a professional AI agent managed by the AgentOS kernel."
+	sysPrompt := "You are a professional AI agent managed by the Fenced kernel."
 	if pb, err := os.ReadFile(promptPath); err == nil {
 		sysPrompt = string(pb)
 		fmt.Printf("[info] loaded system prompt from: %s\n", promptPath)
@@ -416,8 +418,8 @@ func runAgent(args []string) {
 }
 
 func runLegacyFallback(command string, args []string) {
-	fmt.Printf("[info] delegating command: agentos %s %s\n", command, strings.Join(args, " "))
-	cmd := exec.Command("agentos", append([]string{command}, args...)...)
+	fmt.Printf("[info] delegating command: fenced %s %s\n", command, strings.Join(args, " "))
+	cmd := exec.Command("fenced", append([]string{command}, args...)...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
@@ -429,7 +431,7 @@ func runLegacyFallback(command string, args []string) {
 func runConfigWizard(cfg *AgentYAMLConfig) {
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Println("AgentOS Interactive Configuration Wizard (CLI)")
+	fmt.Println("Fenced Interactive Configuration Wizard (CLI)")
 	fmt.Println("Press Enter to accept current/default value shown in brackets [].")
 	fmt.Println()
 
@@ -479,18 +481,18 @@ func runConfigWizard(cfg *AgentYAMLConfig) {
 		prov.BaseURL = curBaseURL
 	}
 
-	// 5. Protocol Form (OpenAI Native /v1 vs AgentOS Gateway /v1alpha)
+	// 5. Protocol Form (OpenAI Native /v1 vs Fenced Gateway /v1alpha)
 	curProtocol := prov.Protocol
 	if curProtocol == "" {
 		curProtocol = "openai"
 	}
-	fmt.Printf("5. Protocol Format (1: openai native /v1, 2: agentos gateway /v1alpha) [%s]: ", curProtocol)
+	fmt.Printf("5. Protocol Format (1: openai native /v1, 2: fenced gateway /v1alpha) [%s]: ", curProtocol)
 	if protoInput, _ := reader.ReadString('\n'); strings.TrimSpace(protoInput) != "" {
 		trimmed := strings.TrimSpace(protoInput)
 		if trimmed == "1" || strings.ToLower(trimmed) == "openai" {
 			prov.Protocol = "openai"
-		} else if trimmed == "2" || strings.ToLower(trimmed) == "agentos" {
-			prov.Protocol = "agentos"
+		} else if trimmed == "2" || strings.ToLower(trimmed) == "fenced" {
+			prov.Protocol = "fenced"
 		} else {
 			prov.Protocol = trimmed
 		}

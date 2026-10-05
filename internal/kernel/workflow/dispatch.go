@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 )
 

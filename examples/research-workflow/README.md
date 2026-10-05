@@ -1,6 +1,6 @@
 # Multi-Agent Research Workflow (Reference Application)
 
-A complete, runnable AgentOS-native implementation of the multi-agent deep
+A complete, runnable Fenced-native implementation of the multi-agent deep
 research workflow from the project's internal design doc (not published in
 this repository; this README is the complete behavioral specification).
 Seven agent roles, dynamic spawn fan-out, Evidence Memory, critic-driven
@@ -17,7 +17,7 @@ agents/                  8 AgentVersion manifests (7 roles; collector is the
 workflow/research-workflow.json   static workflow template + budgets + dynamic limits
 workflow/schemas/        planner / evidence / analysis / critic / report JSON schemas
 runtime/                 the Go runtime implementing all roles behind one
-                         agentos.adapter-http/v1 endpoint (protocol.go, roles.go)
+                         fenced.adapter-http/v1 endpoint (protocol.go, roles.go)
 app/                     application layer (design doc §3): domain objects (§5),
                          the §9 state machine, the Control API client, the
                          report renderer + artifact store, and the §13 REST API
@@ -34,7 +34,7 @@ tests/e2e/               end-to-end scenario suite (build tag `integration`)
 ## Architecture
 
 ```
-                    Control API (agentos workflow create)
+                    Control API (fenced workflow create)
                                    │
                      workflow/research-workflow.json
                                    ▼
@@ -45,10 +45,10 @@ tests/e2e/               end-to-end scenario suite (build tag `integration`)
                        ▼
       runtime adapter workers ── MCP over HTTP (execution-window registry)
                        │                │
-                       ▼                ├── agentos.model.invoke  → Model Gateway → provider
-      research runtime (roles.go) ◄─────┤ agentos.memory.put/search → Memory Gateway (Evidence Memory)
-                       │                ├── agentos.tool.invoke web.search/fetch → Tool Gateway → webtools
-                       └─ agentos.task.spawn ────► WorkflowSpawnService (dynamic steps)
+                       ▼                ├── fenced.model.invoke  → Model Gateway → provider
+      research runtime (roles.go) ◄─────┤ fenced.memory.put/search → Memory Gateway (Evidence Memory)
+                       │                ├── fenced.tool.invoke web.search/fetch → Tool Gateway → webtools
+                       └─ fenced.task.spawn ────► WorkflowSpawnService (dynamic steps)
 ```
 
 ### Roles and data flow
@@ -153,13 +153,13 @@ namespace-key → kernel-workflow-id mapping under the artifact root so it
 survives restarts. Reports are stored as content-addressed artifacts
 (`artifact://…` URIs) with the Markdown deliverable and the citation verdict.
 
-## CLI: `agentos research` (§17)
+## CLI: `fenced research` (§17)
 
 The `research` subcommand drives the §17 showcase through the app API with a
 live timeline and a final statistics block:
 
 ```bash
-go run ./cmd/agentos research --endpoint http://127.0.0.1:9095 \
+go run ./cmd/fenced research --endpoint http://127.0.0.1:9095 \
   --goal "Analyze the next three years of agent runtime infrastructure evolution" --max-tokens 2000000
 
 [00:00] Research created research-… (workflow …)
@@ -190,7 +190,7 @@ Exits non-zero when the run ends in a non-COMPLETED state.
 
 ```bash
 # 1. Infrastructure (Postgres required)
-export DATABASE_URL='postgres://agentos:...@127.0.0.1:5432/agentos?sslmode=disable'
+export DATABASE_URL='postgres://fenced:...@127.0.0.1:5432/fenced?sslmode=disable'
 export ADAPTER_ENDPOINT='http://127.0.0.1:8090'   # research runtime HTTP endpoint
 examples/research-workflow/scripts/bootstrap.sh
 
@@ -222,18 +222,18 @@ tools:
 
 ```bash
 # P0 — real model (OpenAI-compatible / vLLM / Qwen / DeepSeek / GLM …)
-AGENTOS_RESEARCH_LIVE=1
-AGENTOS_RESEARCH_MODEL_BASE_URL=https://api.example.com/v1
-AGENTOS_RESEARCH_MODEL_KEY=sk-...
-AGENTOS_RESEARCH_MODEL_PROVIDER=openai            # registry name, default openai
-AGENTOS_RESEARCH_MODEL_FAST=gpt-4o-mini           # wire model per tier (optional)
-AGENTOS_RESEARCH_MODEL_READER=gpt-4o-mini
-AGENTOS_RESEARCH_MODEL_REASONING=gpt-4o
+FENCED_RESEARCH_LIVE=1
+FENCED_RESEARCH_MODEL_BASE_URL=https://api.example.com/v1
+FENCED_RESEARCH_MODEL_KEY=sk-...
+FENCED_RESEARCH_MODEL_PROVIDER=openai            # registry name, default openai
+FENCED_RESEARCH_MODEL_FAST=gpt-4o-mini           # wire model per tier (optional)
+FENCED_RESEARCH_MODEL_READER=gpt-4o-mini
+FENCED_RESEARCH_MODEL_REASONING=gpt-4o
 
 # P1 — real internet
-AGENTOS_RESEARCH_LIVE_WEB=1
-AGENTOS_RESEARCH_SEARCH_PROVIDER=doubao           # doubao | brave | bing
-AGENTOS_RESEARCH_SEARCH_KEY=...
+FENCED_RESEARCH_LIVE_WEB=1
+FENCED_RESEARCH_SEARCH_PROVIDER=doubao           # doubao | brave | bing
+FENCED_RESEARCH_SEARCH_KEY=...
 ```
 
 Live backends: `webtools.DoubaoSearch` / `webtools.BraveSearch` /
@@ -255,7 +255,7 @@ Gated acceptance tests (skip unless their env is present):
 
 | Test | Gate | Asserts |
 |---|---|---|
-| `TestResearchWorkflowLiveModel` | `AGENTOS_RESEARCH_LIVE=1` | SUCCEEDED, coverage ≥ 0.90, zero unsupported, all evidence grounded; prints §5 metrics JSON |
+| `TestResearchWorkflowLiveModel` | `FENCED_RESEARCH_LIVE=1` | SUCCEEDED, coverage ≥ 0.90, zero unsupported, all evidence grounded; prints §5 metrics JSON |
 | `TestResearchWorkflowLiveFull` | + `LIVE_WEB=1`, `…_GOAL="…"` | + grounded rate = 100 %, unique domains ≥ 3, no INSUFFICIENT_EVIDENCE |
 | `TestResearchWorkflowLiveRecovery` | same as LiveFull | + kills one active Reader worker, expires/fences its lease, requires a recovered Attempt and final SUCCEEDED |
 
@@ -267,16 +267,16 @@ identical shape for deterministic and live executions. Every live acceptance
 also writes a credential-scanned JSON evidence document containing the exact
 commit SHA and all metrics. The default output directory is
 `artifacts/research-live/` (generated files are git-ignored); override it with
-`AGENTOS_RESEARCH_EVIDENCE_DIR` when a CI job will upload the documents as PR
+`FENCED_RESEARCH_EVIDENCE_DIR` when a CI job will upload the documents as PR
 or release artifacts.
 
 ## End-to-end test suite
 
-Requires PostgreSQL at `AGENTOS_TEST_DATABASE_URL`. Each scenario gets its
+Requires PostgreSQL at `FENCED_TEST_DATABASE_URL`. Each scenario gets its
 own schema and a full in-process kernel stack:
 
 ```bash
-export AGENTOS_TEST_DATABASE_URL='postgres://...'
+export FENCED_TEST_DATABASE_URL='postgres://...'
 go test -tags integration -count=1 -timeout 12m \
   -run '^TestResearchWorkflow' ./examples/research-workflow/tests/e2e/
 ```
@@ -295,12 +295,12 @@ go test -tags integration -count=1 -timeout 12m \
 | `Recovery` | SIGKILL-equivalent of both workers mid-run; lease expiry + recovery + restarted instances complete the workflow |
 | `BudgetStop` | undersized budget settles instead of running unbounded |
 | `LiveModel` / `LiveFull` / `LiveRecovery` (env-gated) | real-model, full live-internet, and live worker-recovery acceptance with durable §5 evidence (see Live mode above) |
-| `100Concurrent` (gate `AGENTOS_RESEARCH_SCALE=1`) | 100 simultaneous workflows all reach SUCCEEDED |
+| `100Concurrent` (gate `FENCED_RESEARCH_SCALE=1`) | 100 simultaneous workflows all reach SUCCEEDED |
 | `AppAPIAndReport` | the §13 application API over real HTTP: create → COMPLETED → report artifact with coverage ≥ 0.90 |
 | `AppAPICancel` | §13 cancel path: a running research run settles CANCELLED |
 | `TaskSSEDisconnect` | §14-P4 SSE disconnect: a client that drops mid-stream reconnects and still receives `task.terminal` |
-| `1000Runs` (gate `AGENTOS_RESEARCH_SCALE_1000=1`, count via `AGENTOS_E2E_RESEARCH_RUNS`) | 1000 total ResearchRuns all settle SUCCEEDED (the §16 scale gate) |
-| `Soak` (gate `AGENTOS_RESEARCH_SOAK=1`, duration via `AGENTOS_E2E_SOAK_MINUTES`, default 10; 1440 = 24h) | continuous runs with 100% completion and zero residual capacity reservations (§18 soak) |
+| `1000Runs` (gate `FENCED_RESEARCH_SCALE_1000=1`, count via `FENCED_E2E_RESEARCH_RUNS`) | 1000 total ResearchRuns all settle SUCCEEDED (the §16 scale gate) |
+| `Soak` (gate `FENCED_RESEARCH_SOAK=1`, duration via `FENCED_E2E_SOAK_MINUTES`, default 10; 1440 = 24h) | continuous runs with 100% completion and zero residual capacity reservations (§18 soak) |
 | `MultiRuntimeRolePlacement` | every role runs on its mapped runtime class (reasoning / network / sandbox) with the workflow declaring only the class set |
 | `MultiRuntimeMigration` | the same workflow document runs readers on the surviving sandbox pool when the original pool is cordoned |
 | `MultiRuntimeCapacityExhaustion` | capacity-exhausted sandbox pool → placement walks candidates to the other sandbox pool |
@@ -359,7 +359,7 @@ kill the webtools webhook), `sse-reset` (SIGSTOP/SIGCONT the Control API so
 event streams stall and clients reconnect + reconcile), plus the operator
 `cordon` / `uncordon` pool controls. Each injection prints the §15
 observation chain (`failure injected → attempt failed → recovery → new
-attempt → workflow continued`) to verify against `agentos research` or the
+attempt → workflow continued`) to verify against `fenced research` or the
 e2e recovery scenarios. The same scenarios are exercised deterministically
 in-process by the failure-injection e2e tests (`ToolFailureRecovery`,
 `ModelFailure`, `Recovery`, `ReaderModelRetry`).

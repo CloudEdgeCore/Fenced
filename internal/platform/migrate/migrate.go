@@ -53,7 +53,7 @@ func Apply(ctx context.Context, pool *pgxpool.Pool, directory string) (Result, e
 	}()
 
 	if _, err := conn.Exec(ctx, `
-		CREATE TABLE IF NOT EXISTS agentos_schema_migrations (
+		CREATE TABLE IF NOT EXISTS fenced_schema_migrations (
 			version text PRIMARY KEY,
 			checksum bytea NOT NULL CHECK (octet_length(checksum) = 32),
 			applied_at timestamptz NOT NULL DEFAULT now()
@@ -72,7 +72,7 @@ func Apply(ctx context.Context, pool *pgxpool.Pool, directory string) (Result, e
 
 		var stored []byte
 		err = conn.QueryRow(ctx,
-			"SELECT checksum FROM agentos_schema_migrations WHERE version = $1",
+			"SELECT checksum FROM fenced_schema_migrations WHERE version = $1",
 			name,
 		).Scan(&stored)
 		switch {
@@ -91,7 +91,7 @@ func Apply(ctx context.Context, pool *pgxpool.Pool, directory string) (Result, e
 		}
 		if _, err = tx.Exec(ctx, string(sqlBytes)); err == nil {
 			_, err = tx.Exec(ctx,
-				"INSERT INTO agentos_schema_migrations (version, checksum) VALUES ($1, $2)",
+				"INSERT INTO fenced_schema_migrations (version, checksum) VALUES ($1, $2)",
 				name, checksum[:],
 			)
 		}

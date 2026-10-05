@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/namespace"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/namespace"
 )
 
 // ResourceSyscallHandler handles Resource and Namespace syscalls:

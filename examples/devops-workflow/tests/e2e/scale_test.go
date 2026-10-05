@@ -13,23 +13,23 @@ import (
 	"testing"
 	"time"
 
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 )
 
 // TestScale100kTasks is the §Phase-8 scale gate: 100,000 plain tasks
-// (tunable via AGENTOS_E2E_RESEARCH_RUNS) all reach a terminal state through
+// (tunable via FENCED_E2E_RESEARCH_RUNS) all reach a terminal state through
 // the kernel admission → scheduling → runtime pipeline with zero failures.
-// Gated by AGENTOS_RESEARCH_SCALE_100K=1.
+// Gated by FENCED_RESEARCH_SCALE_100K=1.
 func TestScale100kTasks(t *testing.T) {
-	if os.Getenv("AGENTOS_RESEARCH_SCALE_100K") != "1" {
-		t.Skip("AGENTOS_RESEARCH_SCALE_100K is not set")
+	if os.Getenv("FENCED_RESEARCH_SCALE_100K") != "1" {
+		t.Skip("FENCED_RESEARCH_SCALE_100K is not set")
 	}
 	count := 100000
-	if value := os.Getenv("AGENTOS_E2E_RESEARCH_RUNS"); value != "" {
+	if value := os.Getenv("FENCED_E2E_RESEARCH_RUNS"); value != "" {
 		parsed, err := strconv.Atoi(value)
 		if err != nil || parsed <= 0 {
-			t.Fatalf("AGENTOS_E2E_RESEARCH_RUNS must be a positive integer, got %q", value)
+			t.Fatalf("FENCED_E2E_RESEARCH_RUNS must be a positive integer, got %q", value)
 		}
 		count = parsed
 	}

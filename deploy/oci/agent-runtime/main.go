@@ -1,5 +1,5 @@
 // Minimal agent runtime for the OCI/gVisor isolation drill. The container
-// reads the workload spec from /agentos/input/workload.json (the task spec,
+// reads the workload spec from /fenced/input/workload.json (the task spec,
 // which includes the goal + budget + runtime), writes the result to stdout,
 // and exits. The OCI worker captures stdout as the attempt result.
 //
@@ -14,8 +14,8 @@ import (
 )
 
 func main() {
-	inputPath := "/agentos/input/workload.json"
-	if path := os.Getenv("AGENTOS_INPUT_PATH"); path != "" {
+	inputPath := "/fenced/input/workload.json"
+	if path := os.Getenv("FENCED_INPUT_PATH"); path != "" {
 		inputPath = path
 	}
 
@@ -23,7 +23,7 @@ func main() {
 	if err != nil {
 		// If the input file doesn't exist (pre-created mode), just echo.
 		output, _ := json.Marshal(map[string]any{
-			"agent": "oci-agent", "goal": os.Getenv("AGENTOS_AGENT_VERSION_REF"),
+			"agent": "oci-agent", "goal": os.Getenv("FENCED_AGENT_VERSION_REF"),
 			"status": "ok", "message": "OCI/gVisor isolation drill",
 		})
 		_, _ = os.Stdout.Write(output)

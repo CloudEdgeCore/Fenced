@@ -32,7 +32,7 @@ const (
 	bingSearchAPI      = "https://api.bing.microsoft.com/v7.0/search"
 	doubaoSearchAPI    = "https://open.feedcoopapi.com/search_api/web_search"
 	doubaoMinInterval  = 250 * time.Millisecond // 4 QPS, below the documented default 5 QPS quota
-	liveUserAgent      = "AgentOS-Research/1.0 (+https://agentos.example/bot)"
+	liveUserAgent      = "Fenced-Research/1.0 (+https://fenced.example/bot)"
 	liveSourceIDPrefix = "live-"
 )
 

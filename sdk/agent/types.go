@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	ProtocolVersion       = "agentos.runtime.interface/v1"
-	LegacyProtocolVersion = "agentos.runtime.interface/v1alpha1"
+	ProtocolVersion       = "fenced.runtime.interface/v1"
+	LegacyProtocolVersion = "fenced.runtime.interface/v1alpha1"
 
 	StatusAccepted  = "ACCEPTED"
 	StatusRunning   = "RUNNING"

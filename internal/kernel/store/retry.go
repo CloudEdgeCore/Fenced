@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/agentmetrics"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/agentmetrics"
 )
 
 // RetryRetryable runs fn, retrying transient transaction conflicts with

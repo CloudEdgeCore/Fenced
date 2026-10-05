@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/workload"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/agentmetrics"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/workload"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/agentmetrics"
 	"github.com/google/uuid"
 )
 

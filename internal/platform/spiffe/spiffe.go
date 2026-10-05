@@ -30,7 +30,7 @@ import (
 )
 
 // DefaultTrustDomain is the agent OS trust domain.
-const DefaultTrustDomain = "agentos.dev"
+const DefaultTrustDomain = "fenced.dev"
 
 // SystemNamespace is the SPIFFE namespace of the control plane itself.
 const SystemNamespace = "system"
@@ -43,7 +43,7 @@ type CA struct {
 }
 
 // NewCA creates a fresh CA for the trust domain. Dev/deployments generate one
-// with agentos-svid; production rotates it through a real CA process.
+// with fenced-svid; production rotates it through a real CA process.
 func NewCA(trustDomain string, now time.Time, validity time.Duration) (*CA, error) {
 	if strings.TrimSpace(trustDomain) == "" {
 		return nil, fmt.Errorf("trust domain is required")
@@ -58,7 +58,7 @@ func NewCA(trustDomain string, now time.Time, validity time.Duration) (*CA, erro
 	}
 	template := &x509.Certificate{
 		SerialNumber:          serial,
-		Subject:               pkix.Name{CommonName: "agentos spiffe ca " + trustDomain},
+		Subject:               pkix.Name{CommonName: "fenced spiffe ca " + trustDomain},
 		NotBefore:             now.Add(-5 * time.Minute),
 		NotAfter:              now.Add(validity),
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
@@ -196,7 +196,7 @@ type Pattern struct {
 }
 
 // ParsePattern parses "spiffe://<trust-domain>/ns/<tenant>/worker/<instance>"
-// with "*" wildcards, e.g. "spiffe://agentos.dev/ns/*/worker/*".
+// with "*" wildcards, e.g. "spiffe://fenced.dev/ns/*/worker/*".
 func ParsePattern(raw string) (Pattern, error) {
 	parsed, err := url.Parse(strings.TrimSpace(raw))
 	if err != nil {

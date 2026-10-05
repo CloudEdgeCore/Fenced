@@ -32,7 +32,7 @@ var ErrPackageSignatureInvalid = errors.New("agent package signature is invalid"
 var ErrPackageManifestInvalid = errors.New("agent package manifest is invalid")
 
 // ManifestSchema is the canonical manifest version.
-const ManifestSchema = "agentos.agentpkg/v1"
+const ManifestSchema = "fenced.agentpkg/v1"
 
 // Digest is a content digest reference (algorithm + hex).
 type Digest struct {

@@ -1,4 +1,4 @@
-// Package errorcode is the canonical registry for stable public AgentOS error
+// Package errorcode is the canonical registry for stable public Fenced error
 // codes. Internal errors must be translated to one of these codes before they
 // cross an Agent, SDK, API, artifact, event, or audit boundary.
 package errorcode

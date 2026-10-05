@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentversion"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
 )
 
 // FromAgentManifest builds the unsigned supply-chain manifest from a strict

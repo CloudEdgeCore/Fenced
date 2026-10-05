@@ -1,6 +1,6 @@
 # Benchmark Baseline
 
-> 仓库：`CloudEdgeCore/AgentOS`  
+> 仓库：`CloudEdgeCore/Fenced`  
 > 目标：建立可重复、可比较的性能基线，并记录每次运行的完整环境，使后续版本可以精确对标。
 
 ## 1. 运行环境（每次运行必须完整记录）
@@ -31,18 +31,18 @@ NATS: 同机或同可用区
 
 | 场景 | Tasks | Scheduler | Controller | Runtime | 入口 |
 |------|-------|-----------|------------|---------|------|
-| A: 10K | 10,000 | 8 | 16 | 10 | `TestControlPlanePipelineCapacityBaseline`（`AGENTOS_CAPACITY_TASKS=10000`） |
-| B: 100K | 100,000 | 8 | 16 | 10 | `TestControlPlanePipelineCapacityBaseline`（`AGENTOS_CAPACITY_TASKS=100000`，nightly） |
-| C: 1M | 1,000,000 | 8 | 16 | 10 | `TestControlPlanePipelineCapacityBaseline`（`AGENTOS_CAPACITY_TASKS=1000000`，nightly） |
+| A: 10K | 10,000 | 8 | 16 | 10 | `TestControlPlanePipelineCapacityBaseline`（`FENCED_CAPACITY_TASKS=10000`） |
+| B: 100K | 100,000 | 8 | 16 | 10 | `TestControlPlanePipelineCapacityBaseline`（`FENCED_CAPACITY_TASKS=100000`，nightly） |
+| C: 1M | 1,000,000 | 8 | 16 | 10 | `TestControlPlanePipelineCapacityBaseline`（`FENCED_CAPACITY_TASKS=1000000`，nightly） |
 | 补充: workflow 10K | 10,000 动态任务 | — | — | — | `TestV13DynamicSpawnScale10K` / `TestV13Orchestrates10KDynamicTasks` |
-| 补充: research 100K | 100,000 | — | — | — | `TestScale100kTasks`（`AGENTOS_RESEARCH_SCALE_100K=1`） |
+| 补充: research 100K | 100,000 | — | — | — | `TestScale100kTasks`（`FENCED_RESEARCH_SCALE_100K=1`） |
 
 ## 3. 运行命令
 
 ```bash
 # 需要 live PostgreSQL
-export AGENTOS_TEST_DATABASE_URL=postgres://user:pass@host:5432/agentos_test?sslmode=disable
-export AGENTOS_CAPACITY_TASKS=10000   # 10K / 100000 / 1000000
+export FENCED_TEST_DATABASE_URL=postgres://user:pass@host:5432/fenced_test?sslmode=disable
+export FENCED_CAPACITY_TASKS=10000   # 10K / 100000 / 1000000
 
 go test -tags=integration -count=1 -timeout 240m \
   -run 'TestControlPlanePipelineCapacityBaseline' -v \
@@ -107,7 +107,7 @@ end-to-end:                     p50=3m33.2s  p95=3m56.7s  p99=3m58.9s
 schedule 阶段推进至 **75,300/100,000 RUNNING（deferred=0, maxRetry=0, 零错误）**，
 随后被 go test `-timeout 180m` 终止——本机吞吐不足以在 3h 内完成 100K。
 **结论：管线在 75K 规模下无错误无积压异常；完整 100K PASS 属于 nightly CI**
-（`capacity-baseline` job, `AGENTOS_CAPACITY_TASKS=100000`, ubuntu-latest ~90min）。
+（`capacity-baseline` job, `FENCED_CAPACITY_TASKS=100000`, ubuntu-latest ~90min）。
 
 ### Baseline v1 — 正式基线（待 nightly 硬件产出）
 

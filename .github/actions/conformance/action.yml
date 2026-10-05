@@ -1,5 +1,5 @@
-name: 'AgentOS Conformance Certification'
-description: 'Certifies that an AI Agent Runtime or Framework complies with the AgentOS Runtime Interface v1 specification.'
+name: 'Fenced Conformance Certification'
+description: 'Certifies that an AI Agent Runtime or Framework complies with the Fenced Runtime Interface v1 specification.'
 author: 'CloudEdgeCore'
 
 inputs:
@@ -15,8 +15,8 @@ inputs:
     description: 'Maximum time to allow for the conformance suite run (e.g. 2m)'
     required: false
     default: '2m'
-  agentos-version:
-    description: 'Version of AgentOS Conformance Suite binary to download or build'
+  fenced-version:
+    description: 'Version of Fenced Conformance Suite binary to download or build'
     required: false
     default: 'v1.3.0'
 
@@ -26,7 +26,7 @@ outputs:
     value: ${{ steps.run-suite.outputs.status }}
   badge-markdown:
     description: 'Markdown badge snippet to include in README'
-    value: '[![AgentOS Compatible](https://img.shields.io/badge/AgentOS-Compatible-brightgreen.svg)](https://github.com/CloudEdgeCore/AgentOS)'
+    value: '[![Fenced Compatible](https://img.shields.io/badge/Fenced-Compatible-brightgreen.svg)](https://github.com/CloudEdgeCore/Fenced)'
 
 runs:
   using: 'composite'
@@ -54,15 +54,15 @@ runs:
           FLAGS+=(-timeout "${{ inputs.timeout }}")
         fi
 
-        echo "=== Executing AgentOS Conformance Suite ==="
-        OUTPUT=$(go run github.com/CloudEdgeCore/AgentOS/cmd/agentos-conformance@${{ inputs.agentos-version }} "${FLAGS[@]}")
+        echo "=== Executing Fenced Conformance Suite ==="
+        OUTPUT=$(go run github.com/CloudEdgeCore/Fenced/cmd/fenced-conformance@${{ inputs.fenced-version }} "${FLAGS[@]}")
         echo "$OUTPUT"
 
-        if echo "$OUTPUT" | grep -q "AgentOS Compatible = PASS"; then
+        if echo "$OUTPUT" | grep -q "Fenced Compatible = PASS"; then
           echo "status=PASS" >> "$GITHUB_OUTPUT"
-          echo "::notice title=AgentOS Certified::Runtime verified compatible with AgentOS Kernel! Use badge: [![AgentOS Compatible](https://img.shields.io/badge/AgentOS-Compatible-brightgreen.svg)](https://github.com/CloudEdgeCore/AgentOS)"
+          echo "::notice title=Fenced Certified::Runtime verified compatible with Fenced Kernel! Use badge: [![Fenced Compatible](https://img.shields.io/badge/Fenced-Compatible-brightgreen.svg)](https://github.com/CloudEdgeCore/Fenced)"
         else
           echo "status=FAIL" >> "$GITHUB_OUTPUT"
-          echo "::error title=AgentOS Conformance Failed::Candidate runtime failed one or more conformance checks."
+          echo "::error title=Fenced Conformance Failed::Candidate runtime failed one or more conformance checks."
           exit 1
         fi

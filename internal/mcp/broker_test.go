@@ -8,12 +8,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/memory"
-	kernelmodel "github.com/CloudEdgeCore/AgentOS/internal/kernel/model"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/model/provider"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/memory"
+	kernelmodel "github.com/CloudEdgeCore/Fenced/internal/kernel/model"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/model/provider"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
 	"github.com/google/uuid"
 )
 

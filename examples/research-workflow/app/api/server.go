@@ -18,11 +18,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/examples/research-workflow/app/domain"
-	"github.com/CloudEdgeCore/AgentOS/examples/research-workflow/app/report"
-	"github.com/CloudEdgeCore/AgentOS/examples/research-workflow/app/repository"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/workflow"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/artifact"
+	"github.com/CloudEdgeCore/Fenced/examples/research-workflow/app/domain"
+	"github.com/CloudEdgeCore/Fenced/examples/research-workflow/app/report"
+	"github.com/CloudEdgeCore/Fenced/examples/research-workflow/app/repository"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/workflow"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/artifact"
 	"github.com/google/uuid"
 )
 

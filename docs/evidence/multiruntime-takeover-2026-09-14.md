@@ -1,7 +1,7 @@
 # Multi-Runtime Takeover — 报告
 
-> 仓库：`CloudEdgeCore/AgentOS`
-> 对应文档：《AgentOS_当前状态与下一步建议_2026-08-29》交付包 **D1**（同一 Workflow 无需修改即跨运行时接管并 SUCCEEDED）
+> 仓库：`CloudEdgeCore/Fenced`
+> 对应文档：《Fenced_当前状态与下一步建议_2026-08-29》交付包 **D1**（同一 Workflow 无需修改即跨运行时接管并 SUCCEEDED）
 > 基线日期：2026-09-14
 
 ## 1. 运行环境
@@ -15,7 +15,7 @@ Commit SHA:     c028508f2789234e9a23464745dc2336ef6917fb（HEAD，2026-09-14 13:
 Go:             go1.26.6 windows/amd64
 宿主:           Windows 10.0.26200 + Docker Desktop + WSL2（非基准硬件，本报告不做性能声明）
 PostgreSQL:     pgvector/pgvector:pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
-                （agentos-dev-postgres-1, 127.0.0.1:55432, deploy/dev/compose.yaml）
+                （fenced-dev-postgres-1, 127.0.0.1:55432, deploy/dev/compose.yaml）
 测试入口:       go test -tags=integration -count=1 -run '^TestMultiRuntime' -v \
                   ./examples/research-workflow/tests/e2e/
 Harness:        每场景独立 schema + 完整 in-process kernel 栈

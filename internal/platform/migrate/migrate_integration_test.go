@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/migrate"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/migrate"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func TestApplyIsIdempotentAndRejectsChangedHistory(t *testing.T) {
-	url := os.Getenv("AGENTOS_TEST_DATABASE_URL")
+	url := os.Getenv("FENCED_TEST_DATABASE_URL")
 	if url == "" {
-		t.Skip("AGENTOS_TEST_DATABASE_URL is not set")
+		t.Skip("FENCED_TEST_DATABASE_URL is not set")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -28,17 +28,17 @@ func TestApplyIsIdempotentAndRejectsChangedHistory(t *testing.T) {
 	t.Cleanup(pool.Close)
 
 	const version = "999999_checksum_probe.up.sql"
-	const table = "agentos_migration_checksum_probe"
+	const table = "fenced_migration_checksum_probe"
 	directory := t.TempDir()
 	path := filepath.Join(directory, version)
 	if err := os.WriteFile(path, []byte("CREATE TABLE "+table+" (id bigint PRIMARY KEY);\n"), 0o600); err != nil {
 		t.Fatalf("write migration: %v", err)
 	}
 	_, _ = pool.Exec(ctx, "DROP TABLE IF EXISTS "+table)
-	_, _ = pool.Exec(ctx, `DELETE FROM agentos_schema_migrations WHERE version = $1`, version)
+	_, _ = pool.Exec(ctx, `DELETE FROM fenced_schema_migrations WHERE version = $1`, version)
 	t.Cleanup(func() {
 		_, _ = pool.Exec(context.Background(), "DROP TABLE IF EXISTS "+table)
-		_, _ = pool.Exec(context.Background(), `DELETE FROM agentos_schema_migrations WHERE version = $1`, version)
+		_, _ = pool.Exec(context.Background(), `DELETE FROM fenced_schema_migrations WHERE version = $1`, version)
 	})
 
 	first, err := migrate.Apply(ctx, pool, directory)

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 // TestDevOpsWorkflowFull is Phase 4 acceptance: the full incident workflow

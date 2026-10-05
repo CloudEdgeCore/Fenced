@@ -1,6 +1,6 @@
-# AgentOS 用户使用与开发实战指南 (User Guide)
+# Fenced 用户使用与开发实战指南 (User Guide)
 
-欢迎使用 **AgentOS** —— 面向生产级 AI Agent 的安全发布、调度、执行、容灾、治理与审计的云原生操作系统内核与控制面平台。
+欢迎使用 **Fenced** —— 面向生产级 AI Agent 的安全发布、调度、执行、容灾、治理与审计的云原生操作系统内核与控制面平台。
 
 本指南旨在为开发者、框架作者与运维工程师提供从零到一的完整实战指导，涵盖环境部署、Agent 开发、包注册表、Runtime SDK、Provider 扩展、常驻守护服务、跨 Agent IPC 通信以及外部副作用防护等全套功能。
 
@@ -25,21 +25,21 @@
 
 ## 1. 系统概览与核心概念
 
-AgentOS 不是一个简单的聊天窗口或无代码流程图工具，而是解决 AI Agent 真正进入企业级生产环境时面临的核心系统级工程挑战：**不可变版本控制、确定性执行隔离、精确成本预算结算、长时故障热恢复、密码学供应链签名与防重入副作用防护**。
+Fenced 不是一个简单的聊天窗口或无代码流程图工具，而是解决 AI Agent 真正进入企业级生产环境时面临的核心系统级工程挑战：**不可变版本控制、确定性执行隔离、精确成本预算结算、长时故障热恢复、密码学供应链签名与防重入副作用防护**。
 
 ### 1.1 系统架构图
 
 ```mermaid
 flowchart TD
     subgraph ClientLayer["客户端与生态层 (Client & Ecosystem)"]
-        CLI["AgentOS CLI (agent / agentos)"]
+        CLI["Fenced CLI (agent / fenced)"]
         Registry["Agent Package Registry (OCI)"]
         SDK["Provider SDK & Runtime SDK"]
         Frameworks["LangGraph / AutoGen / CrewAI"]
     end
 
     subgraph ControlPlane["控制平面 (Control Plane)"]
-        API["Control API Server (agentos-control)"]
+        API["Control API Server (fenced-control)"]
         Scheduler["Scheduler & Placement Engine"]
         Supervisor["Supervisor & Recovery Controller"]
         Admission["Admission & Rego Policy Engine"]
@@ -86,8 +86,8 @@ flowchart TD
 | **AgentVersion** | 发布到控制面后的只读、不可变版本对象，内容与哈希完全绑定。 | [`internal/kernel/agentversion`](../internal/kernel/agentversion) |
 | **AgentPackage** | 符合 OCI 规范的数字签名包，携带 SBOM 清单、Spec 摘要与 Provenance 来源凭据。 | [`internal/kernel/agentpkg`](../internal/kernel/agentpkg) |
 | **Task & Run & Attempt** | **单次批处理模型**：一个 Task 代表一次业务目标；包含若干次重试的 Run；每次真正派发到 Worker 执行的实体为 Attempt（非可抢占、租约栅栏保护）。 | [`internal/kernel/task`](../internal/kernel/task) |
-| **Service & Instance** | **受监管副本模型**：每个服务实例绑定一个持久化 Task，复用准入、调度、租约和 Runtime 执行；Supervisor 管理副本、心跳与重启策略。 | [`proto/agentos/service/v1/service.proto`](../proto/agentos/service/v1/service.proto) |
-| **Syscall ABI 1.0.0** | 内核标准系统调用规范，抽象了模型推理、工具执行、内存存取、IPC 通信、服务调用等 8 大子系统。 | [`proto/agentos/syscall/v1/syscall.proto`](../proto/agentos/syscall/v1/syscall.proto) |
+| **Service & Instance** | **受监管副本模型**：每个服务实例绑定一个持久化 Task，复用准入、调度、租约和 Runtime 执行；Supervisor 管理副本、心跳与重启策略。 | [`proto/fenced/service/v1/service.proto`](../proto/fenced/service/v1/service.proto) |
+| **Syscall ABI 1.0.0** | 内核标准系统调用规范，抽象了模型推理、工具执行、内存存取、IPC 通信、服务调用等 8 大子系统。 | [`proto/fenced/syscall/v1/syscall.proto`](../proto/fenced/syscall/v1/syscall.proto) |
 
 ---
 
@@ -116,37 +116,37 @@ docker compose -f deploy/dev/compose.yaml --profile observability up -d
 ```
 
 默认端口与凭证：
-- **PostgreSQL**: `127.0.0.1:55432`，用户 `agentos`，密码 `agentos-dev-only`，数据库 `agentos`
+- **PostgreSQL**: `127.0.0.1:55432`，用户 `fenced`，密码 `fenced-dev-only`，数据库 `fenced`
 - **NATS JetStream**: `127.0.0.1:54222`
 - **Grafana 监控看板**: `http://127.0.0.1:3300` (无需密码)
 - **Prometheus 指标**: `http://127.0.0.1:9093`
 
-### 2.3 编译 AgentOS 核心组件
+### 2.3 编译 Fenced 核心组件
 
 ```bash
 # 编译统一开发者 CLI（agent：配置向导、模型连通性、脚手架、内部预览控制台）
 go build -o bin/agent ./cmd/agent
 
-# 编译稳定工作流 CLI（agentos：发布、运行、日志、工作流、服务）
-go build -o bin/agentos ./cmd/agentos
+# 编译稳定工作流 CLI（fenced：发布、运行、日志、工作流、服务）
+go build -o bin/fenced ./cmd/fenced
 
 # 编译控制面 API 服务
-go build -o bin/agentos-control ./cmd/agentos-control
+go build -o bin/fenced-control ./cmd/fenced-control
 
 # 编译集群调度与恢复控制器
-go build -o bin/agentos-controller ./cmd/agentos-controller
+go build -o bin/fenced-controller ./cmd/fenced-controller
 
 # 编译网关组件
-go build -o bin/agentos-gateway ./cmd/agentos-gateway
+go build -o bin/fenced-gateway ./cmd/fenced-gateway
 
 # 编译数据库迁移工具
-go build -o bin/agentos-migrate ./cmd/agentos-migrate
+go build -o bin/fenced-migrate ./cmd/fenced-migrate
 ```
 
 验证安装：
 ```bash
-./bin/agentos version   # AgentOS 1.3.0.0 (semver v1.3.0, GA)
-./bin/agent version     # agent CLI 1.3.0 (product: AgentOS 1.3.0.0, syscall ABI: 1.0.0)
+./bin/fenced version   # Fenced 1.3.0.0 (semver v1.3.0, GA)
+./bin/agent version     # agent CLI 1.3.0 (product: Fenced 1.3.0.0, syscall ABI: 1.0.0)
 ```
 
 ### 2.4 初始化数据库架构
@@ -154,10 +154,10 @@ go build -o bin/agentos-migrate ./cmd/agentos-migrate
 执行数据库全量迁移，建立多租户、任务状态机、Lease 租约、IPC 邮箱与安全策略表结构：
 
 ```bash
-export DATABASE_URL="postgres://agentos:agentos-dev-only@127.0.0.1:55432/agentos?sslmode=disable"
+export DATABASE_URL="postgres://fenced:fenced-dev-only@127.0.0.1:55432/fenced?sslmode=disable"
 
-# 执行数据库迁移（agentos migrate 子命令仅用于 manifest 版本提升）
-./bin/agentos-migrate -database-url "$DATABASE_URL"
+# 执行数据库迁移（fenced migrate 子命令仅用于 manifest 版本提升）
+./bin/fenced-migrate -database-url "$DATABASE_URL"
 ```
 
 ### 2.5 启动内核服务
@@ -166,7 +166,7 @@ export DATABASE_URL="postgres://agentos:agentos-dev-only@127.0.0.1:55432/agentos
 
 **终端 1：启动控制面 API Server**
 ```bash
-./bin/agentos-control \
+./bin/fenced-control \
   -database-url "$DATABASE_URL" \
   -listen "127.0.0.1:8080" \
   -dev-tenant dev
@@ -174,7 +174,7 @@ export DATABASE_URL="postgres://agentos:agentos-dev-only@127.0.0.1:55432/agentos
 
 **终端 2：启动调度与容灾恢复控制器**
 ```bash
-./bin/agentos-controller \
+./bin/fenced-controller \
   -database-url "$DATABASE_URL" \
   -controller-id "controller-node-01" \
   -runtime-pools deploy/dev/runtime-pools.json \
@@ -188,27 +188,27 @@ export DATABASE_URL="postgres://agentos:agentos-dev-only@127.0.0.1:55432/agentos
 
 ## 3. Agent 开发与生命周期管理
 
-### 3.1 项目初始化 (`agentos init`)
+### 3.1 项目初始化 (`fenced init`)
 
-AgentOS 提供了开箱即用的模板脚手架，支持 Go、Python、LangGraph 与 Agent-to-Agent (A2A) 架构：
+Fenced 提供了开箱即用的模板脚手架，支持 Go、Python、LangGraph 与 Agent-to-Agent (A2A) 架构：
 
 ```bash
 # 使用 Python 模板初始化新 Agent（-adapter 可选 go / python / langgraph / a2a）
-./bin/agentos init -dir my-agent -name my-agent -adapter python
+./bin/fenced init -dir my-agent -name my-agent -adapter python
 
 cd my-agent
 ls -l
 ```
 
 生成的项目目录结构包含：
-- `agent.json`：AgentOS 声明式规格配置
-- `server.py`：业务逻辑入口，遵循 AgentOS Runtime 协议（go 模板生成 `main.go`）
+- `agent.json`：Fenced 声明式规格配置
+- `server.py`：业务逻辑入口，遵循 Fenced Runtime 协议（go 模板生成 `main.go`）
 
 ### 3.2 深入理解 `agent.json` 规格
 
 ```json
 {
-  "apiVersion": "agentos.dev/v1",
+  "apiVersion": "fenced.dev/v1",
   "kind": "AgentManifest",
   "metadata": {
     "name": "research-assistant",
@@ -223,7 +223,7 @@ ls -l
     "runtimes": [
       {
         "class": "python-native",
-        "interface": "agentos.runtime.interface/v1",
+        "interface": "fenced.runtime.interface/v1",
         "runtimeABI": "v1",
         "entrypoint": ["python3", "main.py"]
       }
@@ -257,22 +257,22 @@ ls -l
 > [!IMPORTANT]
 > **能力默认拒绝 (Strict Default-Deny)**：`capabilities` 字段中的每一项授权必须显式声明。如果省略或者传入 `null`，内核准入控制器将在发布与提交阶段直接拒绝（HTTP 422 Unprocessable Entity）。
 
-### 3.3 规范静态校验 (`agentos validate`)
+### 3.3 规范静态校验 (`fenced validate`)
 
 在发布前使用静态校验器检查语法、资源边界与能力格式：
 
 ```bash
-./bin/agentos validate -manifest agent.json
+./bin/fenced validate -manifest agent.json
 ```
 
 若通过，会输出类似 `manifest OK ref=default/research-assistant@1.0.0 digest=... runtimes=1`；校验失败时返回非零退出码并打印具体原因。
 
-### 3.4 提交与运行单次任务 (`agentos run`)
+### 3.4 提交与运行单次任务 (`fenced run`)
 
-向 AgentOS 内核提交一个具体的执行任务：
+向 Fenced 内核提交一个具体的执行任务：
 
 ```bash
-./bin/agentos run \
+./bin/fenced run \
   -endpoint "http://127.0.0.1:8080" \
   -agent "default/research-assistant@1.0.0" \
   -goal "分析近期 AI 操作系统架构设计要点并输出 Markdown 简报" \
@@ -283,13 +283,13 @@ ls -l
 其中 `-spec` 可选，用于传入工作负载 JSON；省略时请求体 `spec` 为空对象。
 命令将返回任务全局唯一标识符 `TaskID`（UUID）。
 
-### 3.5 实时查看日志与事件流 (`agentos logs`)
+### 3.5 实时查看日志与事件流 (`fenced logs`)
 
-AgentOS 将所有生命周期事件、工具调用、思考过程与标准输出持久化为流式事件总线：
+Fenced 将所有生命周期事件、工具调用、思考过程与标准输出持久化为流式事件总线：
 
 ```bash
 # 流式跟踪任务事件（SSE，直到服务端关闭连接）
-./bin/agentos logs -endpoint "http://127.0.0.1:8080" -task "9a2f7c01-4b2e-4f1a-9c3d-7e5b8a1d2f30"
+./bin/fenced logs -endpoint "http://127.0.0.1:8080" -task "9a2f7c01-4b2e-4f1a-9c3d-7e5b8a1d2f30"
 ```
 
 > `-task` 必须是任务 UUID。
@@ -298,7 +298,7 @@ AgentOS 将所有生命周期事件、工具调用、思考过程与标准输出
 
 ## 4. Agent Package Registry 与 6 阶段安全门禁
 
-在企业生产级部署中，未经安全审计和密码学防伪的 Agent 代码绝对不允许直接投入运行。AgentOS 提供了兼容 OCI Registry 标准的包管理器与**强制性 6 阶段安全门禁流水线**。
+在企业生产级部署中，未经安全审计和密码学防伪的 Agent 代码绝对不允许直接投入运行。Fenced 提供了兼容 OCI Registry 标准的包管理器与**强制性 6 阶段安全门禁流水线**。
 
 ```mermaid
 flowchart TD
@@ -316,12 +316,12 @@ flowchart TD
 
 #### 第 1 步：登录注册表
 ```bash
-./bin/agentos login -registry "https://registry.agentos.dev" -token "developer-api-token"
+./bin/fenced login -registry "https://registry.fenced.dev" -token "developer-api-token"
 ```
 
 #### 第 2 步：构建规范供应清单 (Build)
 ```bash
-./bin/agentos package build \
+./bin/fenced package build \
   -manifest "agent.json" \
   -builder "alice@corp.internal" \
   -workflow "github-actions-release" \
@@ -335,7 +335,7 @@ flowchart TD
 使用发行者的 Ed25519 私钥为该包实施数字签名：
 
 ```bash
-./bin/agentos package sign \
+./bin/fenced package sign \
   -package "package-manifest.json" \
   -key-id "release-key-2026" \
   -private-key "YOUR_BASE64_ED25519_PRIVATE_KEY" \
@@ -344,21 +344,21 @@ flowchart TD
 
 #### 第 4 步：推送到 OCI 注册表 (Push)
 ```bash
-./bin/agentos package push \
+./bin/fenced package push \
   -package "package.signed.json" \
-  -registry "https://registry.agentos.dev"
+  -registry "https://registry.fenced.dev"
 ```
 
 #### 第 5 步：在线检索公开与企业包 (Search)
 ```bash
-./bin/agentos package search -query "research" -capability "tools:web-search"
+./bin/fenced package search -query "research" -capability "tools:web-search"
 ```
 
 #### 第 6 步：完整性验证与安装 (Verify & Install)
 在生产租户环境下安装已签名的包，强制经过 6 阶段安全门禁：
 
 ```bash
-./bin/agentos package install \
+./bin/fenced package install \
   -package "package.signed.json" \
   -public-key "RELEASE_PUBLIC_KEY_BASE64" \
   -tenant "production-finance"
@@ -371,13 +371,13 @@ flowchart TD
 
 ## 5. 第三方 Runtime SDK 与一致性测试
 
-AgentOS 允许第三方引擎（例如独立的 Docker 容器沙箱、自定义 Python 执行器、远程 HTTP 服务）接入作为统一运行时，只要适配器符合 `agentos.runtime.interface/v1` 协议。
+Fenced 允许第三方引擎（例如独立的 Docker 容器沙箱、自定义 Python 执行器、远程 HTTP 服务）接入作为统一运行时，只要适配器符合 `fenced.runtime.interface/v1` 协议。
 
-### 5.1 快速脚手架 (`agentos runtime init`)
+### 5.1 快速脚手架 (`fenced runtime init`)
 
 ```bash
 # 初始化一个远程 HTTP 运行时骨架
-./bin/agentos runtime init my-runtime --template http
+./bin/fenced runtime init my-runtime --template http
 
 cd my-runtime
 ```
@@ -392,8 +392,8 @@ package main
 import (
 	"context"
 	"net/http"
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
-	"github.com/CloudEdgeCore/AgentOS/sdk/runtimesdk"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
+	"github.com/CloudEdgeCore/Fenced/sdk/runtimesdk"
 )
 
 type MyCustomRuntime struct{}
@@ -451,17 +451,17 @@ func main() {
 启动你的 Runtime 服务后，运行内置的一致性认证命令：
 
 ```bash
-./bin/agentos runtime test http://127.0.0.1:8088
+./bin/fenced runtime test http://127.0.0.1:8088
 ```
 
 或使用底层的详细验证套件：
 ```bash
-./bin/agentos conformance -endpoint http://127.0.0.1:8088
+./bin/fenced conformance -endpoint http://127.0.0.1:8088
 ```
 
 合规套件将自动注入 12 项黑盒破坏性测试用例：
 1. `health`：状态 SERVING 校验
-2. `protocol-negotiation`：协议头 `AgentOS-Runtime-Interface` 匹配
+2. `protocol-negotiation`：协议头 `Fenced-Runtime-Interface` 匹配
 3. `start`：首次执行正常启动
 4. `idempotency`：相同参数重入响应校验
 5. `conflict`：冲突参数拒绝校验 (409 Conflict)
@@ -475,9 +475,9 @@ func main() {
 
 全部通过后输出：
 ```text
-AgentOS Runtime Interface Conformance: PASS
+Fenced Runtime Interface Conformance: PASS
 Endpoint: http://127.0.0.1:8088
-Protocol: agentos.runtime.interface/v1
+Protocol: fenced.runtime.interface/v1
 Checks Passed: 12/12
 Status: CERTIFIED COMPATIBLE
 ```
@@ -486,7 +486,7 @@ Status: CERTIFIED COMPATIBLE
 
 ## 6. Unified Provider SDK 插件生态
 
-为实现新增大模型、工具、向量库或浏览器能力时**完全无需修改 AgentOS 内核代码（Zero Kernel Modifications）**，AgentOS 提供了 Go 与 Python 统一 Provider SDK（[`sdk/provider/`](../sdk/provider/)）。
+为实现新增大模型、工具、向量库或浏览器能力时**完全无需修改 Fenced 内核代码（Zero Kernel Modifications）**，Fenced 提供了 Go 与 Python 统一 Provider SDK（[`sdk/provider/`](../sdk/provider/)）。
 
 ### 6.1 支持的 6 大 Provider 类别
 
@@ -501,7 +501,7 @@ Status: CERTIFIED COMPATIBLE
 
 #### 1. 模型提供商（OpenAIProvider）
 ```go
-import "github.com/CloudEdgeCore/AgentOS/sdk/provider"
+import "github.com/CloudEdgeCore/Fenced/sdk/provider"
 
 openai, err := provider.NewOpenAIProvider(provider.OpenAIConfig{
     APIKey:  os.Getenv("OPENAI_API_KEY"),
@@ -522,14 +522,14 @@ browser := provider.NewBrowserProvider(provider.BrowserConfig{
     Headless: true,
 })
 
-_ = browser.Navigate(ctx, "https://agentos.dev")
+_ = browser.Navigate(ctx, "https://fenced.dev")
 screenshot, _ := browser.Screenshot(ctx)
 ```
 
 #### 3. 向量持久化提供商（PostgresMemoryProvider）
 ```go
 memory := provider.NewPostgresMemoryProvider(provider.PostgresConfig{
-    ConnectionString: "postgres://agentos:agentos-dev-only@127.0.0.1:55432/agentos?sslmode=disable",
+    ConnectionString: "postgres://fenced:fenced-dev-only@127.0.0.1:55432/fenced?sslmode=disable",
     Dimension:        1536,
 })
 
@@ -571,7 +571,7 @@ stateDiagram-v2
 先发布与命名空间匹配的 AgentVersion，并启动允许其运行类的 Worker 及 Runtime Interface 端点；相应运行池必须已向调度器注册。以下命令假定 `agent.json` 声明了默认命名空间下的 `customer-service-bot@1.0.0`，允许 `remote` 运行类，且版本预算不小于任务预算。`-spec` 必须指向 JSON 对象，包含普通 Task 所需的 `budget`、`placement` 等字段；这些内容仍由服务端准入校验。
 
 ```bash
-./bin/agentos publish -manifest agent.json
+./bin/fenced publish -manifest agent.json
 
 cat > service-task-spec.json <<'JSON'
 {
@@ -594,7 +594,7 @@ cat > service-task-spec.json <<'JSON'
 JSON
 
 # 提交一个受监管副本；调度与实际启动异步进行
-./bin/agentos service create \
+./bin/fenced service create \
   -name "customer-service-bot" \
   -agent "customer-service-bot@1.0.0" \
   -namespace "default" \
@@ -605,11 +605,11 @@ JSON
 
 # 将创建响应中的 id 填入 SERVICE_ID
 SERVICE_ID=your-service-id
-./bin/agentos service instances "$SERVICE_ID"
+./bin/fenced service instances "$SERVICE_ID"
 
 # 将实例响应中的 taskId 填入 TASK_ID，跟踪实际执行事件
 TASK_ID=your-task-id
-./bin/agentos logs -task "$TASK_ID"
+./bin/fenced logs -task "$TASK_ID"
 ```
 
 默认命名空间的规范版本引用写作 `name@version`；其他命名空间写作 `namespace/name@version`，必须与 `-namespace` 相同。`-runtime-class` 可省略，此时按版本策略和工作负载 placement 调度。API 的 `spec.agentVersionRef` 固定服务使用的版本，`spec.workloadSpec` 保存上述 Task 配置。
@@ -626,24 +626,24 @@ Supervisor 依据目标版本、副本数和 drain deadline 收敛实例。Drain
 
 版本更新及排空不能单独保证业务零停机：应用 readiness、入口流量切换、正在处理的会话和隔离边界的退出确认需要部署方接入并验证。当前服务能力不包含已验证的应用健康失败自动回滚。CLI 提供以下操作，带 flag 的命令应将 flag 放在 service ID 前：
 
-生产环境需在 `AGENTOS_TOKEN` 中配置 Control API 接受的 OIDC ID token，并为命令添加 `-endpoint https://...`。`service stop` 调用 `POST /v1/services/{id}/stop`，将副本数设为零、禁用 AutoWake 并请求取消；实例仍需等待 Runtime 确认任务终止。
+生产环境需在 `FENCED_TOKEN` 中配置 Control API 接受的 OIDC ID token，并为命令添加 `-endpoint https://...`。`service stop` 调用 `POST /v1/services/{id}/stop`，将副本数设为零、禁用 AutoWake 并请求取消；实例仍需等待 Runtime 确认任务终止。
 
 ```bash
 # 扩缩副本（Supervisor 滚动收敛到目标副本数）
-./bin/agentos service scale -replicas 3 "$SERVICE_ID"
+./bin/fenced service scale -replicas 3 "$SERVICE_ID"
 
 # 重启实例的执行任务
-./bin/agentos service restart "$SERVICE_ID"
+./bin/fenced service restart "$SERVICE_ID"
 
 # 停止服务
-./bin/agentos service stop "$SERVICE_ID"
+./bin/fenced service stop "$SERVICE_ID"
 ```
 
 ---
 
 ## 8. 跨 Agent 通信 (Durable IPC)
 
-在多 Agent 协同系统（如主管-工人架构、多专家投票法）中，进程间通信面临消息丢失、死锁与网络分区的风险。AgentOS 提供了与内核事务绑定的 **Durable IPC Mailbox**。
+在多 Agent 协同系统（如主管-工人架构、多专家投票法）中，进程间通信面临消息丢失、死锁与网络分区的风险。Fenced 提供了与内核事务绑定的 **Durable IPC Mailbox**。
 
 ### 8.1 核心特性
 - **At-Least-Once 强持久化投递**：基于 NATS JetStream 与 PostgreSQL WAL 双重保障。
@@ -685,7 +685,7 @@ for _, msg := range pollResp.Messages {
 
 LLM 生成代码或 Agent 决策在遇到网络抖动、重试机制时，最危险的行为是**对外部世界产生未保护的重复副作用**（例如：重复调用银行扣款接口、重复发送外部通知邮件、重复删除 S3 文件）。
 
-AgentOS 引入了 **External Effect Engine**，通过单调递增租约栅栏（Monotonic Fencing Tokens）与两阶段预备-提交机制实现真正的精确一次（Effectively-Once）隔离保护。
+Fenced 引入了 **External Effect Engine**，通过单调递增租约栅栏（Monotonic Fencing Tokens）与两阶段预备-提交机制实现真正的精确一次（Effectively-Once）隔离保护。
 
 ```mermaid
 sequenceDiagram
@@ -716,7 +716,7 @@ sequenceDiagram
 
 ## 10. 多 Agent 工作流 DAG 编排
 
-AgentOS 提供了基于 DAG 依赖声明的工作流编排引擎。工作流规格以内容寻址（CAS）方式持久化，保证跨集群运行的一致性。
+Fenced 提供了基于 DAG 依赖声明的工作流编排引擎。工作流规格以内容寻址（CAS）方式持久化，保证跨集群运行的一致性。
 
 ### 10.1 编写工作流规格 (`workflow.json`)
 
@@ -751,10 +751,10 @@ AgentOS 提供了基于 DAG 依赖声明的工作流编排引擎。工作流规�
 
 ```bash
 # 创建并运行工作流
-./bin/agentos workflow create -file workflow.json -goal "data pipeline"
+./bin/fenced workflow create -file workflow.json -goal "data pipeline"
 
 # 渲染工作流实时拓扑树与阶段进展
-./bin/agentos workflow tree -id "4fa0bc12-6c1d-4c85-bf52-8f2a3d9e7100"
+./bin/fenced workflow tree -id "4fa0bc12-6c1d-4c85-bf52-8f2a3d9e7100"
 ```
 
 控制台将输出清晰的树状依赖拓扑：
@@ -771,22 +771,22 @@ Status: RUNNING (2/3 completed)
 
 ## 11. 多租户治理、安全与审计
 
-### 11.1 命名空间与多租户隔离 (`agentos namespace`)
+### 11.1 命名空间与多租户隔离 (`fenced namespace`)
 
 ```bash
 # 创建企业团队命名空间
-./bin/agentos namespace create -name "fintech-team" -display-name "FinTech Team"
+./bin/fenced namespace create -name "fintech-team" -display-name "FinTech Team"
 
 # 查看命名空间详情与资源使用水位
-./bin/agentos namespace get -name "fintech-team"
+./bin/fenced namespace get -name "fintech-team"
 ```
 
 ### 11.2 Rego 准入控制策略
 
-AgentOS 原生集成 Open Policy Agent (OPA) 引擎。所有 Agent 提交与发布必须通过 [`policy/`](../policy) 下定义的安全策略。例如，禁止未授权团队的 Agent 请求生产数据库密钥：
+Fenced 原生集成 Open Policy Agent (OPA) 引擎。所有 Agent 提交与发布必须通过 [`policy/`](../policy) 下定义的安全策略。例如，禁止未授权团队的 Agent 请求生产数据库密钥：
 
 ```rego
-package agentos.admission
+package fenced.admission
 
 default allow = false
 
@@ -809,12 +809,12 @@ deny[msg] {
 
 ```bash
 # 导出审计链（配置签名密钥后为签名 WORM 归档）
-curl -sS -H "Authorization: Bearer $AGENTOS_TOKEN" \
+curl -sS -H "Authorization: Bearer $FENCED_TOKEN" \
   "http://127.0.0.1:8080/v1/audit/export" \
   -o "audit-export.signed.json"
 
 # 校验审计链完整性
-curl -sS -H "Authorization: Bearer $AGENTOS_TOKEN" \
+curl -sS -H "Authorization: Bearer $FENCED_TOKEN" \
   "http://127.0.0.1:8080/v1/audit/verify"
 ```
 
@@ -826,7 +826,7 @@ curl -sS -H "Authorization: Bearer $AGENTOS_TOKEN" \
 
 | 根命令 | 子命令 | 主要用途 | 关键参数示例 |
 | :--- | :--- | :--- | :--- |
-| **`version`** | - | 查看产品版本（`-json` 含 Syscall ABI 与全部协议版本） | `./bin/agentos version -json` |
+| **`version`** | - | 查看产品版本（`-json` 含 Syscall ABI 与全部协议版本） | `./bin/fenced version -json` |
 | **`init`** | - | 初始化 Agent 开发项目脚手架 | `-dir my-agent -adapter [go\|python\|langgraph\|a2a]` |
 | **`validate`** | - | 静态验证 AgentManifest 语法与规范 | `-manifest agent.json` |
 | **`login`** | - | 登录 OCI Agent Package Registry | `-registry https://... -token ...` |
@@ -854,23 +854,23 @@ curl -sS -H "Authorization: Bearer $AGENTOS_TOKEN" \
 
 | 环境变量 | 作用与示例值 | 默认值 / 备注 |
 | :--- | :--- | :--- |
-| `DATABASE_URL` | PostgreSQL 连接串，必须支持 pgvector 扩展 | `postgres://agentos:agentos-dev-only@127.0.0.1:55432/agentos?sslmode=disable`；control / controller / outbox / migrate 读取 |
-| `AGENTOS_CONTROL_URL` | Control Plane API 基础 URL | `http://127.0.0.1:8080`；`registry push` 默认读取（`publish` / `run` / `logs` 通过 `-endpoint` 传入） |
-| `AGENTOS_TOKEN` | 经过身份认证的 JWT 令牌或 API 密钥 | 用于 CLI 与控制面通信时的 Bearer 鉴权 |
-| `AGENTOS_TENANT_ID` | 默认交互租户标识符（Python SDK / OCI provider） | `default` |
-| `AGENTOS_EMBEDDING_TOKEN` | 控制面/网关调用嵌入服务的 Bearer 令牌 | 生产模式未配置时拒绝启动 |
-| `AGENTOS_AUDIT_SIGNING_KEY` | 审计导出签名私钥 | 未配置时仅开发模式允许未签名导出 |
+| `DATABASE_URL` | PostgreSQL 连接串，必须支持 pgvector 扩展 | `postgres://fenced:fenced-dev-only@127.0.0.1:55432/fenced?sslmode=disable`；control / controller / outbox / migrate 读取 |
+| `FENCED_CONTROL_URL` | Control Plane API 基础 URL | `http://127.0.0.1:8080`；`registry push` 默认读取（`publish` / `run` / `logs` 通过 `-endpoint` 传入） |
+| `FENCED_TOKEN` | 经过身份认证的 JWT 令牌或 API 密钥 | 用于 CLI 与控制面通信时的 Bearer 鉴权 |
+| `FENCED_TENANT_ID` | 默认交互租户标识符（Python SDK / OCI provider） | `default` |
+| `FENCED_EMBEDDING_TOKEN` | 控制面/网关调用嵌入服务的 Bearer 令牌 | 生产模式未配置时拒绝启动 |
+| `FENCED_AUDIT_SIGNING_KEY` | 审计导出签名私钥 | 未配置时仅开发模式允许未签名导出 |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`| OpenTelemetry 链路与指标采集接入点 | `127.0.0.1:4317` (gRPC) 或 `127.0.0.1:4318` (HTTP) |
 
-> NATS 等组件连接串通过各自进程参数传入（例如 `agentos-outbox -nats-url ...`）。
+> NATS 等组件连接串通过各自进程参数传入（例如 `fenced-outbox -nats-url ...`）。
 
-> 开发者日常入口为 `agent` CLI（`agent config` / `test-llm` / `mcp` / `ui` / `init` / `demo`）；数据库迁移使用独立二进制 `agentos-migrate -database-url $DATABASE_URL`。
+> 开发者日常入口为 `agent` CLI（`agent config` / `test-llm` / `mcp` / `ui` / `init` / `demo`）；数据库迁移使用独立二进制 `fenced-migrate -database-url $DATABASE_URL`。
 
 ---
 
 ## 结语与生态共建
 
-AgentOS 致力于为整个 Agent 行业建立稳定、标准、中立的操作系统基座。欢迎查阅进阶技术文档以获取更多深度信息：
+Fenced 致力于为整个 Agent 行业建立稳定、标准、中立的操作系统基座。欢迎查阅进阶技术文档以获取更多深度信息：
 - [系统架构与深层规范：ARCHITECTURE.md](architecture/ARCHITECTURE.md)
 - [版本功能全景矩阵：Feature Status](feature-status.md)
 - [v1.2 契约冻结规范：v1.2 Contract Freeze](contracts/v1.2-contract-freeze.md)

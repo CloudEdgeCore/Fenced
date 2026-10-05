@@ -6,11 +6,11 @@
 // fault injection, and the 1,000-task pipeline with ≥99% success — the
 // numbers the development plan's Phase 1 / v1.1 gates require.
 //
-// Requirements: AGENTOS_TEST_DATABASE_URL (PostgreSQL), a Python 3
-// interpreter (AGENTOS_E2E_PYTHON, default "python"), and the repository
+// Requirements: FENCED_TEST_DATABASE_URL (PostgreSQL), a Python 3
+// interpreter (FENCED_E2E_PYTHON, default "python"), and the repository
 // checked out (the agent example and SDK are launched from their source
-// tree). Counts are tunable: AGENTOS_E2E_TASKS (default 1000) and
-// AGENTOS_E2E_FAULTS (default 100).
+// tree). Counts are tunable: FENCED_E2E_TASKS (default 1000) and
+// FENCED_E2E_FAULTS (default 100).
 package e2e_test
 
 import (
@@ -30,29 +30,29 @@ import (
 	"testing"
 	"time"
 
-	gatewayv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/gateway/v1"
-	modelv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/model/v1"
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/gateway"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/admission"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentversion"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/capability"
-	kernelmemory "github.com/CloudEdgeCore/AgentOS/internal/kernel/memory"
-	kernelmodel "github.com/CloudEdgeCore/AgentOS/internal/kernel/model"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/model/provider"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/policy"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/recovery"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/scheduler"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	postgresstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store/postgres"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
-	"github.com/CloudEdgeCore/AgentOS/internal/mcp"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/artifact"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/migrate"
-	runtimeadapter "github.com/CloudEdgeCore/AgentOS/internal/runtime/adapter"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/control"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/reference"
+	gatewayv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/gateway/v1"
+	modelv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/model/v1"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/gateway"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/admission"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/capability"
+	kernelmemory "github.com/CloudEdgeCore/Fenced/internal/kernel/memory"
+	kernelmodel "github.com/CloudEdgeCore/Fenced/internal/kernel/model"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/model/provider"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/policy"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/recovery"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/scheduler"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	postgresstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store/postgres"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
+	"github.com/CloudEdgeCore/Fenced/internal/mcp"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/artifact"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/migrate"
+	runtimeadapter "github.com/CloudEdgeCore/Fenced/internal/runtime/adapter"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/control"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/reference"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -66,7 +66,7 @@ const (
 	e2eTenant         = "tenant-e2e"
 	e2eVersionRef     = "real-agent@1"
 	e2eProviderKey    = "e2e-provider-secret-key"
-	e2eCheckpointKind = "agentos.real-agent/v1"
+	e2eCheckpointKind = "fenced.real-agent/v1"
 )
 
 // e2eModelRef is the model under test; the live-model test swaps it before
@@ -90,13 +90,13 @@ var e2eExposeLiveTools bool
 
 func e2ePython(t *testing.T) string {
 	t.Helper()
-	name := os.Getenv("AGENTOS_E2E_PYTHON")
+	name := os.Getenv("FENCED_E2E_PYTHON")
 	if name == "" {
 		name = "python"
 	}
 	path, err := exec.LookPath(name)
 	if err != nil {
-		t.Skipf("%s interpreter not found (set AGENTOS_E2E_PYTHON): %v", name, err)
+		t.Skipf("%s interpreter not found (set FENCED_E2E_PYTHON): %v", name, err)
 	}
 	return path
 }
@@ -245,9 +245,9 @@ type e2eEnv struct {
 
 func newE2EEnv(t *testing.T, schema string, providerLatency time.Duration, leaseTTL time.Duration) *e2eEnv {
 	t.Helper()
-	url := os.Getenv("AGENTOS_TEST_DATABASE_URL")
+	url := os.Getenv("FENCED_TEST_DATABASE_URL")
 	if url == "" {
-		t.Skip("AGENTOS_TEST_DATABASE_URL is not set")
+		t.Skip("FENCED_TEST_DATABASE_URL is not set")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -332,7 +332,7 @@ func newE2EEnv(t *testing.T, schema string, providerLatency time.Duration, lease
 		// Keyed endpoints (vLLM behind a bearer) exercise credential isolation:
 		// the key is held only in the fenced provider config and must never
 		// surface in any agent-visible artifact. Keyless endpoints leave it unset.
-		if key := os.Getenv("AGENTOS_REAL_MODEL_KEY"); key != "" {
+		if key := os.Getenv("FENCED_REAL_MODEL_KEY"); key != "" {
 			liveConfig.APIKey = key
 		}
 		if err := registry.Register(liveConfig); err != nil {
@@ -469,7 +469,7 @@ func startStack(t *testing.T, env *e2eEnv) *e2eStack {
 	if err != nil {
 		t.Fatalf("listen for MCP: %v", err)
 	}
-	mcpServer := &http.Server{Handler: mcp.NewServer("agentos-e2e", "v1.1.0", broker)}
+	mcpServer := &http.Server{Handler: mcp.NewServer("fenced-e2e", "v1.1.0", broker)}
 	go func() { _ = mcpServer.Serve(mcpListener) }()
 	t.Cleanup(func() { _ = mcpServer.Close() })
 
@@ -481,9 +481,9 @@ func startStack(t *testing.T, env *e2eEnv) *e2eStack {
 	stack.python = exec.Command(pythonBin, filepath.Join(root, "examples", "agents", "python_remote", "real_agent.py"),
 		"--host", "127.0.0.1", "--port", strconv.Itoa(agentPort))
 	stack.python.Env = append(os.Environ(),
-		"AGENTOS_MCP_URL=http://"+mcpListener.Addr().String(),
-		"AGENTOS_MODEL_REF="+e2eModelRef,
-		"AGENTOS_MEMORY_NAMESPACE=runs",
+		"FENCED_MCP_URL=http://"+mcpListener.Addr().String(),
+		"FENCED_MODEL_REF="+e2eModelRef,
+		"FENCED_MEMORY_NAMESPACE=runs",
 		"PYTHONPATH="+filepath.Join(root, "sdk", "python"),
 		"PYTHONUNBUFFERED=1",
 	)
@@ -579,7 +579,7 @@ func publishVersion(ctx context.Context, t *testing.T, env *e2eEnv, entrypoint s
 		"lifecycle":          map[string]any{"maxAttempts": 4},
 		"runtimes": []map[string]any{{
 			"class": "adapter", "interface": agentversion.RuntimeInterfaceV1,
-			"runtimeABI": "agentos.adapter-http/v1", "entrypoint": []string{entrypoint},
+			"runtimeABI": "fenced.adapter-http/v1", "entrypoint": []string{entrypoint},
 		}},
 		"capabilities": map[string]any{
 			"tools": e2eManifestTools(), "models": []string{e2eModelRef},

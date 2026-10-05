@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/version"
+	"github.com/CloudEdgeCore/Fenced/internal/version"
 )
 
 type UIReceipt struct {
@@ -262,7 +262,7 @@ func runUI(args []string) {
 	mux.HandleFunc("/api/agents", handleUIAgents)
 
 	addr := "127.0.0.1:" + port
-	fmt.Printf("[info] starting AgentOS control plane web server (internal preview) on %s\n", addr)
+	fmt.Printf("[info] starting Fenced control plane web server (internal preview) on %s\n", addr)
 	fmt.Printf("[info] dashboard ui strictly bound to loopback: http://127.0.0.1:%s\n", port)
 	fmt.Println("[info] api endpoints available:")
 	fmt.Println("  - GET  /api/status")
@@ -319,7 +319,7 @@ func handleUIStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]any{
-		"product":           "AgentOS Control Plane",
+		"product":           "Fenced Control Plane",
 		"version":           version.Current().SemVer,
 		"syscall_abi":       version.Current().SyscallABI,
 		"environment":       cfg.Environment,
@@ -730,8 +730,8 @@ func handleUITestLLM(w http.ResponseWriter, r *http.Request) {
 	probeCfg.LLM.Providers[probeKey] = provider
 
 	t0 := time.Now()
-	testPrompt := "Respond with one brief sentence confirming connectivity to AgentOS kernel."
-	tokens, err := StreamLLM(&probeCfg, "You are AgentOS kernel.", testPrompt)
+	testPrompt := "Respond with one brief sentence confirming connectivity to Fenced kernel."
+	tokens, err := StreamLLM(&probeCfg, "You are Fenced kernel.", testPrompt)
 	latencyMs := time.Since(t0).Milliseconds()
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -914,7 +914,7 @@ func handleUIRun(w http.ResponseWriter, r *http.Request) {
 	var runErr error
 
 	if provider.APIKey != "" {
-		sysPrompt := "You are AgentOS, an enterprise autonomous agent kernel with deterministic tool execution and audit receipts."
+		sysPrompt := "You are Fenced, an enterprise autonomous agent kernel with deterministic tool execution and audit receipts."
 		tokenCount, runErr = StreamLLM(cfg, sysPrompt, req.Prompt)
 		if runErr != nil {
 			outputText = fmt.Sprintf("Execution completed with runtime fallback: %v", runErr)
@@ -971,7 +971,7 @@ const embeddedDashboardHTML = `<!DOCTYPE html>
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AgentOS Control Plane</title>
+  <title>Fenced Control Plane</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
   <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
@@ -1686,7 +1686,7 @@ const embeddedDashboardHTML = `<!DOCTYPE html>
       </div>
       <div>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <span class="brand-title">AgentOS Kernel</span>
+          <span class="brand-title">Fenced Kernel</span>
           <span class="badge">v1.3.0 LTS</span>
         </div>
         <div style="font-size: 9px; color: var(--secondary-bright); font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;">CloudEdge Architecture</div>
@@ -1865,7 +1865,7 @@ const embeddedDashboardHTML = `<!DOCTYPE html>
         </div>
         <div>
           <label style="font-size: 11px; color: var(--outline);" data-i18n="field_system_prompt">SYSTEM PROMPT & OBJECTIVES</label>
-          <textarea id="newAgentPrompt" placeholder="Define role, constraints, and deterministic outputs...">You are an enterprise AI Agent managed by AgentOS kernel. Always verify telemetry and produce structured reports.</textarea>
+          <textarea id="newAgentPrompt" placeholder="Define role, constraints, and deterministic outputs...">You are an enterprise AI Agent managed by Fenced kernel. Always verify telemetry and produce structured reports.</textarea>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
           <span style="font-family: var(--font-mono); font-size: 11px; color: var(--outline);" id="createAgentMsg">Scaffolds agent.manifest.json, prompt.md, and tools/main.go</span>
@@ -2005,7 +2005,7 @@ const embeddedDashboardHTML = `<!DOCTYPE html>
           <span class="chip" onclick="setPrompt('Inspect product lot 202609-B tolerance variances and locate supplier lot history')" data-i18n="chip_defect">Defect SOP Traceability</span>
           <span class="chip" onclick="setPrompt('Execute kernel conformance self-check across runtime tool interfaces')" data-i18n="chip_conformance">Kernel Conformance Check</span>
         </div>
-        <textarea id="taskPromptInput" placeholder="Enter objective for the AgentOS execution kernel..." data-i18n-ph="prompt_placeholder"></textarea>
+        <textarea id="taskPromptInput" placeholder="Enter objective for the Fenced execution kernel..." data-i18n-ph="prompt_placeholder"></textarea>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
           <div style="display: flex; gap: 10px;">
             <button class="btn" id="dispatchBtn" onclick="dispatchExecution()">
@@ -2429,7 +2429,7 @@ const embeddedDashboardHTML = `<!DOCTYPE html>
   </main>
 
   <script>
-    var currentLang = localStorage.getItem('agentos_lang') || 'en';
+    var currentLang = localStorage.getItem('fenced_lang') || 'en';
     var currentEnv = 'development';
     var currentLogLevel = 'info';
     var currentLogFormat = 'text';
@@ -2486,7 +2486,7 @@ const embeddedDashboardHTML = `<!DOCTYPE html>
         dispatch_objective_title: 'Dispatch New Objective to Execution Kernel',
         dispatch_btn_text: 'Dispatch Execution',
         hold_interlock: 'Hold Interlock',
-        prompt_placeholder: 'Enter objective for the AgentOS execution kernel...',
+        prompt_placeholder: 'Enter objective for the Fenced execution kernel...',
         chip_cnc: 'CNC-03 Alarm Diagnostics',
         chip_defect: 'Defect SOP Traceability',
         chip_conformance: 'Kernel Conformance Check',
@@ -2620,10 +2620,10 @@ const embeddedDashboardHTML = `<!DOCTYPE html>
         stream_task_label: '当前任务: CNC-03主轴异常温升根因诊断与SOP处置',
         cot_stream_title: '自主深度思维链推理流 (CoT)',
         tool_interceptor_title: 'MCP 工具拦截与实施工艺遥测',
-        dispatch_objective_title: '向 AgentOS 执行内核派发全新任务',
+        dispatch_objective_title: '向 Fenced 执行内核派发全新任务',
         dispatch_btn_text: '立即派发执行',
         hold_interlock: '锁定联锁',
-        prompt_placeholder: '输入给 AgentOS 执行内核的目标指令与业务需求...',
+        prompt_placeholder: '输入给 Fenced 执行内核的目标指令与业务需求...',
         chip_cnc: 'CNC-03 主轴报警诊断',
         chip_defect: '产品缺陷 SOP 溯源分析',
         chip_conformance: '内核一致性自检',
@@ -2711,7 +2711,7 @@ const embeddedDashboardHTML = `<!DOCTYPE html>
       }
     };
 
-    var currentTheme = localStorage.getItem('agentos_theme') || 'obsidian';
+    var currentTheme = localStorage.getItem('fenced_theme') || 'obsidian';
 
     function toggleThemeMenu() {
       var m = document.getElementById('themeMenu');
@@ -2720,7 +2720,7 @@ const embeddedDashboardHTML = `<!DOCTYPE html>
 
     function selectTheme(theme) {
       currentTheme = theme;
-      localStorage.setItem('agentos_theme', theme);
+      localStorage.setItem('fenced_theme', theme);
       applyTheme(theme);
       var m = document.getElementById('themeMenu');
       if (m) m.style.display = 'none';
@@ -2750,7 +2750,7 @@ const embeddedDashboardHTML = `<!DOCTYPE html>
 
     function toggleLanguage() {
       currentLang = currentLang === 'en' ? 'zh' : 'en';
-      localStorage.setItem('agentos_lang', currentLang);
+      localStorage.setItem('fenced_lang', currentLang);
       applyLanguage(currentLang);
       applyTheme(currentTheme);
     }
@@ -3208,7 +3208,7 @@ const embeddedDashboardHTML = `<!DOCTYPE html>
         var data = await res.json();
         
         var lines = [
-          '# AgentOS Active Configuration (agent.yaml)',
+          '# Fenced Active Configuration (agent.yaml)',
           'version: "' + (data.version || '1.0') + '"',
           'environment: "' + (data.environment || 'development') + '"',
           '',

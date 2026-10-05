@@ -51,7 +51,7 @@ const (
 	SysEffectGet     SyscallNumber = 802
 )
 
-// SyscallABIVersion specifies the semantic version of the AgentOS Syscall ABI.
+// SyscallABIVersion specifies the semantic version of the Fenced Syscall ABI.
 const SyscallABIVersion = "1.0.0"
 
 // SyscallABIMajor is the major version component of the Syscall ABI.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/supervisor"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/supervisor"
 )
 
 // ServiceSyscallHandler handles SYS_SERVICE_HEARTBEAT and SYS_SERVICE_QUERY.

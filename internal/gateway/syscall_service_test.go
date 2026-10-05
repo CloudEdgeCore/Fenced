@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/syscall"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/syscall"
 	"github.com/google/uuid"
 )
 

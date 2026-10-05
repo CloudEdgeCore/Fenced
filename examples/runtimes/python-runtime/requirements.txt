@@ -1,1 +1,1 @@
-agentos-runtime>=1.2.0
+fenced-runtime>=1.2.0

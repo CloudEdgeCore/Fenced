@@ -1,5 +1,5 @@
 {
-  "apiVersion": "agentos.dev/v1",
+  "apiVersion": "fenced.dev/v1",
   "kind": "AgentManifest",
   "metadata": {
     "name": "quality-tracer",
@@ -14,8 +14,8 @@
     "runtimes": [
       {
         "class": "reference",
-        "interface": "agentos.runtime.interface/v1",
-        "runtimeABI": "agentos.reference/v1",
+        "interface": "fenced.runtime.interface/v1",
+        "runtimeABI": "fenced.reference/v1",
         "entrypoint": ["internal"]
       }
     ],

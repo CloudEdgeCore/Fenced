@@ -9,16 +9,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 )
 
 func TestJetStreamPublisherPersistsAndDeduplicatesEvent(t *testing.T) {
-	url := os.Getenv("AGENTOS_TEST_NATS_URL")
+	url := os.Getenv("FENCED_TEST_NATS_URL")
 	if url == "" {
-		t.Skip("AGENTOS_TEST_NATS_URL is not set")
+		t.Skip("FENCED_TEST_NATS_URL is not set")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

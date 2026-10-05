@@ -7,7 +7,7 @@ param(
     [string]$BaoToken = "bao-dev-only",
     [string]$PostgresHost = "postgres",
     [string]$PostgresPort = "5432",
-    [string]$Database = "agentos",
+    [string]$Database = "fenced",
     [string]$Role = "dev-db"
 )
 
@@ -30,8 +30,8 @@ try {
     Write-Host "database secrets engine already enabled"
 }
 
-Invoke-Bao "Put" "database/config/agentos" @{
-    connection_url = "postgresql://agentos:agentos-dev-only@$PostgresHost`:$PostgresPort/$Database?sslmode=disable"
+Invoke-Bao "Put" "database/config/fenced" @{
+    connection_url = "postgresql://fenced:fenced-dev-only@$PostgresHost`:$PostgresPort/$Database?sslmode=disable"
     allowed_roles  = @($Role)
     plugin_name    = "postgresql-database-plugin"
 } | Out-Null

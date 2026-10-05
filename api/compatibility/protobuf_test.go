@@ -3,19 +3,19 @@ package compatibility_test
 import (
 	"testing"
 
-	gatewayv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/gateway/v1"
-	gatewayv1alpha1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/gateway/v1alpha1"
-	modelv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/model/v1"
-	modelv1alpha1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/model/v1alpha1"
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
-	runtimev1alpha1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1alpha1"
+	gatewayv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/gateway/v1"
+	gatewayv1alpha1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/gateway/v1alpha1"
+	modelv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/model/v1"
+	modelv1alpha1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/model/v1alpha1"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
+	runtimev1alpha1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1alpha1"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 func TestPromotedProtobufsRemainAlphaWireCompatible(t *testing.T) {
-	assertWireCompatible(t, runtimev1.File_agentos_runtime_v1_runtime_proto, runtimev1alpha1.File_agentos_runtime_v1alpha1_runtime_proto)
-	assertWireCompatible(t, gatewayv1.File_agentos_gateway_v1_gateway_proto, gatewayv1alpha1.File_agentos_gateway_v1alpha1_gateway_proto)
-	assertWireCompatible(t, modelv1.File_agentos_model_v1_model_proto, modelv1alpha1.File_agentos_model_v1alpha1_model_proto)
+	assertWireCompatible(t, runtimev1.File_fenced_runtime_v1_runtime_proto, runtimev1alpha1.File_fenced_runtime_v1alpha1_runtime_proto)
+	assertWireCompatible(t, gatewayv1.File_fenced_gateway_v1_gateway_proto, gatewayv1alpha1.File_fenced_gateway_v1alpha1_gateway_proto)
+	assertWireCompatible(t, modelv1.File_fenced_model_v1_model_proto, modelv1alpha1.File_fenced_model_v1alpha1_model_proto)
 }
 
 func assertWireCompatible(t *testing.T, stable, legacy protoreflect.FileDescriptor) {

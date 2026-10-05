@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/control/auth"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/supervisor"
+	"github.com/CloudEdgeCore/Fenced/internal/control/auth"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/supervisor"
 	"github.com/google/uuid"
 )
 
@@ -49,7 +49,7 @@ type serviceResponse struct {
 
 func formatServiceResponse(svc *supervisor.Service, traceID string) serviceResponse {
 	return serviceResponse{
-		APIVersion: "agentos.dev/v1",
+		APIVersion: "fenced.dev/v1",
 		Kind:       "AgentService",
 		ID:         svc.ID,
 		TenantID:   svc.TenantID,
@@ -88,7 +88,7 @@ type instanceResponse struct {
 
 func formatInstanceResponse(inst *supervisor.Instance, traceID string) instanceResponse {
 	return instanceResponse{
-		APIVersion:    "agentos.dev/v1",
+		APIVersion:    "fenced.dev/v1",
 		Kind:          "ServiceInstance",
 		ID:            inst.ID,
 		ServiceID:     inst.ServiceID,

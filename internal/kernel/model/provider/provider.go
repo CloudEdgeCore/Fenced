@@ -27,7 +27,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/redact"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/redact"
 )
 
 // Sentinel errors the invoker maps onto ledger outcomes.
@@ -495,10 +495,10 @@ func (e *Executor) releaseBulkhead() { <-e.bulkhead }
 
 func setCorrelationHeaders(request *http.Request, invocation Invocation) {
 	for name, value := range map[string]string{
-		"X-AgentOS-Trace-ID":      invocation.TraceID,
-		"X-AgentOS-Task-ID":       invocation.TaskID,
-		"X-AgentOS-Attempt-ID":    invocation.AttemptID,
-		"X-AgentOS-Model-Call-ID": invocation.ModelCallID,
+		"X-Fenced-Trace-ID":      invocation.TraceID,
+		"X-Fenced-Task-ID":       invocation.TaskID,
+		"X-Fenced-Attempt-ID":    invocation.AttemptID,
+		"X-Fenced-Model-Call-ID": invocation.ModelCallID,
 	} {
 		if value != "" {
 			request.Header.Set(name, value)

@@ -24,13 +24,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/admission"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/scheduler"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	postgresstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store/postgres"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/migrate"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/admission"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/scheduler"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	postgresstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store/postgres"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/migrate"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -425,7 +425,7 @@ func assertCapacityExactness(t *testing.T, ctx context.Context, pool *pgxpool.Po
 }
 
 func capacityTasks() int {
-	if value := os.Getenv("AGENTOS_CAPACITY_TASKS"); value != "" {
+	if value := os.Getenv("FENCED_CAPACITY_TASKS"); value != "" {
 		if parsed, err := strconv.Atoi(value); err == nil && parsed > 0 {
 			return parsed
 		}
@@ -438,9 +438,9 @@ func capacityTasks() int {
 // packages.
 func newCapacityDatabase(t *testing.T) (*pgxpool.Pool, *postgresstore.Store) {
 	t.Helper()
-	url := os.Getenv("AGENTOS_TEST_DATABASE_URL")
+	url := os.Getenv("FENCED_TEST_DATABASE_URL")
 	if url == "" {
-		t.Skip("AGENTOS_TEST_DATABASE_URL is not set")
+		t.Skip("FENCED_TEST_DATABASE_URL is not set")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -448,7 +448,7 @@ func newCapacityDatabase(t *testing.T) (*pgxpool.Pool, *postgresstore.Store) {
 	if err != nil {
 		t.Fatalf("open PostgreSQL admin connection: %v", err)
 	}
-	if _, err := admin.Exec(ctx, `CREATE SCHEMA IF NOT EXISTS agentos_capacity`); err != nil {
+	if _, err := admin.Exec(ctx, `CREATE SCHEMA IF NOT EXISTS fenced_capacity`); err != nil {
 		admin.Close(ctx)
 		t.Fatalf("create capacity schema: %v", err)
 	}
@@ -459,7 +459,7 @@ func newCapacityDatabase(t *testing.T) (*pgxpool.Pool, *postgresstore.Store) {
 	if err != nil {
 		t.Fatalf("parse database URL: %v", err)
 	}
-	config.ConnConfig.RuntimeParams["search_path"] = "agentos_capacity"
+	config.ConnConfig.RuntimeParams["search_path"] = "fenced_capacity"
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		t.Fatalf("open PostgreSQL: %v", err)

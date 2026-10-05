@@ -13,14 +13,14 @@ import (
 	"testing"
 	"time"
 
-	controlapi "github.com/CloudEdgeCore/AgentOS/internal/control/api"
-	"github.com/CloudEdgeCore/AgentOS/internal/control/auth"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentpkg"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentversion"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/memory"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	controlapi "github.com/CloudEdgeCore/Fenced/internal/control/api"
+	"github.com/CloudEdgeCore/Fenced/internal/control/auth"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentpkg"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/memory"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 )
 

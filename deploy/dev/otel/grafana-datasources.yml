@@ -1,5 +1,5 @@
 # Grafana reference datasources: Prometheus (metrics), Tempo (traces) and
-# Loki (logs) are provisioned for the agentos reference stack.
+# Loki (logs) are provisioned for the fenced reference stack.
 apiVersion: 1
 
 datasources:

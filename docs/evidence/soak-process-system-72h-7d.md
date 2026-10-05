@@ -1,7 +1,6 @@
-# AgentOS Process System 72h / 7d Production Soak Validation
+# Fenced Process System 72h / 7d Production Soak Validation
 
-> **Repository**: `CloudEdgeCore/AgentOS`  
-> **Reference Plan**: [`docs/evidence/AgentOS_Next_Agent_Process_System_Plan.md`](file:///c:/Users/Administrator/Desktop/AgentOS/docs/evidence/AgentOS_Next_Agent_Process_System_Plan.md) (§17, §20, §21)  
+> **Repository**: `CloudEdgeCore/Fenced`  
 > **Release Target**: Agent Process System (IPC Authorization + Kernel Effect API + AgentService/Supervisor + Syscall ABI)  
 > **Status**: Verified & Passing ✅  
 
@@ -9,7 +8,7 @@
 
 ## 1. Executive Summary
 
-This document certifies the **72h / 7d Production Soak Validation** for the unified Agent Process System in AgentOS. The system under test integrates:
+This document certifies the **72h / 7d Production Soak Validation** for the unified Agent Process System in Fenced. The system under test integrates:
 1. **IPC Peer Authorization & Service Routing** (`internal/kernel/ipc/`, `internal/kernel/supervisor/router.go`)
 2. **Kernel Effect API with Fencing & Idempotency** (`internal/kernel/effect/`, `internal/kernel/syscall/handlers_effect.go`)
 3. **AgentService Lifecycle & Supervisor** (`internal/kernel/supervisor/`)
@@ -134,7 +133,7 @@ The automated soak test suite is fully integrated into the codebase:
    go test -race -v -run '^TestProcessSystemSoakValidation$' ./internal/kernel/supervisor/
 
    # Extended production soak mode (configurable duration):
-   $env:AGENTOS_SOAK_DURATION = "72h"
+   $env:FENCED_SOAK_DURATION = "72h"
    go test -race -v -run '^TestProcessSystemSoakValidation$' ./internal/kernel/supervisor/
    ```
 
@@ -145,7 +144,7 @@ The automated soak test suite is fully integrated into the codebase:
 
 3. **100K Control Plane Capacity Baseline**:
    ```powershell
-   $env:AGENTOS_CAPACITY_TASKS = "100000"
+   $env:FENCED_CAPACITY_TASKS = "100000"
    go test -tags=integration -v -run '^TestControlPlanePipelineCapacityBaseline$' ./internal/kernel/store/postgres/
    ```
 

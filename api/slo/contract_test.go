@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	platformslo "github.com/CloudEdgeCore/AgentOS/internal/platform/slo"
-	"github.com/CloudEdgeCore/AgentOS/internal/version"
+	platformslo "github.com/CloudEdgeCore/Fenced/internal/platform/slo"
+	"github.com/CloudEdgeCore/Fenced/internal/version"
 )
 
 func TestStableSLOContractIsComplete(t *testing.T) {

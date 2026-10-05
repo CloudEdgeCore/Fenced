@@ -174,7 +174,7 @@ func (c *Client) call(ctx context.Context, method, path string, body any, expect
 	if len(encoded) > maxInterfaceBody {
 		return errors.New("runtime interface response exceeds 2 MiB")
 	}
-	if reply.Header.Get("AgentOS-Runtime-Interface") != c.protocol {
+	if reply.Header.Get("Fenced-Runtime-Interface") != c.protocol {
 		return errors.New("runtime interface protocol negotiation failed")
 	}
 	if reply.StatusCode != expected {

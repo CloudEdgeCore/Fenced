@@ -5,8 +5,8 @@ use wasmtime::component::{Component, Linker};
 use wasmtime::{Config, Engine, Store, StoreLimits, StoreLimitsBuilder};
 
 pub const PROVIDER_NAME: &str = "wasmtime";
-pub const RUNTIME_ABI: &str = "agentos.wasm-component/v1";
-pub const CHECKPOINT_SCHEMA: &str = "agentos.wasm-logical-state/v1";
+pub const RUNTIME_ABI: &str = "fenced.wasm-component/v1";
+pub const CHECKPOINT_SCHEMA: &str = "fenced.wasm-logical-state/v1";
 const MAX_COMPONENT_BYTES: u64 = 64 << 20;
 
 pub struct Sandbox {
@@ -152,7 +152,7 @@ mod tests {
 
     #[test]
     fn rejects_path_escape() {
-        let root = std::env::temp_dir().join(format!("agentos-wasm-test-{}", uuid::Uuid::now_v7()));
+        let root = std::env::temp_dir().join(format!("fenced-wasm-test-{}", uuid::Uuid::now_v7()));
         std::fs::create_dir_all(&root).expect("create test root");
         let sandbox = Sandbox::new(&root, 10_000, Duration::from_millis(100), 1 << 20)
             .expect("create sandbox");
@@ -167,7 +167,7 @@ mod tests {
 
     #[test]
     fn executes_the_conformance_component() {
-        let root = std::env::temp_dir().join(format!("agentos-wasm-exec-{}", uuid::Uuid::now_v7()));
+        let root = std::env::temp_dir().join(format!("fenced-wasm-exec-{}", uuid::Uuid::now_v7()));
         std::fs::create_dir_all(&root).expect("create package root");
         let component = crate::fixture::build_agent_component().expect("build fixture component");
         std::fs::write(root.join("agent.wasm"), component).expect("stage component");

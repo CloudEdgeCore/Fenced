@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/model/provider"
-	postgresstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store/postgres"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/model/provider"
+	postgresstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store/postgres"
 )
 
 func TestProviderCircuitIsSharedAndHalfOpenProbeIsExclusive(t *testing.T) {

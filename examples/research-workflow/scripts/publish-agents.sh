@@ -9,11 +9,11 @@ set -euo pipefail
 
 EXAMPLE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." )"
 AGENTS_DIR="$EXAMPLE_DIR/agents"
-ENDPOINT="${1:-${AGENTOS_CONTROL_API:-http://127.0.0.1:8080}}"
+ENDPOINT="${1:-${FENCED_CONTROL_API:-http://127.0.0.1:8080}}"
 MODEL_REF="${MODEL_REF:-openai/gpt-4o-mini}"
 
 REPO_ROOT="$(cd "$EXAMPLE_DIR/../.." && pwd)"
-AGENTOS="$REPO_ROOT/cmd/agentos"
+FENCED="$REPO_ROOT/cmd/fenced"
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
@@ -26,7 +26,7 @@ for manifest in "$AGENTS_DIR"/*.json; do
       -e "s#__MODEL_REASONING__#$MODEL_REF#g" \
       "$manifest" > "$target"
   echo "[publish-agents] publishing $published@1.0.0"
-  go run "$AGENTOS" publish -endpoint "$ENDPOINT" -manifest "$target" \
+  go run "$FENCED" publish -endpoint "$ENDPOINT" -manifest "$target" \
     -idempotency-key "research-$published-1.0.0"
 done
 

@@ -1,4 +1,4 @@
-// Package provider defines the unified AgentOS Provider Plugin Protocol.
+// Package provider defines the unified Fenced Provider Plugin Protocol.
 // It allows Model, Tool, Memory, Browser, Storage, and Runtime providers
 // to be developed, registered, and discovered without modifying the Kernel.
 package provider
@@ -76,7 +76,7 @@ func (m Manifest) Validate() error {
 	return nil
 }
 
-// Provider is the base interface implemented by all AgentOS providers.
+// Provider is the base interface implemented by all Fenced providers.
 type Provider interface {
 	Manifest() Manifest
 	Health(ctx context.Context) HealthStatus

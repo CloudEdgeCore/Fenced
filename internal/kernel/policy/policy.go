@@ -18,7 +18,7 @@ import (
 // every decision so outcomes remain auditable across policy updates.
 const Revision = "2026-09-19/v1"
 
-//go:embed agentos.rego
+//go:embed fenced.rego
 var moduleSource string
 
 // TenantPolicy is the tenant-attribute data the policy rules evaluate.
@@ -105,19 +105,19 @@ func New(tenants TenantPolicies) (*Engine, error) {
 }
 
 func newWithModule(source string, tenants TenantPolicies) (*Engine, error) {
-	admission, err := prepare(source, "data.agentos.policy")
+	admission, err := prepare(source, "data.fenced.policy")
 	if err != nil {
 		return nil, fmt.Errorf("prepare admission policy: %w", err)
 	}
-	tool, err := prepare(source, "data.agentos.policy.tool")
+	tool, err := prepare(source, "data.fenced.policy.tool")
 	if err != nil {
 		return nil, fmt.Errorf("prepare tool policy: %w", err)
 	}
-	model, err := prepare(source, "data.agentos.policy.model")
+	model, err := prepare(source, "data.fenced.policy.model")
 	if err != nil {
 		return nil, fmt.Errorf("prepare model policy: %w", err)
 	}
-	peer, err := prepare(source, "data.agentos.policy.peer")
+	peer, err := prepare(source, "data.fenced.policy.peer")
 	if err != nil {
 		return nil, fmt.Errorf("prepare peer policy: %w", err)
 	}
@@ -127,7 +127,7 @@ func newWithModule(source string, tenants TenantPolicies) (*Engine, error) {
 func prepare(source, query string) (preparedQuery, error) {
 	prepared, err := rego.New(
 		rego.Query(query),
-		rego.Module("agentos.rego", source),
+		rego.Module("fenced.rego", source),
 	).PrepareForEval(context.Background())
 	if err != nil {
 		return preparedQuery{}, err

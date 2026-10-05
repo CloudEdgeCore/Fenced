@@ -1,6 +1,6 @@
-# AgentOS Runtime SDK for Python
+# Fenced Runtime SDK for Python
 
-`agentos-runtime` is the supported Python implementation of the AgentOS
+`fenced-runtime` is the supported Python implementation of the Fenced
 Runtime Interface. SDK `1.x` implements `runtime.interface/v1`; the deprecated
 `v1alpha1` route remains available only for one-version migration testing.
 
@@ -12,16 +12,16 @@ The package provides:
 - `RealAgent`, a governed model/tool/memory reference loop;
 - PEP 561 typing metadata (`py.typed`).
 
-Python agents run outside the AgentOS kernel trust boundary. Provider secrets
+Python agents run outside the Fenced kernel trust boundary. Provider secrets
 are never passed to the agent process; model and tool calls use the injected
-loopback MCP endpoint and the execution identity supplied by AgentOS.
+loopback MCP endpoint and the execution identity supplied by Fenced.
 
 ## Install
 
 Python 3.11 or later is required.
 
 ```bash
-python -m pip install agentos-runtime
+python -m pip install fenced-runtime
 ```
 
 For a checkout of this repository:
@@ -34,7 +34,7 @@ python -m pip install -e sdk/python
 
 ```python
 import threading
-from agentos_runtime import serve
+from fenced_runtime import serve
 
 
 class Runtime:
@@ -55,7 +55,7 @@ serve(Runtime(), "python-remote", max_concurrent=16).serve_forever()
 ```
 
 Bind the development server to loopback. In production, the Runtime Adapter
-connects to it locally while AgentOS authenticates cross-process control links
+connects to it locally while Fenced authenticates cross-process control links
 with SPIFFE/mTLS.
 
 ## Brokered MCP access
@@ -64,11 +64,11 @@ The runtime start request contains the MCP endpoint. Bind every client to the
 current execution so concurrent attempts cannot share authority:
 
 ```python
-from agentos_runtime import MCPClient
+from fenced_runtime import MCPClient
 
 mcp = MCPClient(request["mcpEndpoint"], execution_id=request["executionId"])
 mcp.initialize()
-result = mcp.call_tool("agentos.model.invoke", {
+result = mcp.call_tool("fenced.model.invoke", {
     "modelRef": "deepseek-v4-flash",
     "messages": [{"role": "user", "content": request["goal"]}],
 })
@@ -102,7 +102,7 @@ contained by terminating the whole adapter process.
 After starting it locally:
 
 ```bash
-agentos conformance -endpoint http://127.0.0.1:8088
+fenced conformance -endpoint http://127.0.0.1:8088
 ```
 
 Run the Python unit suite with:
@@ -113,5 +113,5 @@ python -m unittest discover -s tests -v
 ```
 
 This SDK is an agent-side runtime component, not a trusted control-plane
-plugin. Its semantic version is independent of the AgentOS product version;
+plugin. Its semantic version is independent of the Fenced product version;
 the supported Runtime Interface major version is the compatibility contract.

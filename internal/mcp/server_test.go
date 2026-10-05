@@ -81,7 +81,7 @@ func post(t *testing.T, server http.Handler, body, accept string) *httptest.Resp
 }
 
 func TestServerInitializationNegotiatesPinnedVersion(t *testing.T) {
-	server := NewServer("agentos-mcp", "v0.1", &fakeHandler{})
+	server := NewServer("fenced-mcp", "v0.1", &fakeHandler{})
 	response := post(t, server, `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}`, "application/json")
 	if response.Code != http.StatusOK {
 		t.Fatalf("status = %d: %s", response.Code, response.Body.String())
@@ -100,7 +100,7 @@ func TestServerInitializationNegotiatesPinnedVersion(t *testing.T) {
 }
 
 func TestServerPingAndUnknownMethod(t *testing.T) {
-	server := NewServer("agentos-mcp", "v0.1", &fakeHandler{})
+	server := NewServer("fenced-mcp", "v0.1", &fakeHandler{})
 	response := post(t, server, `{"jsonrpc":"2.0","id":1,"method":"ping"}`, "application/json")
 	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"result":{}`) {
 		t.Fatalf("ping: %d %s", response.Code, response.Body.String())
@@ -116,7 +116,7 @@ func TestServerPingAndUnknownMethod(t *testing.T) {
 }
 
 func TestServerNotificationAcknowledgedWithNoContent(t *testing.T) {
-	server := NewServer("agentos-mcp", "v0.1", &fakeHandler{})
+	server := NewServer("fenced-mcp", "v0.1", &fakeHandler{})
 	response := post(t, server, `{"jsonrpc":"2.0","method":"notifications/initialized"}`, "application/json")
 	if response.Code != http.StatusNoContent || response.Body.Len() != 0 {
 		t.Fatalf("notification: %d %s", response.Code, response.Body.String())
@@ -124,7 +124,7 @@ func TestServerNotificationAcknowledgedWithNoContent(t *testing.T) {
 }
 
 func TestServerTransportEnforcement(t *testing.T) {
-	server := NewServer("agentos-mcp", "v0.1", &fakeHandler{})
+	server := NewServer("fenced-mcp", "v0.1", &fakeHandler{})
 
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	response := httptest.NewRecorder()
@@ -148,7 +148,7 @@ func TestServerTransportEnforcement(t *testing.T) {
 }
 
 func TestServerAnswersOverSSEWhenRequested(t *testing.T) {
-	server := NewServer("agentos-mcp", "v0.1", &fakeHandler{})
+	server := NewServer("fenced-mcp", "v0.1", &fakeHandler{})
 	response := post(t, server, `{"jsonrpc":"2.0","id":1,"method":"ping"}`, "text/event-stream")
 	if response.Code != http.StatusOK || response.Header().Get("Content-Type") != "text/event-stream" {
 		t.Fatalf("sse: %d %s", response.Code, response.Header())
@@ -162,7 +162,7 @@ func TestServerAnswersOverSSEWhenRequested(t *testing.T) {
 }
 
 func TestServerAcceptNegotiationHonorsQValuesAndWildcards(t *testing.T) {
-	server := NewServer("agentos-mcp", "v0.1", &fakeHandler{})
+	server := NewServer("fenced-mcp", "v0.1", &fakeHandler{})
 
 	// A bare wildcard (what most HTTP clients send) must serve JSON, not 406.
 	response := post(t, server, `{"jsonrpc":"2.0","id":1,"method":"ping"}`, "*/*")
@@ -196,7 +196,7 @@ func TestServerAcceptNegotiationHonorsQValuesAndWildcards(t *testing.T) {
 }
 
 func TestServerRejectsOversizedBody(t *testing.T) {
-	server := NewServer("agentos-mcp", "v0.1", &fakeHandler{})
+	server := NewServer("fenced-mcp", "v0.1", &fakeHandler{})
 	server.maxBodyBytes = 16
 	response := post(t, server, `{"jsonrpc":"2.0","id":1,"method":"ping","params":{"padding":"aaaaaaaaaaaaaaaaaaaaaaaa"}}`, "application/json")
 	if response.Code != http.StatusOK {

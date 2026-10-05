@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/capability"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/effect"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/capability"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/effect"
 )
 
 // EffectInvoker defines the kernel boundary for external effect execution.

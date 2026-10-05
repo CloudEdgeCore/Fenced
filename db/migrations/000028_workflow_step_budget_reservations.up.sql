@@ -40,7 +40,7 @@ WHERE l.tenant_id = s.tenant_id AND l.workflow_id = s.workflow_id;
 -- step row is locked before the ledger row so every reservation path
 -- (spawn, step transition, admission transfer, terminal release) acquires
 -- workflow_steps before workflow_usage_ledgers and cannot deadlock.
-CREATE OR REPLACE FUNCTION agentos_workflow_usage_task_terminal() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE OR REPLACE FUNCTION fenced_workflow_usage_task_terminal() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE budget task_budget_ledgers%ROWTYPE; hold_tasks bigint; hold_tokens bigint; hold_cost bigint;
 BEGIN
   IF NEW.workflow_id IS NOT NULL AND OLD.phase NOT IN ('SUCCEEDED','FAILED','CANCELLED','TIMED_OUT','REJECTED')
@@ -66,7 +66,7 @@ END $$;
 -- originating step's outstanding token/cost reservation so the commitment
 -- is counted exactly once across the spawn and admission transactions. The
 -- step row locks before the ledger row (see task-terminal note above).
-CREATE OR REPLACE FUNCTION agentos_workflow_usage_budget_insert() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE OR REPLACE FUNCTION fenced_workflow_usage_budget_insert() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE workflow uuid; lineage_step uuid; terminal boolean; hold_tokens bigint; hold_cost bigint;
 BEGIN
   SELECT workflow_id, workflow_step_id, phase IN ('SUCCEEDED','FAILED','CANCELLED','TIMED_OUT','REJECTED')
@@ -91,7 +91,7 @@ END $$;
 -- moves the new row's reserved_* onto the usage ledger inside the same
 -- statement, keeping the hot spawn path at one round trip fewer than a
 -- separate ledger UPDATE.
-CREATE FUNCTION agentos_workflow_usage_step_insert() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE FUNCTION fenced_workflow_usage_step_insert() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   UPDATE workflow_usage_ledgers SET
     step_reserved_tasks = step_reserved_tasks + NEW.reserved_tasks,
@@ -102,4 +102,4 @@ BEGIN
   RETURN NEW;
 END $$;
 CREATE TRIGGER workflow_usage_step_insert AFTER INSERT ON workflow_steps
-  FOR EACH ROW EXECUTE FUNCTION agentos_workflow_usage_step_insert();
+  FOR EACH ROW EXECUTE FUNCTION fenced_workflow_usage_step_insert();

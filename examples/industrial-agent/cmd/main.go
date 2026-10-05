@@ -14,7 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/examples/industrial-agent/tools"
+	"github.com/CloudEdgeCore/Fenced/examples/industrial-agent/tools"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/compat"
 )
 
 const (
@@ -34,6 +35,7 @@ type ExecutionReceipt struct {
 }
 
 func main() {
+	compat.WarnLegacyEnv(os.Stderr, compat.AliasLegacyEnv())
 	modelRef := flag.String("model", defaultOpenRouterModel, "model reference")
 	apiKey := flag.String("api-key", defaultOpenRouterKey, "OpenRouter API Key")
 	equipmentID := flag.String("equipment", "CNC-03", "equipment ID to diagnose")
@@ -47,7 +49,7 @@ func main() {
 		}
 	}
 
-	fmt.Println("[info] starting AgentOS industrial equipment diagnostics engine")
+	fmt.Println("[info] starting Fenced industrial equipment diagnostics engine")
 	fmt.Printf("[kernel] starting industrial MCP tool webhook service...\n")
 
 	// 1. Start Tool Server
@@ -131,7 +133,7 @@ func main() {
 	fmt.Printf("  safety redline: %s\n", sopInfo.SafetyNotice)
 
 	// Step 4: Model Invocation
-	fmt.Printf("\n[step 4/4] dispatching model: %s via AgentOS model gateway...\n", *modelRef)
+	fmt.Printf("\n[step 4/4] dispatching model: %s via Fenced model gateway...\n", *modelRef)
 	fmt.Printf("  streaming diagnostic report based on verified evidence chain...\n\n")
 
 	systemPrompt := `You are an expert industrial equipment diagnostics and reliability engineer (Equipment & Diagnostic Agent).
@@ -235,8 +237,8 @@ func streamOpenRouterChat(ctx context.Context, apiKey, model, systemPrompt, user
 	if apiKey != "" {
 		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
-	req.Header.Set("HTTP-Referer", "https://agentos.dev")
-	req.Header.Set("X-Title", "AgentOS Industrial Demo")
+	req.Header.Set("HTTP-Referer", "https://fenced.dev")
+	req.Header.Set("X-Title", "Fenced Industrial Demo")
 
 	client := &http.Client{
 		Timeout: 0,

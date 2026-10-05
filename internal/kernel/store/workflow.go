@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/workload"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/workload"
 	"github.com/google/uuid"
 )
 

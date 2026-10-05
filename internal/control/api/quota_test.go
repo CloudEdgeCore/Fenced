@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	controlapi "github.com/CloudEdgeCore/AgentOS/internal/control/api"
-	"github.com/CloudEdgeCore/AgentOS/internal/control/auth"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	controlapi "github.com/CloudEdgeCore/Fenced/internal/control/api"
+	"github.com/CloudEdgeCore/Fenced/internal/control/auth"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 func TestTenantQuotaEndpointsDisabledWithoutStore(t *testing.T) {

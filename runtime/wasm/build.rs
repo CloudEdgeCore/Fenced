@@ -4,9 +4,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     prost.protoc_executable(protoc);
     tonic_prost_build::configure().compile_with_config(
         prost,
-        &["../../proto/agentos/runtime/v1/runtime.proto"],
+        &["../../proto/fenced/runtime/v1/runtime.proto"],
         &["../../proto"],
     )?;
-    println!("cargo:rerun-if-changed=../../proto/agentos/runtime/v1/runtime.proto");
+    println!("cargo:rerun-if-changed=../../proto/fenced/runtime/v1/runtime.proto");
     Ok(())
 }

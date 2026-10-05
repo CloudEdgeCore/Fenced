@@ -1,6 +1,6 @@
-# AgentOS Feature Status & Capability Matrix
+# Fenced Feature Status & Capability Matrix
 
-This matrix provides the verified implementation status for all subsystems, protocols, and APIs in AgentOS as of **v1.3 (Developer Core & Dynamic Orchestration)**.
+This matrix provides the verified implementation status for all subsystems, protocols, and APIs in Fenced as of **v1.3 (Developer Core & Dynamic Orchestration)**.
 
 ---
 
@@ -8,14 +8,14 @@ This matrix provides the verified implementation status for all subsystems, prot
 
 | Feature / Capability | Status | Since | Protocol / Contract | Description |
 | :--- | :---: | :---: | :--- | :--- |
-| **Task State Machine** | **GA** | v1.0 | `agentos.dev/v1` | `Task → Run → Attempt` lifecycle with non-preemptible execution semantics. |
-| **Cooperative Cancellation** | **GA** | v1.0 | `proto/agentos/runtime/v1` | Heartbeat-driven cancellation signaling with verified TLA+ liveness convergence. |
+| **Task State Machine** | **GA** | v1.0 | `fenced.dev/v1` | `Task → Run → Attempt` lifecycle with non-preemptible execution semantics. |
+| **Cooperative Cancellation** | **GA** | v1.0 | `proto/fenced/runtime/v1` | Heartbeat-driven cancellation signaling with verified TLA+ liveness convergence. |
 | **Lease & Fencing Token** | **GA** | v1.0 | Kernel Store | Monotonically increasing fencing tokens preventing split-brain zombie writes. |
-| **AgentService execution** | **Implemented (runtime-dependent)** | v1.2 | `proto/agentos/service/v1` | Each instance runs through a durable Task with normal admission, budgets, placement, leases, and Runtime execution. Every active replica needs a Worker slot; Host and Task execution timeouts still apply. |
-| **Process Supervisor** | **Implemented** | v1.2 | `proto/agentos/service/v1` | Replica reconciliation, restart policy, backoff, and runtime lifecycle tracking. Running reflects Kernel execution state, not application readiness. |
-| **Heartbeat Auto-Reap** | **Implemented** | v1.2 | `proto/agentos/service/v1` | Detects stale instance liveness and requests cancellation/replacement. Physical termination of a non-cooperative runtime requires an isolation-boundary termination hook. |
-| **Rolling Upgrade & Drain** | **Limited** | v1.2 | `proto/agentos/service/v1` | Version and replica convergence with drain deadlines and cooperative task cancellation. Zero-downtime application traffic switching and readiness checks are not certified. |
-| **Automatic Rollback** | **Not verified** | v1.2 | `proto/agentos/service/v1` | Explicit rollback operations exist; automatic rollback triggered by application health failures is not certified. |
+| **AgentService execution** | **Implemented (runtime-dependent)** | v1.2 | `proto/fenced/service/v1` | Each instance runs through a durable Task with normal admission, budgets, placement, leases, and Runtime execution. Every active replica needs a Worker slot; Host and Task execution timeouts still apply. |
+| **Process Supervisor** | **Implemented** | v1.2 | `proto/fenced/service/v1` | Replica reconciliation, restart policy, backoff, and runtime lifecycle tracking. Running reflects Kernel execution state, not application readiness. |
+| **Heartbeat Auto-Reap** | **Implemented** | v1.2 | `proto/fenced/service/v1` | Detects stale instance liveness and requests cancellation/replacement. Physical termination of a non-cooperative runtime requires an isolation-boundary termination hook. |
+| **Rolling Upgrade & Drain** | **Limited** | v1.2 | `proto/fenced/service/v1` | Version and replica convergence with drain deadlines and cooperative task cancellation. Zero-downtime application traffic switching and readiness checks are not certified. |
+| **Automatic Rollback** | **Not verified** | v1.2 | `proto/fenced/service/v1` | Explicit rollback operations exist; automatic rollback triggered by application health failures is not certified. |
 
 ---
 
@@ -38,10 +38,10 @@ This matrix provides the verified implementation status for all subsystems, prot
 
 | Feature | Status | Protocol | Guarantee |
 | :--- | :---: | :--- | :--- |
-| **Durable Mailbox** | **GA** | `proto/agentos/ipc/v1` | Messages persist across instance and attempt crashes. |
-| **At-Least-Once Delivery** | **GA** | `proto/agentos/ipc/v1` | Network/crash resilience with unconsumed message replay. |
-| **Deduplication Engine** | **GA** | `proto/agentos/ipc/v1` | Receiver mailbox receipts guarantee exactly-once application. |
-| **Correlation & Reply-To** | **GA** | `proto/agentos/ipc/v1` | End-to-end distributed tracing and asynchronous RPC-style conversations. |
+| **Durable Mailbox** | **GA** | `proto/fenced/ipc/v1` | Messages persist across instance and attempt crashes. |
+| **At-Least-Once Delivery** | **GA** | `proto/fenced/ipc/v1` | Network/crash resilience with unconsumed message replay. |
+| **Deduplication Engine** | **GA** | `proto/fenced/ipc/v1` | Receiver mailbox receipts guarantee exactly-once application. |
+| **Correlation & Reply-To** | **GA** | `proto/fenced/ipc/v1` | End-to-end distributed tracing and asynchronous RPC-style conversations. |
 | **Tenant Boundary Routing** | **GA** | Kernel Router | Cross-tenant isolation with strict default-deny delivery rules. |
 
 ---
@@ -50,10 +50,10 @@ This matrix provides the verified implementation status for all subsystems, prot
 
 | Feature | Status | Protocol | Guarantee |
 | :--- | :---: | :--- | :--- |
-| **Monotonic Fencing** | **GA** | `proto/agentos/effect/v1` | Stale attempts cannot mutate external state (`SYSCALL_EFENCE`). |
-| **Idempotency Deduplication** | **GA** | `proto/agentos/effect/v1` | Existing keys return cached `EffectReceipt` without duplicate external dispatch. |
-| **Payload Integrity** | **GA** | `proto/agentos/effect/v1` | SHA-256 payload verification against duplicate keys (`SYSCALL_EINVAL`). |
-| **UNKNOWN Isolation** | **GA** | `proto/agentos/effect/v1` | Ambiguous timeouts transition to `UNKNOWN` (`SYSCALL_EUNKNOWN`); auto-replay strictly forbidden. |
+| **Monotonic Fencing** | **GA** | `proto/fenced/effect/v1` | Stale attempts cannot mutate external state (`SYSCALL_EFENCE`). |
+| **Idempotency Deduplication** | **GA** | `proto/fenced/effect/v1` | Existing keys return cached `EffectReceipt` without duplicate external dispatch. |
+| **Payload Integrity** | **GA** | `proto/fenced/effect/v1` | SHA-256 payload verification against duplicate keys (`SYSCALL_EINVAL`). |
+| **UNKNOWN Isolation** | **GA** | `proto/fenced/effect/v1` | Ambiguous timeouts transition to `UNKNOWN` (`SYSCALL_EUNKNOWN`); auto-replay strictly forbidden. |
 
 ---
 
@@ -92,5 +92,5 @@ This matrix provides the verified implementation status for all subsystems, prot
 | **Developer Core CLI (`agent`)** | **GA** | v1.3 | `cmd/agent` | Cascading `agent.yaml` configuration, interactive `agent config wizard`, multi-provider LLM matrix, chain-of-thought dual-channel streaming, project scaffolding, and demo scenarios. |
 | **Embedded Developer Console** | **Preview (opt-in)** | v1.3 | `agent ui --preview` | Disabled for external access; runs loopback-only for internal polishing with model connectivity, MCP tool probing, agent/tool configuration, and audit receipts. |
 | **Dual-Protocol Model Layer** | **GA** | v1.3 | `cmd/agent/stream.go` | OpenAI-compatible (`/chat/completions`) and Anthropic Messages (`/v1/messages`) streaming for developer runs. |
-| **Dynamic Task Spawn** | **GA** | v1.3 | `agentos.task.spawn` | Fenced child-task spawning with recursion, fan-out, and total-step guards. |
+| **Dynamic Task Spawn** | **GA** | v1.3 | `fenced.task.spawn` | Fenced child-task spawning with recursion, fan-out, and total-step guards. |
 | **Workflow Budgets & Fair Sharding** | **GA** | v1.3 | Kernel Store / Orchestrator | Workflow-wide budgets and deadlines, dynamic group joins (`spawn:<parent>`), and lease-based fair sharding across orchestrator instances. |

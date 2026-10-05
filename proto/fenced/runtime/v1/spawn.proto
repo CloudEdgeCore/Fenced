@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package fenced.runtime.v1;
+
+import "fenced/runtime/v1/runtime.proto";
+
+option go_package = "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1;runtimev1";
+
+// Dynamic step spawning behind the workflow guards (v1.3). The runtime
+// adapter calls this when a sandboxed agent invokes the brokered
+// fenced.task.spawn system tool; every recursion, fan-out and budget guard
+// runs inside the kernel transaction, so the response is authoritative.
+service WorkflowSpawnService {
+  // SpawnStep creates one dynamic workflow step (or replays the step an
+  // identical spawn already created).
+  rpc SpawnStep(SpawnStepRequest) returns (SpawnStepResponse);
+}
+
+message SpawnStepRequest {
+	// Identity is injected by the runtime worker and validated against the
+	// current assignment before any workflow mutation is attempted.
+	AttemptIdentity identity = 1;
+	string workflow_id = 2;
+	// parent_step names the step whose task is spawning; its depth bounds the
+	// recursion guard.
+	string parent_step = 3;
+	string name = 4;
+	string goal = 5;
+	string agent_version_ref = 6;
+	// spec_json is the merged task spec of the spawned step.
+	string spec_json = 7;
+	int32 max_attempts = 8;
+	// idempotency_key fingerprints the spawning tool call; arguments_json
+	// completes the spawn key (same call replays the same step).
+	string idempotency_key = 9;
+	string arguments_json = 10;
+}
+
+message SpawnStepResponse {
+  // outcome: "created", "replayed", or a guard denial code
+  // (SPAWN_DEPTH_EXCEEDED, SPAWN_DYNAMIC_LIMIT_EXCEEDED, ...).
+  string outcome = 1;
+  string message = 2;
+  string step_name = 3;
+  int32 spawn_depth = 4;
+}

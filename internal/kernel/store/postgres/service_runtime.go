@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/supervisor"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/supervisor"
 	"github.com/google/uuid"
 )
 
@@ -27,7 +27,7 @@ func (s *Store) WithServiceLock(ctx context.Context, tenantID, serviceID string,
 	}
 	defer rollback(ctx, tx)
 	// Length-prefix the tenant so arbitrary IDs cannot alias another tuple.
-	key := fmt.Sprintf("agentos/service/%d:%s%s", len(tenantID), tenantID, serviceID)
+	key := fmt.Sprintf("fenced/service/%d:%s%s", len(tenantID), tenantID, serviceID)
 	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, key); err != nil {
 		return classify(err)
 	}

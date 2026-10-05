@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/workflow"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/workflow"
 	"github.com/google/uuid"
 )
 
@@ -132,8 +132,8 @@ const dualAgentSpec = `{
 // workflow) and no cross-talk (research output reaches only its own
 // review).
 func TestV12DualAgentWorkflowRegression(t *testing.T) {
-	total := e2eCount("AGENTOS_E2E_WORKFLOWS", 1000)
-	env := newE2EEnv(t, "agentos_wf_regression", 0, 30*time.Second)
+	total := e2eCount("FENCED_E2E_WORKFLOWS", 1000)
+	env := newE2EEnv(t, "fenced_wf_regression", 0, 30*time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -219,7 +219,7 @@ func TestV12DualAgentWorkflowRegression(t *testing.T) {
 // cancellation propagation. Recovery is proven by driving the semantics
 // workflow with a freshly constructed orchestrator after every round.
 func TestV12WorkflowSemantics(t *testing.T) {
-	env := newE2EEnv(t, "agentos_wf_semantics", 700*time.Millisecond, 30*time.Second)
+	env := newE2EEnv(t, "fenced_wf_semantics", 700*time.Millisecond, 30*time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -383,13 +383,13 @@ func TestV12WorkflowSemantics(t *testing.T) {
 }
 
 // TestV12WorkflowScale is the Phase 3 capacity gate: one workflow with
-// AGENTOS_E2E_WF_STEPS steps (default 1000, wide fan-out with a final
-// join), AGENTOS_E2E_CONCURRENT_WF concurrent workflows (default 100), and
+// FENCED_E2E_WF_STEPS steps (default 1000, wide fan-out with a final
+// join), FENCED_E2E_CONCURRENT_WF concurrent workflows (default 100), and
 // the orchestrator P95 reconcile latency below 500ms.
 func TestV12WorkflowScale(t *testing.T) {
-	steps := e2eCount("AGENTOS_E2E_WF_STEPS", 1000)
-	concurrent := e2eCount("AGENTOS_E2E_CONCURRENT_WF", 100)
-	env := newE2EEnv(t, "agentos_wf_scale", 0, 30*time.Second)
+	steps := e2eCount("FENCED_E2E_WF_STEPS", 1000)
+	concurrent := e2eCount("FENCED_E2E_CONCURRENT_WF", 100)
+	env := newE2EEnv(t, "fenced_wf_scale", 0, 30*time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

@@ -5,7 +5,7 @@ package slo
 
 import "fmt"
 
-const Schema = "agentos.slo/v1"
+const Schema = "fenced.slo/v1"
 
 type Sample struct {
 	Schema                         string  `json:"schema"`

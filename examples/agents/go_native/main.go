@@ -8,10 +8,12 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/compat"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 )
 
 type nativeRuntime struct {
@@ -62,6 +64,7 @@ func (r *nativeRuntime) Restore(_ context.Context, request agent.RestoreRequest)
 }
 
 func main() {
+	compat.WarnLegacyEnv(os.Stderr, compat.AliasLegacyEnv())
 	listen := flag.String("listen", "127.0.0.1:8087", "Runtime Interface listen address")
 	flag.Parse()
 	host, err := agent.NewHost(&nativeRuntime{states: map[string]json.RawMessage{}}, agent.HostOptions{Adapter: "go-native"})

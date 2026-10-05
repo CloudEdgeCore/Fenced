@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/mcp"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/mcp"
 	"github.com/google/uuid"
 )
 
@@ -29,7 +29,7 @@ func TestWorkerMcpEndpointForwardsFencedIdentity(t *testing.T) {
 	slot := NewIdentitySlot()
 	worker.WithIdentitySlot(slot)
 	adapter := mcp.NewToolAdapter(NewGrpcToolInvoker(worker.toolGateway), slot)
-	server := httptest.NewServer(mcp.NewServer("agentos-runtime", "v0.1", adapter))
+	server := httptest.NewServer(mcp.NewServer("fenced-runtime", "v0.1", adapter))
 	t.Cleanup(server.Close)
 
 	// Outside an execution window: default deny (no fenced identity).

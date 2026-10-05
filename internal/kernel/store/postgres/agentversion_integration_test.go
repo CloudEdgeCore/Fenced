@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 )
 
@@ -283,7 +283,7 @@ func TestCheckpointRejectsUnpublishedAgentVersion(t *testing.T) {
 	_, _, err = repository.CommitCheckpoint(ctx, kernelstore.CommitCheckpointInput{
 		TenantID: "tenant-a", AttemptID: running.ID, FencingToken: running.FencingToken,
 		ExpectedAttemptVersion: running.ResourceVersion, IdempotencyKey: "ghost-checkpoint-1", CheckpointID: uuid.New(),
-		AgentVersionRef: "ghost@1", Provider: "reference-go", RuntimeABI: "agentos.reference/v1",
+		AgentVersionRef: "ghost@1", Provider: "reference-go", RuntimeABI: "fenced.reference/v1",
 		SchemaVersion: "state/v1",
 		State: kernelstore.ArtifactReference{
 			URI: "artifact://tenant-a/sha256/ghost", SHA256: digest, SizeBytes: int64(len("ghost-state")), MediaType: "application/octet-stream",

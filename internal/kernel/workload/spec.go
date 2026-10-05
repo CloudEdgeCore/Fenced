@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
 )
 
 // imageDigestPattern bounds digests to "sha256:<64 lowercase hex>".

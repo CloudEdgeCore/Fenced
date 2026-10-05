@@ -12,12 +12,12 @@ import (
 	"strings"
 	"time"
 
-	research "github.com/CloudEdgeCore/AgentOS/examples/research-workflow/runtime"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentversion"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/scheduler"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	workflowkernel "github.com/CloudEdgeCore/AgentOS/internal/kernel/workflow"
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	research "github.com/CloudEdgeCore/Fenced/examples/research-workflow/runtime"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/scheduler"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	workflowkernel "github.com/CloudEdgeCore/Fenced/internal/kernel/workflow"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 	"github.com/google/uuid"
 )
 

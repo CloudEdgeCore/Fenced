@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/nats-io/nats.go/jetstream"
 )
 
 const (
-	StreamName    = "AGENTOS_EVENTS"
-	SubjectPrefix = "agentos.events"
+	StreamName    = "FENCED_EVENTS"
+	SubjectPrefix = "fenced.events"
 )
 
 var subjectToken = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]{0,127}$`)
@@ -61,7 +61,7 @@ func (p *JetStreamPublisher) Publish(ctx context.Context, event store.OutboxEven
 		OccurredAt       time.Time       `json:"occurredAt"`
 		Payload          json.RawMessage `json:"payload"`
 	}{
-		SchemaVersion: "agentos.events/v1alpha1", EventID: event.ID.String(), TenantID: event.TenantID,
+		SchemaVersion: "fenced.events/v1alpha1", EventID: event.ID.String(), TenantID: event.TenantID,
 		AggregateType: event.AggregateType, AggregateID: event.AggregateID.String(),
 		AggregateVersion: event.AggregateVersion, EventType: event.EventType,
 		OccurredAt: event.OccurredAt.UTC(), Payload: event.Payload,

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 )
 
@@ -77,7 +77,7 @@ func (h *RuntimeSyscallHandler) handleCheckpoint(ctx *SyscallContext) (json.RawM
 		CheckpointID:           checkpointID,
 		AgentVersionRef:        ctx.Assignment.Task.AgentVersionRef,
 		Provider:               providerName,
-		RuntimeABI:             "agentos-v1",
+		RuntimeABI:             "fenced-v1",
 		SchemaVersion:          "v1.0",
 		State:                  payload.State,
 		ConfirmedReceiptIDs:    payload.ConfirmedReceiptIDs,

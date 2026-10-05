@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/opensearch"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/opensearch"
 	"github.com/google/uuid"
 )
 

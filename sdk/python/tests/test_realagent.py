@@ -2,7 +2,7 @@ import threading
 import unittest
 from unittest import mock
 
-from agentos_runtime import realagent
+from fenced_runtime import realagent
 
 
 class _FakeMCP:

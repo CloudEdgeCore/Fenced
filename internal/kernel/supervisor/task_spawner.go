@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentversion"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/workload"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/workload"
 	"github.com/google/uuid"
 )
 
@@ -122,7 +122,7 @@ func (p *TaskSpawner) PrepareInstance(svc *Service, inst *Instance) {
 	inst.RuntimeClass = svc.Spec.RuntimeClass
 	inst.LaunchSpec = append([]byte(nil), svc.Spec.WorkloadSpec...)
 	key := fmt.Sprintf("%s/%s/%s/%d", svc.TenantID, svc.ID, inst.ID, inst.RestartCount)
-	id := uuid.NewSHA1(uuid.NameSpaceOID, []byte("agentos/service/"+key))
+	id := uuid.NewSHA1(uuid.NameSpaceOID, []byte("fenced/service/"+key))
 	inst.TaskID = &id
 	inst.FencingToken = 0
 	inst.LastHeartbeat = time.Time{}

@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 
-use agentos_runtime_wasm::sandbox::{CHECKPOINT_SCHEMA, PROVIDER_NAME, RUNTIME_ABI, Sandbox};
+use fenced_runtime_wasm::sandbox::{CHECKPOINT_SCHEMA, PROVIDER_NAME, RUNTIME_ABI, Sandbox};
 use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -13,7 +13,7 @@ use tonic::{Code, Request};
 use uuid::Uuid;
 
 pub mod protocol {
-    tonic::include_proto!("agentos.runtime.v1");
+    tonic::include_proto!("fenced.runtime.v1");
 }
 
 use protocol::runtime_control_service_client::RuntimeControlServiceClient;
@@ -162,7 +162,7 @@ async fn run_once(
         })?;
         let state = write_artifact(
             settings,
-            "application/vnd.agentos.wasm-state+json",
+            "application/vnd.fenced.wasm-state+json",
             &logical,
         )?;
         version = client
@@ -232,7 +232,7 @@ async fn run_once(
     };
     let result = write_artifact(
         settings,
-        "application/vnd.agentos.wasm-result+json",
+        "application/vnd.fenced.wasm-result+json",
         output.as_bytes(),
     )?;
     client

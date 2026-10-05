@@ -11,7 +11,7 @@ import (
 // image signatures can never be replayed as manifest signatures, and vice
 // versa (cosign-style binding, ADR-010).
 func imageSignatureMessage(digest Digest) []byte {
-	return []byte("agentos.image/v1\x00" + digest.String())
+	return []byte("fenced.image/v1\x00" + digest.String())
 }
 
 // SignImage signs the digest-pinned OCI image the package ships. The

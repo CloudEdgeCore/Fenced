@@ -104,7 +104,7 @@ func runMCP(args []string) {
 			return
 		}
 		endpoint := args[1]
-		fmt.Printf("[info] bridging external MCP server [%s] into AgentOS Tool Gateway...\n", endpoint)
+		fmt.Printf("[info] bridging external MCP server [%s] into Fenced Tool Gateway...\n", endpoint)
 		fmt.Println("[info] verified MCP protocol: 2024-11-05 (Anthropic compliant)")
 		fmt.Println("[info] status: bridge active, tools registered into local sandbox")
 	}

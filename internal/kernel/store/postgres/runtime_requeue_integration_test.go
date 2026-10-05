@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/admission"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/scheduler"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/admission"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/scheduler"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 // A cleanly failed attempt of a multi-attempt task must requeue the task for

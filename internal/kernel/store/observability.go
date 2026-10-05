@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/observability"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/observability"
 )
 
 // MetricsStore exposes the aggregated platform observability surface (§Phase-7

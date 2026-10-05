@@ -97,7 +97,7 @@ func (h *Host) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		writeProblem(writer, http.StatusNotFound, "ROUTE_NOT_FOUND", "runtime interface route not found")
 		return
 	}
-	writer.Header().Set("AgentOS-Runtime-Interface", protocol)
+	writer.Header().Set("Fenced-Runtime-Interface", protocol)
 	switch {
 	case request.Method == http.MethodGet && request.URL.Path == prefix+"/health":
 		h.health(writer, protocol)

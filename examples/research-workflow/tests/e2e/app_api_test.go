@@ -18,10 +18,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/examples/research-workflow/app/api"
-	"github.com/CloudEdgeCore/AgentOS/examples/research-workflow/app/repository"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/artifact"
+	"github.com/CloudEdgeCore/Fenced/examples/research-workflow/app/api"
+	"github.com/CloudEdgeCore/Fenced/examples/research-workflow/app/repository"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/artifact"
 	"github.com/google/uuid"
 )
 
@@ -197,18 +197,18 @@ func TestResearchAppAPICancel(t *testing.T) {
 }
 
 // TestResearch1000Runs is the §16/§14-P5 scale gate: 1000 total ResearchRun
-// submissions all settle SUCCEEDED (gated by AGENTOS_RESEARCH_SCALE_1000=1).
-// The run count is tunable with AGENTOS_E2E_RESEARCH_RUNS.
+// submissions all settle SUCCEEDED (gated by FENCED_RESEARCH_SCALE_1000=1).
+// The run count is tunable with FENCED_E2E_RESEARCH_RUNS.
 func TestResearch1000Runs(t *testing.T) {
-	if os.Getenv("AGENTOS_RESEARCH_SCALE_1000") != "1" {
-		t.Skip("AGENTOS_RESEARCH_SCALE_1000 is not set")
+	if os.Getenv("FENCED_RESEARCH_SCALE_1000") != "1" {
+		t.Skip("FENCED_RESEARCH_SCALE_1000 is not set")
 	}
 	const defaultRuns = 1000
 	runs := defaultRuns
-	if value := strings.TrimSpace(os.Getenv("AGENTOS_E2E_RESEARCH_RUNS")); value != "" {
+	if value := strings.TrimSpace(os.Getenv("FENCED_E2E_RESEARCH_RUNS")); value != "" {
 		parsed, err := strconv.Atoi(value)
 		if err != nil || parsed <= 0 {
-			t.Fatalf("AGENTOS_E2E_RESEARCH_RUNS must be a positive integer, got %q", value)
+			t.Fatalf("FENCED_E2E_RESEARCH_RUNS must be a positive integer, got %q", value)
 		}
 		runs = parsed
 	}
@@ -364,18 +364,18 @@ func readSSEFrames(t *testing.T, url string, limit int, timeout time.Duration) [
 }
 
 // TestResearchSoak is the §18 "24h soak" evidence gate: continuous research
-// runs with no budget or capacity drift. Gated by AGENTOS_RESEARCH_SOAK=1;
-// duration tunable with AGENTOS_E2E_SOAK_MINUTES (default 10; 1440 for a
+// runs with no budget or capacity drift. Gated by FENCED_RESEARCH_SOAK=1;
+// duration tunable with FENCED_E2E_SOAK_MINUTES (default 10; 1440 for a
 // full 24h run).
 func TestResearchSoak(t *testing.T) {
-	if os.Getenv("AGENTOS_RESEARCH_SOAK") != "1" {
-		t.Skip("AGENTOS_RESEARCH_SOAK is not set")
+	if os.Getenv("FENCED_RESEARCH_SOAK") != "1" {
+		t.Skip("FENCED_RESEARCH_SOAK is not set")
 	}
 	minutes := int64(10)
-	if value := strings.TrimSpace(os.Getenv("AGENTOS_E2E_SOAK_MINUTES")); value != "" {
+	if value := strings.TrimSpace(os.Getenv("FENCED_E2E_SOAK_MINUTES")); value != "" {
 		parsed, err := strconv.ParseInt(value, 10, 64)
 		if err != nil || parsed <= 0 {
-			t.Fatalf("AGENTOS_E2E_SOAK_MINUTES must be a positive integer, got %q", value)
+			t.Fatalf("FENCED_E2E_SOAK_MINUTES must be a positive integer, got %q", value)
 		}
 		minutes = parsed
 	}

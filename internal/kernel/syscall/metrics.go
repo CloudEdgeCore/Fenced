@@ -32,7 +32,7 @@ type StandardMetrics struct {
 // NewStandardMetrics initializes OpenTelemetry instruments and atomic counters.
 func NewStandardMetrics() *StandardMetrics {
 	m := &StandardMetrics{}
-	meter := otel.Meter("agentos.kernel.syscall")
+	meter := otel.Meter("fenced.kernel.syscall")
 
 	m.otelCallsCounter, _ = meter.Int64Counter("syscall_total")
 	m.otelDurationHist, _ = meter.Float64Histogram("syscall_duration_seconds")

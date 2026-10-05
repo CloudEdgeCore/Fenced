@@ -24,11 +24,11 @@ func testCA(t *testing.T) *CA {
 
 func TestIdentityShape(t *testing.T) {
 	identity := Identity(DefaultTrustDomain, "tenant-a", "worker-1")
-	want := "spiffe://agentos.dev/ns/tenant-a/worker/worker-1"
+	want := "spiffe://fenced.dev/ns/tenant-a/worker/worker-1"
 	if identity != want {
 		t.Fatalf("identity = %q, want %q", identity, want)
 	}
-	if got := ControlPlaneIdentity(DefaultTrustDomain); got != "spiffe://agentos.dev/ns/system/control" {
+	if got := ControlPlaneIdentity(DefaultTrustDomain); got != "spiffe://fenced.dev/ns/system/control" {
 		t.Fatalf("control plane identity = %q", got)
 	}
 }
@@ -47,7 +47,7 @@ func TestIssueAndParseSVID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("extract identity: %v", err)
 	}
-	if identity != "spiffe://agentos.dev/ns/tenant-a/worker/worker-1" {
+	if identity != "spiffe://fenced.dev/ns/tenant-a/worker/worker-1" {
 		t.Fatalf("identity = %q", identity)
 	}
 
@@ -114,13 +114,13 @@ func TestSVIDExpiryAndUntrustedCA(t *testing.T) {
 }
 
 func TestPatternMatching(t *testing.T) {
-	pattern, err := ParsePattern("spiffe://agentos.dev/ns/*/worker/*")
+	pattern, err := ParsePattern("spiffe://fenced.dev/ns/*/worker/*")
 	if err != nil {
 		t.Fatalf("parse pattern: %v", err)
 	}
 	for _, identity := range []string{
-		"spiffe://agentos.dev/ns/tenant-a/worker/worker-1",
-		"spiffe://agentos.dev/ns/tenant-b/worker/any",
+		"spiffe://fenced.dev/ns/tenant-a/worker/worker-1",
+		"spiffe://fenced.dev/ns/tenant-b/worker/any",
 	} {
 		if !pattern.Matches(identity) {
 			t.Fatalf("pattern %q must match %q", pattern, identity)
@@ -128,26 +128,26 @@ func TestPatternMatching(t *testing.T) {
 	}
 	for _, identity := range []string{
 		"spiffe://evil.example/ns/tenant-a/worker/worker-1",
-		"spiffe://agentos.dev/ns/tenant-a/model/gateway-1",
-		"spiffe://agentos.dev/ns/system/control",
+		"spiffe://fenced.dev/ns/tenant-a/model/gateway-1",
+		"spiffe://fenced.dev/ns/system/control",
 		"not-a-spiffe-id",
-		"https://agentos.dev/ns/tenant-a/worker/worker-1",
+		"https://fenced.dev/ns/tenant-a/worker/worker-1",
 	} {
 		if pattern.Matches(identity) {
 			t.Fatalf("pattern %q must reject %q", pattern, identity)
 		}
 	}
 
-	exact, err := ParsePattern("spiffe://agentos.dev/ns/tenant-a/worker/worker-1")
+	exact, err := ParsePattern("spiffe://fenced.dev/ns/tenant-a/worker/worker-1")
 	if err != nil {
 		t.Fatalf("parse exact pattern: %v", err)
 	}
-	if !exact.Matches("spiffe://agentos.dev/ns/tenant-a/worker/worker-1") ||
-		exact.Matches("spiffe://agentos.dev/ns/tenant-a/worker/worker-2") {
+	if !exact.Matches("spiffe://fenced.dev/ns/tenant-a/worker/worker-1") ||
+		exact.Matches("spiffe://fenced.dev/ns/tenant-a/worker/worker-2") {
 		t.Fatal("exact pattern matching is wrong")
 	}
 
-	for _, bad := range []string{"", "spiffe://agentos.dev", "spiffe://agentos.dev/ns/tenant-a", "spiffe://agentos.dev/ns/tenant-a/worker"} {
+	for _, bad := range []string{"", "spiffe://fenced.dev", "spiffe://fenced.dev/ns/tenant-a", "spiffe://fenced.dev/ns/tenant-a/worker"} {
 		if _, err := ParsePattern(bad); err == nil {
 			t.Fatalf("malformed pattern %q was accepted", bad)
 		}
@@ -155,14 +155,14 @@ func TestPatternMatching(t *testing.T) {
 }
 
 func TestWorkerClaimsAreExactAndTenantBound(t *testing.T) {
-	trustDomain, tenant, instance, err := WorkerClaims("spiffe://agentos.dev/ns/tenant-a/worker/worker-1")
-	if err != nil || trustDomain != "agentos.dev" || tenant != "tenant-a" || instance != "worker-1" {
+	trustDomain, tenant, instance, err := WorkerClaims("spiffe://fenced.dev/ns/tenant-a/worker/worker-1")
+	if err != nil || trustDomain != "fenced.dev" || tenant != "tenant-a" || instance != "worker-1" {
 		t.Fatalf("claims=%q/%q/%q err=%v", trustDomain, tenant, instance, err)
 	}
 	for _, invalid := range []string{
-		"spiffe://agentos.dev/ns/system/control",
-		"spiffe://agentos.dev/ns/*/worker/worker-1",
-		"https://agentos.dev/ns/tenant-a/worker/worker-1",
+		"spiffe://fenced.dev/ns/system/control",
+		"spiffe://fenced.dev/ns/*/worker/worker-1",
+		"https://fenced.dev/ns/tenant-a/worker/worker-1",
 	} {
 		if _, _, _, err := WorkerClaims(invalid); err == nil {
 			t.Fatalf("invalid worker identity %q was accepted", invalid)
@@ -187,7 +187,7 @@ func TestPeerIdentityFromContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("peer identity: %v", err)
 	}
-	if identity != "spiffe://agentos.dev/ns/tenant-a/worker/worker-1" {
+	if identity != "spiffe://fenced.dev/ns/tenant-a/worker/worker-1" {
 		t.Fatalf("peer identity = %q", identity)
 	}
 
@@ -214,7 +214,7 @@ func TestPeerIdentityFromContext(t *testing.T) {
 
 func TestCheckPeerIdentity(t *testing.T) {
 	ca := testCA(t)
-	pattern, err := ParsePattern("spiffe://agentos.dev/ns/*/worker/*")
+	pattern, err := ParsePattern("spiffe://fenced.dev/ns/*/worker/*")
 	if err != nil {
 		t.Fatalf("parse pattern: %v", err)
 	}

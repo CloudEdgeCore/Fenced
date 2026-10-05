@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 // Enforcer performs admission and policy enforcement on namespaces and resource quotas.

@@ -199,7 +199,7 @@ func (c *Client) StreamEvents(ctx context.Context, executionID string, after int
 		}
 		return Result{}, &HTTPError{Status: reply.StatusCode, Body: encoded}
 	}
-	if reply.Header.Get("AgentOS-Runtime-Interface") != c.protocol {
+	if reply.Header.Get("Fenced-Runtime-Interface") != c.protocol {
 		return Result{}, errors.New("runtime interface protocol negotiation failed")
 	}
 	return consumeEventStream(reply.Body, onEvent)

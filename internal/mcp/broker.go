@@ -17,23 +17,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/capability"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/memory"
-	kernelmodel "github.com/CloudEdgeCore/AgentOS/internal/kernel/model"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/model/provider"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/capability"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/memory"
+	kernelmodel "github.com/CloudEdgeCore/Fenced/internal/kernel/model"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/model/provider"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 )
 
 // System tool names exposed alongside the tenant tool registry.
 const (
-	SystemModelInvoke  = "agentos.model.invoke"
-	SystemMemoryPut    = "agentos.memory.put"
-	SystemMemorySearch = "agentos.memory.search"
-	SystemTaskSpawn    = "agentos.task.spawn"
-	SystemIPCSend      = "agentos.ipc.send"
-	SystemIPCReceive   = "agentos.ipc.receive"
-	SystemIPCAck       = "agentos.ipc.ack"
+	SystemModelInvoke  = "fenced.model.invoke"
+	SystemMemoryPut    = "fenced.memory.put"
+	SystemMemorySearch = "fenced.memory.search"
+	SystemTaskSpawn    = "fenced.task.spawn"
+	SystemIPCSend      = "fenced.ipc.send"
+	SystemIPCReceive   = "fenced.ipc.receive"
+	SystemIPCAck       = "fenced.ipc.ack"
 	// systemToolsRevision is the version advertised in every system tool
 	// description. It moves whenever the set or the contract of the advertised
 	// tools changes, so an agent that caches tools/list can tell.
@@ -123,7 +123,7 @@ func (k KernelMemoryBroker) Search(ctx context.Context, identity AttemptContext,
 // reads are all derived from the fence, so no agent argument can widen them.
 //
 // Delivery is pull-only. The platform cannot notify a running agent that mail
-// has arrived — agentos.runtime.v1 exposes pull RPCs and its HeartbeatResponse
+// has arrived — fenced.runtime.v1 exposes pull RPCs and its HeartbeatResponse
 // carries no payload — so an agent discovers mail by draining its own mailbox.
 // A drain may wait for a bounded time, which is a poll, not a push.
 type MailboxBroker interface {
@@ -286,7 +286,7 @@ func systemToolDeclarations(models ModelBroker, memories MemoryBroker, spawner W
 	if models != nil {
 		declarations = append(declarations, systemTool{
 			name:        SystemModelInvoke,
-			description: "Invoke a model through the AgentOS Model Gateway (policy, budget and audit enforced; the provider credential never reaches the agent)",
+			description: "Invoke a model through the Fenced Model Gateway (policy, budget and audit enforced; the provider credential never reaches the agent)",
 			schema:      schemaFor[modelToolInput](),
 		})
 	}

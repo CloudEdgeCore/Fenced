@@ -24,13 +24,13 @@ import (
 	"testing"
 	"time"
 
-	gatewayv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/gateway/v1"
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/gateway"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/policy"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/control"
+	gatewayv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/gateway/v1"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/gateway"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/policy"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/control"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -224,7 +224,7 @@ func TestFencingReplayRejectedAtProtocolBoundary(t *testing.T) {
 	_, err = service.CommitCheckpoint(context.Background(), &runtimev1.CommitCheckpointRequest{
 		Identity: identity, CheckpointId: uuid.New().String(), ExpectedAttemptVersion: 1,
 		IdempotencyKey: "replay-checkpoint", AgentVersionRef: "agent@1", Provider: "reference-go",
-		RuntimeAbi: "agentos.reference/v1", SchemaVersion: "state/v1",
+		RuntimeAbi: "fenced.reference/v1", SchemaVersion: "state/v1",
 		State: &runtimev1.ArtifactReference{Uri: "artifact://tenant-a/sha256/ab", Sha256: sha256Hex("x"), SizeBytes: 1, MediaType: "application/octet-stream"},
 	})
 	if status.Code(err) != codes.PermissionDenied {

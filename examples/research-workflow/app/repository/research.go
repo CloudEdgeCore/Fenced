@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/examples/research-workflow/app/domain"
+	"github.com/CloudEdgeCore/Fenced/examples/research-workflow/app/domain"
 )
 
 // RunView is the materialized application view of one research run: the §5

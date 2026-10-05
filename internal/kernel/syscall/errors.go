@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/capability"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/capability"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 // SyscallErrorCode represents a POSIX-like kernel error number returned by system calls.

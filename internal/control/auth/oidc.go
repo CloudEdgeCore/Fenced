@@ -90,7 +90,7 @@ func writeAuthProblem(writer http.ResponseWriter, request *http.Request, reasonC
 	writer.Header().Set("Cache-Control", "no-store")
 	writer.WriteHeader(http.StatusUnauthorized)
 	_ = json.NewEncoder(writer).Encode(authProblem{
-		Type:  "https://agentos.dev/problems/" + strings.ToLower(strings.ReplaceAll(reasonCode, "_", "-")),
+		Type:  "https://fenced.dev/problems/" + strings.ToLower(strings.ReplaceAll(reasonCode, "_", "-")),
 		Title: http.StatusText(http.StatusUnauthorized), Status: http.StatusUnauthorized,
 		Detail: detail, Instance: request.URL.Path, ReasonCode: reasonCode,
 	})

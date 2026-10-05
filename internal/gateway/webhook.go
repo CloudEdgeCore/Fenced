@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentversion"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
 )
 
 const maxWebhookResponseBytes = 1 << 20
@@ -76,9 +76,9 @@ func (e *WebhookExecutor) Execute(ctx context.Context, input tool.ExecutionReque
 	}
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Accept", "application/json")
-	request.Header.Set("User-Agent", "AgentOS-Tool-Gateway/1.0")
+	request.Header.Set("User-Agent", "Fenced-Tool-Gateway/1.0")
 	if input.Secret != "" {
-		request.Header.Set("AgentOS-Secret-Handle", string(input.Secret))
+		request.Header.Set("Fenced-Secret-Handle", string(input.Secret))
 	}
 	response, err := e.client.Do(request)
 	if err != nil {

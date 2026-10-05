@@ -99,12 +99,12 @@
 ## 4. CI 真机腿(job:`runtime-linux-leg`)
 
 见 `.github/workflows/ci.yml`。流程:安装钉定 containerd+runsc → 指纹
-(存产物)→ 构建 `agentos-runtime-oci` → digest 钉定并预拉 conformance
+(存产物)→ 构建 `fenced-runtime-oci` → digest 钉定并预拉 conformance
 镜像 → 跑 OCI conformance 腿(`TestSameAgentVersionRunsOnBothProviders/oci`,
-`AGENTOS_OCI_CONTAINERD_NAMESPACE=agentos-ci`)→ Firecracker 探测
+`FENCED_OCI_CONTAINERD_NAMESPACE=fenced-ci`)→ Firecracker 探测
 (`--allow-no-kvm`:GitHub 托管 runner 明确报告 KVM 缺失并跳过)。
 
-自托管带 KVM 的 runner(`label: agentos-kvm`)额外执行:Firecracker 完整
+自托管带 KVM 的 runner(`label: fenced-kvm`)额外执行:Firecracker 完整
 探测(无 `--allow-no-kvm`)与后续 boot smoke。
 
 > 嵌套容器注记:在 Docker Desktop/WSL2 等嵌套环境跑真机腿时,

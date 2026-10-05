@@ -92,10 +92,10 @@ case "$KIND" in
   sse-reset)
     SECONDS="${TARGET:-5}"
     echo "[inject] SIGSTOP Control API for ${SECONDS}s (SSE stalls), then SIGCONT"
-    pkill -STOP -f 'agentos-control' || {
-      echo "[inject] no agentos-control process matched"; exit 1; }
+    pkill -STOP -f 'fenced-control' || {
+      echo "[inject] no fenced-control process matched"; exit 1; }
     sleep "$SECONDS"
-    pkill -CONT -f 'agentos-control' || true
+    pkill -CONT -f 'fenced-control' || true
     echo "[inject] reconnect the event stream; clients must reconcile with GET /v1/tasks/{id}"
     observe
     ;;

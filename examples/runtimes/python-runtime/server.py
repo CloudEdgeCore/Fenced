@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Official AgentOS Python Runtime Adapter.
-Implements the 7-method lifecycle over HTTP conforming to agentos.runtime.interface/v1:
+Official Fenced Python Runtime Adapter.
+Implements the 7-method lifecycle over HTTP conforming to fenced.runtime.interface/v1:
 - health
 - start
 - event
@@ -16,11 +16,11 @@ import json
 import threading
 import time
 from typing import Any, Dict
-from agentos_runtime import AgentRuntime, serve
+from fenced_runtime import AgentRuntime, apply_legacy_compat, serve
 
 
 class PythonStandaloneRuntime(AgentRuntime):
-    """Clean reference implementation of an AgentOS Python Runtime."""
+    """Clean reference implementation of an Fenced Python Runtime."""
 
     def __init__(self):
         self.states: Dict[str, Dict[str, Any]] = {}
@@ -64,7 +64,8 @@ class PythonStandaloneRuntime(AgentRuntime):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="AgentOS Python Runtime Adapter")
+    apply_legacy_compat()
+    parser = argparse.ArgumentParser(description="Fenced Python Runtime Adapter")
     parser.add_argument("--port", type=int, default=8087, help="Listen port")
     args = parser.parse_args()
 

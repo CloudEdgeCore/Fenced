@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/namespace"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/namespace"
 	"github.com/google/uuid"
 )
 

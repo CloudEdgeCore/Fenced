@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/ipc"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/ipc"
 )
 
 func TestServiceCRUD(t *testing.T) {

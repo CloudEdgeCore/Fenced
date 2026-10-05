@@ -21,35 +21,35 @@ import (
 	"testing"
 	"time"
 
-	devops "github.com/CloudEdgeCore/AgentOS/examples/devops-workflow/runtime"
-	devopstools "github.com/CloudEdgeCore/AgentOS/examples/devops-workflow/tools/cluster"
-	hello "github.com/CloudEdgeCore/AgentOS/examples/third-party/hello-agent"
-	gatewayv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/gateway/v1"
-	modelv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/model/v1"
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/control/api"
-	"github.com/CloudEdgeCore/AgentOS/internal/control/auth"
-	"github.com/CloudEdgeCore/AgentOS/internal/gateway"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/admission"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/capability"
-	kernelmemory "github.com/CloudEdgeCore/AgentOS/internal/kernel/memory"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/model"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/model/provider"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/policy"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/recovery"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/scheduler"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	postgresstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store/postgres"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
-	workflowkernel "github.com/CloudEdgeCore/AgentOS/internal/kernel/workflow"
-	"github.com/CloudEdgeCore/AgentOS/internal/mcp"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/artifact"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/migrate"
-	runtimeadapter "github.com/CloudEdgeCore/AgentOS/internal/runtime/adapter"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/control"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/reference"
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	devops "github.com/CloudEdgeCore/Fenced/examples/devops-workflow/runtime"
+	devopstools "github.com/CloudEdgeCore/Fenced/examples/devops-workflow/tools/cluster"
+	hello "github.com/CloudEdgeCore/Fenced/examples/third-party/hello-agent"
+	gatewayv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/gateway/v1"
+	modelv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/model/v1"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/control/api"
+	"github.com/CloudEdgeCore/Fenced/internal/control/auth"
+	"github.com/CloudEdgeCore/Fenced/internal/gateway"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/admission"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/capability"
+	kernelmemory "github.com/CloudEdgeCore/Fenced/internal/kernel/memory"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/model"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/model/provider"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/policy"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/recovery"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/scheduler"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	postgresstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store/postgres"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
+	workflowkernel "github.com/CloudEdgeCore/Fenced/internal/kernel/workflow"
+	"github.com/CloudEdgeCore/Fenced/internal/mcp"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/artifact"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/migrate"
+	runtimeadapter "github.com/CloudEdgeCore/Fenced/internal/runtime/adapter"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/control"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/reference"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
@@ -190,9 +190,9 @@ func envOr(key, fallback string) string {
 // newHarness builds the full in-process stack for one scenario.
 func newHarness(t *testing.T, name string, stubborn bool) *harness {
 	t.Helper()
-	databaseURL := os.Getenv("AGENTOS_TEST_DATABASE_URL")
+	databaseURL := os.Getenv("FENCED_TEST_DATABASE_URL")
 	if databaseURL == "" {
-		t.Skip("AGENTOS_TEST_DATABASE_URL is not set")
+		t.Skip("FENCED_TEST_DATABASE_URL is not set")
 	}
 	normalizedName := strings.Map(func(character rune) rune {
 		if character >= 'a' && character <= 'z' || character >= 'A' && character <= 'Z' ||
@@ -201,7 +201,7 @@ func newHarness(t *testing.T, name string, stubborn bool) *harness {
 		}
 		return '_'
 	}, name)
-	schema := "agentos_devops_" + normalizedName
+	schema := "fenced_devops_" + normalizedName
 	ctx, _ := context.WithTimeout(context.Background(), 60*time.Second)
 	admin, err := pgx.Connect(ctx, databaseURL)
 	if err != nil {

@@ -11,19 +11,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 const (
 	// ProviderName identifies this provider in checkpoints and audit records.
 	ProviderName = "oci-gvisor"
 	// RuntimeABI is the provider-level Runtime ABI declared in checkpoint envelopes.
-	RuntimeABI = "agentos.oci/v1"
+	RuntimeABI = "fenced.oci/v1"
 	// CheckpointSchema is the logical checkpoint state schema version.
-	CheckpointSchema = "agentos.oci-logical/v1"
+	CheckpointSchema = "fenced.oci-logical/v1"
 
-	checkpointMediaType = "application/vnd.agentos.oci-checkpoint+json"
-	resultMediaType     = "application/vnd.agentos.oci-result+json"
+	checkpointMediaType = "application/vnd.fenced.oci-checkpoint+json"
+	resultMediaType     = "application/vnd.fenced.oci-result+json"
 )
 
 // ArtifactStore is the content-addressed store used for checkpoint state and
@@ -110,7 +110,7 @@ func spoolOutput(ctx context.Context, spooler OutputSpooler, tenantID, attemptID
 }
 
 // sandboxIDPrefix names the containerd containers this provider owns.
-const sandboxIDPrefix = "agentos-"
+const sandboxIDPrefix = "fenced-"
 
 // reapTargets returns the listed container IDs this provider should clean up
 // as orphans: our prefix, and not currently owned by a live execution.
@@ -201,7 +201,7 @@ type ctrExecutor struct {
 	active map[string]struct{}
 }
 
-// WithNamespace sets the containerd namespace (default "agentos").
+// WithNamespace sets the containerd namespace (default "fenced").
 func WithNamespace(namespace string) RunscOption {
 	return func(e *ctrExecutor) { e.namespace = namespace }
 }
@@ -244,7 +244,7 @@ func WithRunscPlatform(platform string) DirectRunscOption {
 }
 
 // WithRunscRoot sets the runsc state root directory (default
-// "/run/containerd/runsc/agentos").
+// "/run/containerd/runsc/fenced").
 func WithRunscRoot(root string) DirectRunscOption {
 	return func(e *directExecutor) { e.rootDir = root }
 }

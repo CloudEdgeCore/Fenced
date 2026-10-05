@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/spiffe"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/spiffe"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"

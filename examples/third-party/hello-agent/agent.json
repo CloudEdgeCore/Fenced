@@ -1,5 +1,5 @@
 {
-  "apiVersion": "agentos.dev/v1",
+  "apiVersion": "fenced.dev/v1",
   "kind": "AgentVersion",
   "metadata": {
     "name": "hello-agent",
@@ -20,18 +20,18 @@
     "runtimes": [
       {
         "class": "research-network",
-        "interface": "agentos.runtime.interface/v1",
-        "runtimeABI": "agentos.adapter-http/v1",
+        "interface": "fenced.runtime.interface/v1",
+        "runtimeABI": "fenced.adapter-http/v1",
         "entrypoint": [
-          "agentos-binding://hello"
+          "fenced-binding://hello"
         ]
       },
       {
         "class": "research-sandbox",
-        "interface": "agentos.runtime.interface/v1",
-        "runtimeABI": "agentos.adapter-http/v1",
+        "interface": "fenced.runtime.interface/v1",
+        "runtimeABI": "fenced.adapter-http/v1",
         "entrypoint": [
-          "agentos-binding://hello"
+          "fenced-binding://hello"
         ]
       }
     ],

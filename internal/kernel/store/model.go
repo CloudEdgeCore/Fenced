@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
 	"github.com/google/uuid"
 )
 

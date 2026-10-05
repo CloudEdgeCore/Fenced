@@ -12,30 +12,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "agentos-runtime-wasm"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "hex",
- "prost",
- "prost-build",
- "prost-types",
- "protoc-bin-vendored",
- "serde",
- "serde_json",
- "sha2",
- "tokio",
- "tonic",
- "tonic-prost",
- "tonic-prost-build",
- "uuid",
- "wasmtime",
- "wat",
- "wit-component",
- "wit-parser",
-]
-
-[[package]]
 name = "aho-corasick"
 version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -424,6 +400,30 @@ name = "fastrand"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
+
+[[package]]
+name = "fenced-runtime-wasm"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "hex",
+ "prost",
+ "prost-build",
+ "prost-types",
+ "protoc-bin-vendored",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+ "tonic",
+ "tonic-prost",
+ "tonic-prost-build",
+ "uuid",
+ "wasmtime",
+ "wat",
+ "wit-component",
+ "wit-parser",
+]
 
 [[package]]
 name = "find-msvc-tools"

@@ -27,7 +27,7 @@ func tlsListener(handler http.Handler) (net.Listener, *http.Client, string, erro
 	}
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().UnixNano()),
-		Subject:      pkix.Name{CommonName: "agentos-devops-tools"},
+		Subject:      pkix.Name{CommonName: "fenced-devops-tools"},
 		NotBefore:    time.Now().Add(-time.Minute),
 		NotAfter:     time.Now().Add(time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,

@@ -1,5 +1,5 @@
 {
-  "schema": "agentos.slo/v1",
+  "schema": "fenced.slo/v1",
   "productVersion": "1.3.0.0",
   "windowDays": 30,
   "objectives": {

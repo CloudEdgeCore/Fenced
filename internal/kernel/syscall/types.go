@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/ipc"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/namespace"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/supervisor"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/ipc"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/namespace"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/supervisor"
 	"github.com/google/uuid"
 )
 

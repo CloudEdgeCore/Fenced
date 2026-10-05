@@ -6,8 +6,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentversion"
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 )
 
 func TestV1PromotionPolicyIsMachineComplete(t *testing.T) {

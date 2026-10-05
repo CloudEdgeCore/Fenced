@@ -24,18 +24,18 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
         env:
-          POSTGRES_DB: agentos_test
-          POSTGRES_USER: agentos
-          POSTGRES_PASSWORD: agentos-test-only
+          POSTGRES_DB: fenced_test
+          POSTGRES_USER: fenced
+          POSTGRES_PASSWORD: fenced-test-only
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U agentos -d agentos_test"
+          --health-cmd "pg_isready -U fenced -d fenced_test"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 20
     env:
-      AGENTOS_TEST_DATABASE_URL: postgres://agentos:agentos-test-only@127.0.0.1:5432/agentos_test?sslmode=disable
+      FENCED_TEST_DATABASE_URL: postgres://fenced:fenced-test-only@127.0.0.1:5432/fenced_test?sslmode=disable
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -69,19 +69,19 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
         env:
-          POSTGRES_DB: agentos_test
-          POSTGRES_USER: agentos
-          POSTGRES_PASSWORD: agentos-test-only
+          POSTGRES_DB: fenced_test
+          POSTGRES_USER: fenced
+          POSTGRES_PASSWORD: fenced-test-only
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U agentos -d agentos_test"
+          --health-cmd "pg_isready -U fenced -d fenced_test"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 20
     env:
-      AGENTOS_TEST_DATABASE_URL: postgres://agentos:agentos-test-only@127.0.0.1:5432/agentos_test?sslmode=disable
-      AGENTOS_RUN_OCI_DRILL: "1"
+      FENCED_TEST_DATABASE_URL: postgres://fenced:fenced-test-only@127.0.0.1:5432/fenced_test?sslmode=disable
+      FENCED_RUN_OCI_DRILL: "1"
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -125,26 +125,26 @@ jobs:
 
       - name: Build agent-runtime image and import into containerd
         run: |
-          docker build -t agentos-runtime:latest -f deploy/oci/agent-runtime/Dockerfile .
-          docker save agentos-runtime:latest | sudo ctr -n agentos images import -
+          docker build -t fenced-runtime:latest -f deploy/oci/agent-runtime/Dockerfile .
+          docker save fenced-runtime:latest | sudo ctr -n fenced images import -
           # Verify the image is findable; containerd treats a positional
           # arg as a filter (which chokes on the / in the reference), so
           # list and match instead.
-          sudo ctr -n agentos images ls -q | grep -xF docker.io/library/agentos-runtime:latest
+          sudo ctr -n fenced images ls -q | grep -xF docker.io/library/fenced-runtime:latest
           # The real-takeover drill runs a long-lived workload inside an
           # alpine image (the OCI worker starts with -skip-image-pull), so it
           # must be preloaded into containerd as well.
-          sudo ctr -n agentos images pull docker.io/library/alpine:latest
+          sudo ctr -n fenced images pull docker.io/library/alpine:latest
 
       - name: Build OCI worker
         run: |
           mkdir -p bin
-          go build -o bin/agentos-runtime-oci ./cmd/agentos-runtime-oci
+          go build -o bin/fenced-runtime-oci ./cmd/fenced-runtime-oci
 
       - name: Smoke-test gVisor container execution
         run: |
-          sudo ctr -n agentos run --rm --runtime io.containerd.runsc.v1 \
-            docker.io/library/agentos-runtime:latest gvisor-smoke 2>&1
+          sudo ctr -n fenced run --rm --runtime io.containerd.runsc.v1 \
+            docker.io/library/fenced-runtime:latest gvisor-smoke 2>&1
           echo "gVisor sandbox verified: container executed and exited"
 
       - name: Run OCI/gVisor isolation and takeover drills

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/ipc"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/ipc"
 )
 
 // Router resolves logical AgentAddress targets to concrete, healthy Service instances.

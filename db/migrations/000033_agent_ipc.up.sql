@@ -20,12 +20,12 @@
 -- production reader and no production writer; IPC is its first real user.
 --
 -- Delivery is at-least-once, not exactly-once. The receipt suppresses a
--- duplicate *observation* inside AgentOS; it cannot suppress a duplicate
+-- duplicate *observation* inside Fenced; it cannot suppress a duplicate
 -- external side effect the receiving agent performs after it has read a
 -- message, because that call leaves the fencing and audit boundary.
 --
 -- The outbox subject grammar constrains PR-2: eventSubject() renders
--- "agentos.events.<aggregate_type lowercased>.<event_type lowercased>" and both
+-- "fenced.events.<aggregate_type lowercased>.<event_type lowercased>" and both
 -- tokens must match ^[A-Za-z][A-Za-z0-9_]{0,127}$, so the aggregate type for a
 -- message event is pinned to "ipc" here and cannot carry '.' or '-'.
 

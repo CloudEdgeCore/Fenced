@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	ipcv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/ipc/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/capability"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/policy"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	ipcv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/ipc/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/capability"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/policy"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -30,7 +30,7 @@ const (
 	ipcMaxWaitMillis int32 = 10_000
 
 	// ipcPollInterval is how often a waiting drain re-reads the mailbox. There
-	// is no notification path to wait on: agentos.runtime.v1 is pull-only and
+	// is no notification path to wait on: fenced.runtime.v1 is pull-only and
 	// the platform cannot tell a receiver that mail has arrived, so a bounded
 	// poll is the only mechanism available. A drain that waits the full
 	// ipcMaxWaitMillis issues at most ~40 of these reads, which is the price of
@@ -41,7 +41,7 @@ const (
 // ipcMessageIDNamespace is the fixed UUIDv5 namespace message ids are derived
 // in. Deriving it from the OID namespace keeps the constant a function of a name
 // instead of an unexplained literal.
-var ipcMessageIDNamespace = uuid.NewSHA1(uuid.NameSpaceOID, []byte("agentos.ipc.v1/message"))
+var ipcMessageIDNamespace = uuid.NewSHA1(uuid.NameSpaceOID, []byte("fenced.ipc.v1/message"))
 
 // MailboxScope resolves the mailbox a run id names.
 type MailboxScope interface {
@@ -81,7 +81,7 @@ type PeerPolicy interface {
 // Two things it deliberately still does not do:
 //
 //   - It does not notify a receiver. The platform cannot push into a running
-//     agent: agentos.runtime.v1 exposes seven pull RPCs, its HeartbeatResponse
+//     agent: fenced.runtime.v1 exposes seven pull RPCs, its HeartbeatResponse
 //     carries no payload, and nothing in the repository resembles a wake path.
 //     A receiver drains its mailbox on its own schedule.
 //   - It does not check the *receiver's* willingness. The grant answers "may I

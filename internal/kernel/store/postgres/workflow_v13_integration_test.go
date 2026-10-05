@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 )
 
@@ -318,8 +318,8 @@ func TestV13WorkflowClaimsFillBatchRoundRobinAcrossTenantBacklogs(t *testing.T) 
 }
 
 func TestV13DynamicSpawnScale10K(t *testing.T) {
-	if os.Getenv("AGENTOS_V13_SCALE_TEST") != "1" {
-		t.Skip("set AGENTOS_V13_SCALE_TEST=1 to run the 10k dynamic-step acceptance leg")
+	if os.Getenv("FENCED_V13_SCALE_TEST") != "1" {
+		t.Skip("set FENCED_V13_SCALE_TEST=1 to run the 10k dynamic-step acceptance leg")
 	}
 	clock := newFakeClock()
 	_, repository := prepare(t, clock.Now)

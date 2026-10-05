@@ -43,7 +43,7 @@ concurrency:
   group: >-
     ${{ ((github.event_name == 'schedule' && (github.event.schedule == '41 17 * * 0' || github.event.schedule == '41 17 15 * *' || github.event.schedule == '41 17 1 * *')) ||
          (github.event_name == 'workflow_dispatch' && (github.event.inputs.jobs == 'soak' || github.event.inputs.jobs == 'capacity-baseline-1m' || github.event.inputs.jobs == 'all')))
-        && 'agentos-long-evidence' || 'nightly-production-evidence' }}
+        && 'fenced-long-evidence' || 'nightly-production-evidence' }}
   cancel-in-progress: false
 
 jobs:
@@ -59,8 +59,8 @@ jobs:
   # This gate turns "the pool is missing" into an explicit, terminal skip so
   # every run ends in a state an operator can act on (never a silent queue).
   #
-  # Operator action: once the `agentos-soak` runner is online, set the
-  # repository variable AGENTOS_SELF_HOSTED_PROVISIONED to "true". Until then
+  # Operator action: once the `fenced-soak` runner is online, set the
+  # repository variable FENCED_SELF_HOSTED_PROVISIONED to "true". Until then
   # the self-hosted evidence jobs are skipped with a notice and never queue.
   runner-preflight:
     runs-on: ubuntu-latest
@@ -71,14 +71,14 @@ jobs:
       - name: Check whether the self-hosted evidence pool is provisioned
         id: check
         env:
-          AGENTOS_SELF_HOSTED_PROVISIONED: ${{ vars.AGENTOS_SELF_HOSTED_PROVISIONED }}
+          FENCED_SELF_HOSTED_PROVISIONED: ${{ vars.FENCED_SELF_HOSTED_PROVISIONED }}
         run: |
-          if [ "${AGENTOS_SELF_HOSTED_PROVISIONED}" = "true" ]; then
+          if [ "${FENCED_SELF_HOSTED_PROVISIONED}" = "true" ]; then
             echo "provisioned=true" >> "$GITHUB_OUTPUT"
-            echo "self-hosted evidence pool (agentos-soak) declared provisioned"
+            echo "self-hosted evidence pool (fenced-soak) declared provisioned"
           else
             echo "provisioned=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::self-hosted evidence pool runs-on [self-hosted, Linux, X64, agentos-soak] is NOT provisioned. Skipping soak, soak-7d and capacity-baseline-1m instead of leaving them queued forever. Set the repository variable AGENTOS_SELF_HOSTED_PROVISIONED=true once the runner is online."
+            echo "::notice::self-hosted evidence pool runs-on [self-hosted, Linux, X64, fenced-soak] is NOT provisioned. Skipping soak, soak-7d and capacity-baseline-1m instead of leaving them queued forever. Set the repository variable FENCED_SELF_HOSTED_PROVISIONED=true once the runner is online."
           fi
 
   # 100k capacity baseline: throughput benchmark, measured WITHOUT the race
@@ -94,19 +94,19 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
         env:
-          POSTGRES_DB: agentos_test
-          POSTGRES_USER: agentos
-          POSTGRES_PASSWORD: agentos-test-only
+          POSTGRES_DB: fenced_test
+          POSTGRES_USER: fenced
+          POSTGRES_PASSWORD: fenced-test-only
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U agentos -d agentos_test"
+          --health-cmd "pg_isready -U fenced -d fenced_test"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 20
     env:
-      AGENTOS_TEST_DATABASE_URL: postgres://agentos:agentos-test-only@127.0.0.1:5432/agentos_test?sslmode=disable
-      AGENTOS_CAPACITY_TASKS: "100000"
+      FENCED_TEST_DATABASE_URL: postgres://fenced:fenced-test-only@127.0.0.1:5432/fenced_test?sslmode=disable
+      FENCED_CAPACITY_TASKS: "100000"
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -146,11 +146,11 @@ jobs:
       github.event_name == 'workflow_dispatch' &&
       (github.event.inputs.jobs == 'all' || github.event.inputs.jobs == 'capacity-baseline-1m') &&
       needs.runner-preflight.outputs.provisioned == 'true'
-    runs-on: [self-hosted, Linux, X64, agentos-soak]
+    runs-on: [self-hosted, Linux, X64, fenced-soak]
     timeout-minutes: 1200
     env:
-      AGENTOS_TEST_DATABASE_URL: ${{ secrets.AGENTOS_SOAK_DATABASE_URL }}
-      AGENTOS_CAPACITY_TASKS: "1000000"
+      FENCED_TEST_DATABASE_URL: ${{ secrets.FENCED_SOAK_DATABASE_URL }}
+      FENCED_CAPACITY_TASKS: "1000000"
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -181,26 +181,26 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
         env:
-          POSTGRES_DB: agentos_test
-          POSTGRES_USER: agentos
-          POSTGRES_PASSWORD: agentos-test-only
+          POSTGRES_DB: fenced_test
+          POSTGRES_USER: fenced
+          POSTGRES_PASSWORD: fenced-test-only
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U agentos -d agentos_test"
+          --health-cmd "pg_isready -U fenced -d fenced_test"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 20
     env:
-      AGENTOS_TEST_DATABASE_URL: postgres://agentos:agentos-test-only@127.0.0.1:5432/agentos_test?sslmode=disable
-      AGENTOS_TEST_NATS_URL: nats://127.0.0.1:4222
-      AGENTOS_REAL_MODEL_URL: ${{ vars.AGENTOS_REAL_MODEL_URL }}
-      AGENTOS_REAL_MODEL_NAME: ${{ vars.AGENTOS_REAL_MODEL_NAME }}
+      FENCED_TEST_DATABASE_URL: postgres://fenced:fenced-test-only@127.0.0.1:5432/fenced_test?sslmode=disable
+      FENCED_TEST_NATS_URL: nats://127.0.0.1:4222
+      FENCED_REAL_MODEL_URL: ${{ vars.FENCED_REAL_MODEL_URL }}
+      FENCED_REAL_MODEL_NAME: ${{ vars.FENCED_REAL_MODEL_NAME }}
       # Optional bearer token for keyed endpoints (vLLM behind an API gateway);
       # unset/empty means a keyless endpoint. Held only in the fenced provider
       # config; credential isolation is asserted by TestRealModelToolCalling.
-      AGENTOS_REAL_MODEL_KEY: ${{ secrets.AGENTOS_REAL_MODEL_KEY }}
-      AGENTOS_V13_SCALE_TEST: "1"
+      FENCED_REAL_MODEL_KEY: ${{ secrets.FENCED_REAL_MODEL_KEY }}
+      FENCED_V13_SCALE_TEST: "1"
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -212,12 +212,12 @@ jobs:
           cache-dependency-path: go.sum
 
       - name: Start NATS JetStream
-        run: docker run --detach --name agentos-nightly-nats --publish 4222:4222 nats:2.14.1-alpine@sha256:ea17b9b7f74279b9239cf65e5786c0133e9a7c353bf218d29004abf2e7a33181 --jetstream
+        run: docker run --detach --name fenced-nightly-nats --publish 4222:4222 nats:2.14.1-alpine@sha256:ea17b9b7f74279b9239cf65e5786c0133e9a7c353bf218d29004abf2e7a33181 --jetstream
 
       - name: Require the governed live-model target
         run: |
-          test -n "$AGENTOS_REAL_MODEL_URL"
-          test -n "$AGENTOS_REAL_MODEL_NAME"
+          test -n "$FENCED_REAL_MODEL_URL"
+          test -n "$FENCED_REAL_MODEL_NAME"
 
       - name: Probe the live-model endpoint
         # One-token completion directly against the provider: distinguishes
@@ -228,13 +228,13 @@ jobs:
         id: live-probe
         run: |
           auth=(-H 'Content-Type: application/json')
-          if [ -n "${AGENTOS_REAL_MODEL_KEY:-}" ]; then
-            auth+=(-H "Authorization: Bearer $AGENTOS_REAL_MODEL_KEY")
+          if [ -n "${FENCED_REAL_MODEL_KEY:-}" ]; then
+            auth+=(-H "Authorization: Bearer $FENCED_REAL_MODEL_KEY")
           fi
           code=$(curl -sS -o /tmp/live-probe.json -w '%{http_code}' --max-time 60 \
             "${auth[@]}" \
-            -d "{\"model\":\"$AGENTOS_REAL_MODEL_NAME\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1}" \
-            "$AGENTOS_REAL_MODEL_URL/chat/completions") || code=000
+            -d "{\"model\":\"$FENCED_REAL_MODEL_NAME\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1}" \
+            "$FENCED_REAL_MODEL_URL/chat/completions") || code=000
           if [ "$code" = "200" ]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
@@ -247,7 +247,7 @@ jobs:
         run: |
           go test -race -tags=integration -count=1 -timeout 120m -run 'TestV13DynamicSpawnScale10K|TestV12WorkflowScale|TestMultiTenant' ./internal/kernel/store/postgres ./e2e/workflows
           go test -race -count=1 -timeout 45m -run 'TestV13Orchestrates10KDynamicTasks' ./internal/kernel/workflow
-          AGENTOS_RESEARCH_SCALE_100K=1 AGENTOS_E2E_RESEARCH_RUNS=10000 go test -tags=integration -count=1 -timeout 60m -run 'TestScale100kTasks' -v ./examples/devops-workflow/tests/e2e/
+          FENCED_RESEARCH_SCALE_100K=1 FENCED_E2E_RESEARCH_RUNS=10000 go test -tags=integration -count=1 -timeout 60m -run 'TestScale100kTasks' -v ./examples/devops-workflow/tests/e2e/
 
       - name: Run parser fuzz corpus and discovery
         run: |
@@ -276,29 +276,29 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
         env:
-          POSTGRES_DB: agentos_test
-          POSTGRES_USER: agentos
-          POSTGRES_PASSWORD: agentos-test-only
+          POSTGRES_DB: fenced_test
+          POSTGRES_USER: fenced
+          POSTGRES_PASSWORD: fenced-test-only
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U agentos -d agentos_test"
+          --health-cmd "pg_isready -U fenced -d fenced_test"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 20
     env:
-      AGENTOS_TEST_DATABASE_URL: postgres://agentos:agentos-test-only@127.0.0.1:5432/agentos_test?sslmode=disable
-      AGENTOS_RESEARCH_LIVE: "1"
-      AGENTOS_RESEARCH_LIVE_WEB: "1"
-      AGENTOS_RESEARCH_LIVE_GOAL: "Assess how agent runtime control planes evolved between 2023 and 2025 and what defines their next cycle"
-      AGENTOS_RESEARCH_MODEL_BASE_URL: ${{ secrets.AGENTOS_RESEARCH_MODEL_BASE_URL }}
-      AGENTOS_RESEARCH_MODEL_KEY: ${{ secrets.AGENTOS_RESEARCH_MODEL_KEY }}
-      AGENTOS_RESEARCH_MODEL_PROVIDER: ${{ vars.AGENTOS_RESEARCH_MODEL_PROVIDER }}
-      AGENTOS_RESEARCH_MODEL_FAST: ${{ vars.AGENTOS_RESEARCH_MODEL_FAST }}
-      AGENTOS_RESEARCH_MODEL_READER: ${{ vars.AGENTOS_RESEARCH_MODEL_READER }}
-      AGENTOS_RESEARCH_MODEL_REASONING: ${{ vars.AGENTOS_RESEARCH_MODEL_REASONING }}
-      AGENTOS_RESEARCH_SEARCH_PROVIDER: ${{ vars.AGENTOS_RESEARCH_SEARCH_PROVIDER }}
-      AGENTOS_RESEARCH_SEARCH_KEY: ${{ secrets.AGENTOS_RESEARCH_SEARCH_KEY }}
+      FENCED_TEST_DATABASE_URL: postgres://fenced:fenced-test-only@127.0.0.1:5432/fenced_test?sslmode=disable
+      FENCED_RESEARCH_LIVE: "1"
+      FENCED_RESEARCH_LIVE_WEB: "1"
+      FENCED_RESEARCH_LIVE_GOAL: "Assess how agent runtime control planes evolved between 2023 and 2025 and what defines their next cycle"
+      FENCED_RESEARCH_MODEL_BASE_URL: ${{ secrets.FENCED_RESEARCH_MODEL_BASE_URL }}
+      FENCED_RESEARCH_MODEL_KEY: ${{ secrets.FENCED_RESEARCH_MODEL_KEY }}
+      FENCED_RESEARCH_MODEL_PROVIDER: ${{ vars.FENCED_RESEARCH_MODEL_PROVIDER }}
+      FENCED_RESEARCH_MODEL_FAST: ${{ vars.FENCED_RESEARCH_MODEL_FAST }}
+      FENCED_RESEARCH_MODEL_READER: ${{ vars.FENCED_RESEARCH_MODEL_READER }}
+      FENCED_RESEARCH_MODEL_REASONING: ${{ vars.FENCED_RESEARCH_MODEL_REASONING }}
+      FENCED_RESEARCH_SEARCH_PROVIDER: ${{ vars.FENCED_RESEARCH_SEARCH_PROVIDER }}
+      FENCED_RESEARCH_SEARCH_KEY: ${{ secrets.FENCED_RESEARCH_SEARCH_KEY }}
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -312,7 +312,7 @@ jobs:
       - name: Require live credentials or mark the run neutral
         id: credentials
         run: |
-          if [ -z "$AGENTOS_RESEARCH_MODEL_BASE_URL" ] || [ -z "$AGENTOS_RESEARCH_SEARCH_KEY" ]; then
+          if [ -z "$FENCED_RESEARCH_MODEL_BASE_URL" ] || [ -z "$FENCED_RESEARCH_SEARCH_KEY" ]; then
             echo "::notice::research-live secrets are not configured on this repository; the acceptance leg is skipped"
             echo "configured=false" >> "$GITHUB_OUTPUT"
             exit 0
@@ -324,9 +324,9 @@ jobs:
           # regressions still fail.
           code=$(curl -sS -o /tmp/research-probe.json -w '%{http_code}' --max-time 60 \
             -H 'Content-Type: application/json' \
-            -H "Authorization: Bearer $AGENTOS_RESEARCH_MODEL_KEY" \
-            -d "{\"model\":\"$AGENTOS_RESEARCH_MODEL_FAST\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1}" \
-            "$AGENTOS_RESEARCH_MODEL_BASE_URL/chat/completions") || code=000
+            -H "Authorization: Bearer $FENCED_RESEARCH_MODEL_KEY" \
+            -d "{\"model\":\"$FENCED_RESEARCH_MODEL_FAST\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}],\"max_tokens\":1}" \
+            "$FENCED_RESEARCH_MODEL_BASE_URL/chat/completions") || code=000
           if [ "$code" = "200" ]; then
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
@@ -364,11 +364,11 @@ jobs:
       (github.event_name == 'schedule' && (github.event.schedule == '41 17 * * 0' || github.event.schedule == '41 17 15 * *')
       || (github.event_name == 'workflow_dispatch' && (github.event.inputs.jobs == 'all' || github.event.inputs.jobs == 'soak') && github.event.inputs.soak_hours != '168'))
       && needs.runner-preflight.outputs.provisioned == 'true'
-    runs-on: [self-hosted, Linux, X64, agentos-soak]
+    runs-on: [self-hosted, Linux, X64, fenced-soak]
     timeout-minutes: 4500
     env:
-      AGENTOS_TEST_DATABASE_URL: ${{ secrets.AGENTOS_SOAK_DATABASE_URL }}
-      AGENTOS_TEST_NATS_URL: ${{ secrets.AGENTOS_SOAK_NATS_URL }}
+      FENCED_TEST_DATABASE_URL: ${{ secrets.FENCED_SOAK_DATABASE_URL }}
+      FENCED_TEST_NATS_URL: ${{ secrets.FENCED_SOAK_NATS_URL }}
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -376,8 +376,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$AGENTOS_TEST_DATABASE_URL"
-          test -n "$AGENTOS_TEST_NATS_URL"
+          test -n "$FENCED_TEST_DATABASE_URL"
+          test -n "$FENCED_TEST_NATS_URL"
           hours=24
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             hours="${{ github.event.inputs.soak_hours }}"
@@ -404,7 +404,7 @@ jobs:
       (github.event_name == 'schedule' && github.event.schedule == '41 17 1 * *'
       || (github.event_name == 'workflow_dispatch' && (github.event.inputs.jobs == 'all' || github.event.inputs.jobs == 'soak') && github.event.inputs.soak_hours == '168'))
       && needs.runner-preflight.outputs.provisioned == 'true'
-    runs-on: [self-hosted, Linux, X64, agentos-soak]
+    runs-on: [self-hosted, Linux, X64, fenced-soak]
     timeout-minutes: 5100
     strategy:
       max-parallel: 1
@@ -412,8 +412,8 @@ jobs:
       matrix:
         chunk: [1, 2]
     env:
-      AGENTOS_TEST_DATABASE_URL: ${{ secrets.AGENTOS_SOAK_DATABASE_URL }}
-      AGENTOS_TEST_NATS_URL: ${{ secrets.AGENTOS_SOAK_NATS_URL }}
+      FENCED_TEST_DATABASE_URL: ${{ secrets.FENCED_SOAK_DATABASE_URL }}
+      FENCED_TEST_NATS_URL: ${{ secrets.FENCED_SOAK_NATS_URL }}
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -421,8 +421,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$AGENTOS_TEST_DATABASE_URL"
-          test -n "$AGENTOS_TEST_NATS_URL"
+          test -n "$FENCED_TEST_DATABASE_URL"
+          test -n "$FENCED_TEST_NATS_URL"
           deadline=$(( $(date +%s) + 84 * 3600 ))
           iterations=0
           while (( $(date +%s) < deadline )); do

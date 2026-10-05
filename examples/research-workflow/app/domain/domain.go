@@ -1,6 +1,6 @@
 // Package domain holds the research domain model of the reference
 // application (design doc §5). These objects live in the application layer
-// on purpose: the AgentOS kernel never sees them, and every state they
+// on purpose: the Fenced kernel never sees them, and every state they
 // carry is derived from observable kernel surfaces (workflow documents,
 // memory namespaces), never from kernel internals.
 package domain

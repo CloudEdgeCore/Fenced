@@ -1,6 +1,6 @@
-// Docker Runtime: An official AgentOS runtime adapter that isolates agent tasks
+// Docker Runtime: An official Fenced runtime adapter that isolates agent tasks
 // inside container boundaries, maps checkpoints to persistent volumes, and enforces
-// the agentos.runtime.interface/v1 specification.
+// the fenced.runtime.interface/v1 specification.
 package main
 
 import (
@@ -14,7 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/compat"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 )
 
 type dockerTask struct {
@@ -51,7 +52,7 @@ func (d *DockerRuntime) Run(ctx context.Context, req agent.StartRequest, emit ag
 	d.mu.Unlock()
 
 	// 1. Emit container spawn event
-	_ = emit("container.spawned", json.RawMessage(fmt.Sprintf(`{"containerId":"%s","image":"agentos-base:latest"}`, containerID)))
+	_ = emit("container.spawned", json.RawMessage(fmt.Sprintf(`{"containerId":"%s","image":"fenced-base:latest"}`, containerID)))
 
 	// 2. Simulate task execution with cancellation awareness
 	select {
@@ -109,6 +110,7 @@ func (d *DockerRuntime) Restore(ctx context.Context, req agent.RestoreRequest) e
 }
 
 func main() {
+	compat.WarnLegacyEnv(os.Stderr, compat.AliasLegacyEnv())
 	port := flag.Int("port", 8089, "listen port for runtime interface")
 	flag.Parse()
 

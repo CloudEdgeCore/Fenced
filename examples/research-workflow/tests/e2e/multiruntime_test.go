@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	workflowkernel "github.com/CloudEdgeCore/AgentOS/internal/kernel/workflow"
+	workflowkernel "github.com/CloudEdgeCore/Fenced/internal/kernel/workflow"
 	"github.com/google/uuid"
 )
 

@@ -1,5 +1,5 @@
 // Package cluster implements the DevOps reference workload's deterministic
-// tools as a webhook-backed tool endpoint behind the AgentOS Tool Gateway:
+// tools as a webhook-backed tool endpoint behind the Fenced Tool Gateway:
 //
 //	kubernetes.get@1.0.0       inspect a service's pod health
 //	kubernetes.logs@1.0.0      recent log lines for a service

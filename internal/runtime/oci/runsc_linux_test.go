@@ -15,13 +15,13 @@ func TestRunscExecutorUsesFailClosedCtrArguments(t *testing.T) {
 	logPath := filepath.Join(dir, "ctr.log")
 	ctrPath := filepath.Join(dir, "ctr")
 	const fakeCtr = `#!/bin/sh
-printf '%s\n' "$*" >> "$AGENTOS_CTR_TEST_LOG"
+printf '%s\n' "$*" >> "$FENCED_CTR_TEST_LOG"
 exit 0
 `
 	if err := os.WriteFile(ctrPath, []byte(fakeCtr), 0o700); err != nil {
 		t.Fatalf("write fake ctr: %v", err)
 	}
-	t.Setenv("AGENTOS_CTR_TEST_LOG", logPath)
+	t.Setenv("FENCED_CTR_TEST_LOG", logPath)
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 
 	executor, err := NewRunscExecutor(WithSkipPull())
@@ -94,7 +94,7 @@ exit 0
 	}
 	if !containsSequence(runArgs, []string{
 		"example.invalid/agent@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-		"agentos-attempt-a", "/bin/agent", "--mode", "conformance",
+		"fenced-attempt-a", "/bin/agent", "--mode", "conformance",
 	}) {
 		t.Errorf("ctr run arguments do not preserve the command argv: %q", runArgs)
 	}

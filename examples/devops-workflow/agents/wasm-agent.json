@@ -1,11 +1,11 @@
 {
-  "apiVersion": "agentos.dev/v1",
+  "apiVersion": "fenced.dev/v1",
   "kind": "AgentVersion",
   "metadata": { "name": "devops-wasm-agent", "version": "1.0.0", "namespace": "default" },
   "spec": {
     "runtimeClassPolicy": { "allowed": ["research-wasm"], "preferred": "research-wasm" },
     "lifecycle": { "maxAttempts": 3 },
-    "runtimes": [{ "class": "research-wasm", "interface": "agentos.runtime.interface/v1", "runtimeABI": "agentos.wasm-component/v1", "entrypoint": ["agentos-binding://devops"] }],
+    "runtimes": [{ "class": "research-wasm", "interface": "fenced.runtime.interface/v1", "runtimeABI": "fenced.wasm-component/v1", "entrypoint": ["fenced-binding://devops"] }],
     "capabilities": { "tools": [], "models": [], "memory": [], "secrets": [] },
     "budget": { "tokens": 1000, "costUsd": 0.10, "toolCalls": 4, "wallSeconds": 60 },
     "checkpoint": { "mode": "logical", "schemaVersion": "devops/v1", "intervalSeconds": 30 }

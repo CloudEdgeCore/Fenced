@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package fenced.model.v1alpha1;
+
+option go_package = "github.com/CloudEdgeCore/Fenced/gen/go/fenced/model/v1alpha1;modelv1alpha1";
+
+// ModelGateway is the fenced model-invocation boundary runtime workers and
+// sandboxed Agents use for streaming model calls. The gateway enforces model
+// policy, incremental token/cost settlement against the task budget ledger
+// and the hard stop when a reservation is exhausted. Prompt and completion
+// content never crosses this boundary.
+service ModelGatewayService {
+  // Begin opens a model call: policy + budget preflight, ledger row.
+  rpc Begin(BeginRequest) returns (BeginResponse);
+  // Settle appends one idempotent usage step; an exhausted reservation
+  // returns ResourceExhausted and the caller must stop the stream.
+  rpc Settle(SettleRequest) returns (SettleResponse);
+  // Finish finalizes the call with final usage, computed cost and audit.
+  rpc Finish(FinishRequest) returns (FinishResponse);
+}
+
+message AttemptIdentity {
+  string tenant_id = 1;
+  string attempt_id = 2;
+  int64 fencing_token = 3;
+}
+
+message BeginRequest {
+  AttemptIdentity identity = 1;
+  string task_id = 2;
+  string run_id = 3;
+  string agent_version_ref = 4;
+  string model_ref = 5;
+  string idempotency_key = 6;
+}
+
+message BeginResponse {
+  string call_id = 1;
+  string model_ref = 2;
+  string status = 3;
+  string price_revision = 4;
+  string policy_revision = 5;
+  // resource_version is the CAS version of the ledger row the caller must
+  // present when finalizing the call (Finish.expected_version).
+  int64 resource_version = 6;
+}
+
+message SettleRequest {
+  AttemptIdentity identity = 1;
+  string call_id = 2;
+  int64 sequence = 3;
+  int64 input_tokens = 4;
+  int64 output_tokens = 5;
+}
+
+message SettleResponse {
+  string call_id = 1;
+}
+
+message FinishRequest {
+  AttemptIdentity identity = 1;
+  string call_id = 2;
+  int64 expected_version = 3;
+  string status = 4;
+  int64 input_tokens = 5;
+  int64 output_tokens = 6;
+  string provider_request_id = 7;
+  string finish_reason = 8;
+}
+
+message FinishResponse {
+  string call_id = 1;
+  string model_ref = 2;
+  string status = 3;
+  int64 input_tokens = 4;
+  int64 output_tokens = 5;
+  double cost_usd = 6;
+  string price_revision = 7;
+  string finish_reason = 8;
+}

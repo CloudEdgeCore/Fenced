@@ -5,7 +5,7 @@ import time
 import unittest
 from http.server import ThreadingHTTPServer
 
-from agentos_runtime.host import RuntimeHost, _Execution
+from fenced_runtime.host import RuntimeHost, _Execution
 
 
 def start_request(execution_id: str) -> dict:

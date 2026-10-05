@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 // directExecutor runs workloads directly through the runsc CLI with an OCI
@@ -39,8 +39,8 @@ func NewRunscDirectExecutor(options ...DirectRunscOption) (Executor, error) {
 		return nil, fmt.Errorf("containerd CLI (ctr) is required to mount workload images: %w", err)
 	}
 	executor := &directExecutor{
-		ctrPath: ctrPath, namespace: "agentos", runscPath: runscPath, platform: "kvm",
-		rootDir: "/run/containerd/runsc/agentos", outputLimit: 1 << 20,
+		ctrPath: ctrPath, namespace: "fenced", runscPath: runscPath, platform: "kvm",
+		rootDir: "/run/containerd/runsc/fenced", outputLimit: 1 << 20,
 	}
 	for _, option := range options {
 		option(executor)
@@ -73,12 +73,12 @@ func (e *directExecutor) Prepare(ctx context.Context, spec ExecutionSpec) (Execu
 		return nil, fmt.Errorf("reap orphaned sandbox containers: %w", err)
 	}
 
-	bundleDir, err := os.MkdirTemp("", "agentos-bundle-*")
+	bundleDir, err := os.MkdirTemp("", "fenced-bundle-*")
 	if err != nil {
 		e.unregister(containerID)
 		return nil, fmt.Errorf("create bundle directory: %w", err)
 	}
-	inputDir, err := os.MkdirTemp("", "agentos-input-*")
+	inputDir, err := os.MkdirTemp("", "fenced-input-*")
 	if err != nil {
 		_ = os.RemoveAll(bundleDir)
 		e.unregister(containerID)
@@ -117,7 +117,7 @@ func (e *directExecutor) Prepare(ctx context.Context, spec ExecutionSpec) (Execu
 	spoolPipe, spoolWriter := io.Pipe()
 	stdoutRef, stdoutTruncated, spoolErr := make(chan *store.ArtifactReference, 1), make(chan bool, 1), make(chan error, 1)
 	go func() {
-		ref, truncated, err := spoolOutput(ctx, spec.OutputSpooler, spec.TenantID, spec.AttemptID, "application/vnd.agentos.stdout+octet-stream", spoolPipe)
+		ref, truncated, err := spoolOutput(ctx, spec.OutputSpooler, spec.TenantID, spec.AttemptID, "application/vnd.fenced.stdout+octet-stream", spoolPipe)
 		spoolPipe.CloseWithError(err)
 		stdoutRef <- ref
 		stdoutTruncated <- truncated
@@ -165,7 +165,7 @@ func (e *directExecutor) Destroy(ctx context.Context, execution Execution) error
 // targetDir, and unmounts the image. The resulting directory is a writable copy
 // that the gofer can use for its filesystem store.
 func (e *directExecutor) prepareRootfs(ctx context.Context, imageRef, targetDir string) error {
-	mountPoint, err := os.MkdirTemp("", "agentos-rootfs-mount-*")
+	mountPoint, err := os.MkdirTemp("", "fenced-rootfs-mount-*")
 	if err != nil {
 		return fmt.Errorf("create rootfs mount point: %w", err)
 	}
@@ -222,7 +222,7 @@ func (e *directExecutor) run(ctx context.Context, args ...string) error {
 }
 
 // reapOrphans deletes sandboxes with our prefix that no live execution owns:
-// a worker that crashed leaves agentos-* containers behind; the next Prepare
+// a worker that crashed leaves fenced-* containers behind; the next Prepare
 // cleans them up.
 func (e *directExecutor) reapOrphans(ctx context.Context) error {
 	command := exec.CommandContext(ctx, e.runscPath, "--root", e.rootDir, "list", "-q")
@@ -297,11 +297,11 @@ func (e *directExecution) Wait(ctx context.Context) (RunResult, error) {
 // identity plus the workload input path, identical to the containerd executor.
 func directEnvironment(spec ExecutionSpec, inputPath string) []string {
 	return []string{
-		"AGENTOS_TENANT_ID=" + spec.TenantID,
-		"AGENTOS_ATTEMPT_ID=" + spec.AttemptID,
-		"AGENTOS_AGENT_VERSION_REF=" + spec.AgentVersionRef,
-		"AGENTOS_INPUT_PATH=" + inputPath,
-		"AGENTOS_WORKSPACE_PATH=/agentos/workspace",
+		"FENCED_TENANT_ID=" + spec.TenantID,
+		"FENCED_ATTEMPT_ID=" + spec.AttemptID,
+		"FENCED_AGENT_VERSION_REF=" + spec.AgentVersionRef,
+		"FENCED_INPUT_PATH=" + inputPath,
+		"FENCED_WORKSPACE_PATH=/fenced/workspace",
 	}
 }
 
@@ -319,11 +319,11 @@ func writeRunscSpec(path string, spec ExecutionSpec, inputPath string) error {
 		{"destination": "/dev/mqueue", "type": "mqueue", "source": "mqueue", "options": []string{"nosuid", "noexec", "nodev"}},
 		{"destination": "/sys", "type": "sysfs", "source": "sysfs", "options": []string{"nosuid", "noexec", "nodev", "ro"}},
 		{"destination": "/run", "type": "tmpfs", "source": "tmpfs", "options": []string{"nosuid", "strictatime", "mode=755", "size=65536k"}},
-		{"destination": "/agentos/input/workload.json", "type": "bind", "source": inputPath, "options": []string{"rbind", "ro"}},
+		{"destination": "/fenced/input/workload.json", "type": "bind", "source": inputPath, "options": []string{"rbind", "ro"}},
 	}
 	if spec.WorkspaceBytes > 0 {
 		mounts = append(mounts, map[string]any{
-			"destination": "/agentos/workspace", "type": "tmpfs", "source": "tmpfs",
+			"destination": "/fenced/workspace", "type": "tmpfs", "source": "tmpfs",
 			"options": []string{"nosuid", "noexec", "nodev", fmt.Sprintf("size=%d", spec.WorkspaceBytes)},
 		})
 	}
@@ -359,7 +359,7 @@ func writeRunscSpec(path string, spec ExecutionSpec, inputPath string) error {
 				"additionalGids": []int{0, 1, 2, 3, 4, 6, 10, 11, 20, 26, 27},
 			},
 			"args":            args,
-			"env":             directEnvironment(spec, "/agentos/input/workload.json"),
+			"env":             directEnvironment(spec, "/fenced/input/workload.json"),
 			"cwd":             "/",
 			"noNewPrivileges": true,
 			"capabilities": map[string]any{
@@ -369,7 +369,7 @@ func writeRunscSpec(path string, spec ExecutionSpec, inputPath string) error {
 			"rlimits": []map[string]any{{"type": "RLIMIT_NOFILE", "hard": 1024, "soft": 1024}},
 		},
 		"root":     map[string]any{"path": "rootfs", "readonly": true},
-		"hostname": "agentos",
+		"hostname": "fenced",
 		"mounts":   mounts,
 		"linux": map[string]any{
 			"resources": resources,
@@ -380,7 +380,7 @@ func writeRunscSpec(path string, spec ExecutionSpec, inputPath string) error {
 				{"type": "uts"},
 				{"type": "mount"},
 			},
-			"cgroupsPath": "/agentos",
+			"cgroupsPath": "/fenced",
 			"maskedPaths": []string{
 				"/proc/acpi", "/proc/asound", "/proc/kcore", "/proc/keys",
 				"/proc/latency_stats", "/proc/timer_list", "/proc/timer_stats",

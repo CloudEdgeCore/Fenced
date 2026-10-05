@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "fenced.fullname" . }}-control
+  labels:
+    app.kubernetes.io/name: fenced-control
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  type: {{ .Values.controlPlane.service.type }}
+  ports:
+    - port: {{ .Values.controlPlane.service.port }}
+      targetPort: https
+      protocol: TCP
+      name: https
+  selector:
+    {{- include "fenced.controlSelectorLabels" . | nindent 4 }}

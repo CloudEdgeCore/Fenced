@@ -13,12 +13,12 @@ import (
 )
 
 // AuditSchema identifies the canonical audit event encoding.
-const AuditSchema = "agentos.audit/v1"
+const AuditSchema = "fenced.audit/v1"
 
 // AuditGenesisHash anchors the first event of every tenant's chain: the
 // first event's PrevHash equals this constant, so a truncated chain (events
 // deleted from the head) is detectable.
-var AuditGenesisHash = sha256.Sum256([]byte("agentos-audit-genesis-v1"))
+var AuditGenesisHash = sha256.Sum256([]byte("fenced-audit-genesis-v1"))
 
 // ErrAuditChainBroken reports a hash-chain integrity failure at a known seq.
 var ErrAuditChainBroken = errors.New("audit chain integrity check failed")

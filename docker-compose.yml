@@ -10,14 +10,14 @@
 #   docker compose --profile secrets up -d
 #   docker compose --profile search up -d
 #
-# Application processes (agentos-migrate, agentos-control, agentos-controller,
-# agentos-outbox, agentos-gateway, agentos-runtime-control,
-# agentos-runtime-reference) run on the host via `go run` as documented in
+# Application processes (fenced-migrate, fenced-control, fenced-controller,
+# fenced-outbox, fenced-gateway, fenced-runtime-control,
+# fenced-runtime-reference) run on the host via `go run` as documented in
 # README.md. They are intentionally not containerized here: development
 # identity requires loopback-only listeners, which port-published containers
 # cannot provide. Production deployments define their own topology under
 # deploy/helm and deploy/oci.
-name: agentos-dev
+name: fenced-dev
 
 include:
   - path: deploy/dev/compose.yaml

@@ -48,7 +48,7 @@ type SOPGuideline struct {
 	SafetyNotice string   `json:"safetyNotice"`
 }
 
-// IndustrialToolServer serves industrial tools as webhooks for AgentOS Tool Gateway.
+// IndustrialToolServer serves industrial tools as webhooks for Fenced Tool Gateway.
 type IndustrialToolServer struct{}
 
 func NewIndustrialToolServer() *IndustrialToolServer {

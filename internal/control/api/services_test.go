@@ -8,9 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	controlapi "github.com/CloudEdgeCore/AgentOS/internal/control/api"
-	"github.com/CloudEdgeCore/AgentOS/internal/control/auth"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/supervisor"
+	controlapi "github.com/CloudEdgeCore/Fenced/internal/control/api"
+	"github.com/CloudEdgeCore/Fenced/internal/control/auth"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/supervisor"
 )
 
 func TestServiceEndpointsLifecycle(t *testing.T) {

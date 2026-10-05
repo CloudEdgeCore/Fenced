@@ -1,11 +1,11 @@
 {
-  "apiVersion": "agentos.dev/v1",
+  "apiVersion": "fenced.dev/v1",
   "kind": "AgentVersion",
   "metadata": { "name": "research-writer", "version": "1.0.0", "namespace": "default" },
   "spec": {
     "runtimeClassPolicy": { "allowed": ["research-reasoning"], "preferred": "research-reasoning" },
     "lifecycle": { "maxAttempts": 3 },
-    "runtimes": [{ "class": "research-reasoning", "interface": "agentos.runtime.interface/v1", "runtimeABI": "agentos.adapter-http/v1", "entrypoint": ["agentos-binding://research"] }],
+    "runtimes": [{ "class": "research-reasoning", "interface": "fenced.runtime.interface/v1", "runtimeABI": "fenced.adapter-http/v1", "entrypoint": ["fenced-binding://research"] }],
     "capabilities": {
       "tools": [],
       "models": ["__MODEL_REASONING__"],

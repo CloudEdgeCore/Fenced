@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 )
 
 // Runtime implements agent.Runtime behind the brokered MCP surface.
@@ -80,7 +80,7 @@ type HTTPMCPClient struct {
 	http     *http.Client
 }
 
-const executionHeader = "X-Agentos-Execution"
+const executionHeader = "X-Fenced-Execution"
 
 func NewHTTPMCPClient(endpoint string) *HTTPMCPClient {
 	return &HTTPMCPClient{endpoint: strings.TrimRight(endpoint, "/"), http: &http.Client{Timeout: 10 * time.Minute}}

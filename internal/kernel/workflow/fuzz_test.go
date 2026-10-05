@@ -6,8 +6,8 @@ import (
 )
 
 func FuzzDecodeWorkflowSpec(f *testing.F) {
-	f.Add([]byte(`{"apiVersion":"agentos.dev/workflow/v1","kind":"Workflow","steps":[]}`))
-	f.Add([]byte(`{"apiVersion":"agentos.dev/workflow/v1","kind":"Workflow","steps":[{"name":"a","agentVersionRef":"a@1.0.0","goal":"go"}]}`))
+	f.Add([]byte(`{"apiVersion":"fenced.dev/workflow/v1","kind":"Workflow","steps":[]}`))
+	f.Add([]byte(`{"apiVersion":"fenced.dev/workflow/v1","kind":"Workflow","steps":[{"name":"a","agentVersionRef":"a@1.0.0","goal":"go"}]}`))
 	f.Fuzz(func(t *testing.T, raw []byte) {
 		spec, err := DecodeWorkflowSpec(raw)
 		if err != nil {

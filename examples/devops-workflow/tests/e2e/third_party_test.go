@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 )
 
@@ -25,7 +25,7 @@ func TestThirdPartyAgentOnboarding(t *testing.T) {
 	// from examples/third-party/hello/agent.json.)
 	ref := "hello-agent@1.0.0"
 
-	// Run: create a plain task — the same surface `agentos run` uses. The
+	// Run: create a plain task — the same surface `fenced run` uses. The
 	// task spec carries only what the third-party developer knows: budget,
 	// placement, retry. No lease, fencing, pool or ledger concepts.
 	taskID := uuid.New()

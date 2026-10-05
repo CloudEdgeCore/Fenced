@@ -21,20 +21,20 @@ import (
 	"testing"
 	"time"
 
-	gatewayv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/gateway/v1"
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/gateway"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/admission"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/policy"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/scheduler"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	postgresstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store/postgres"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/artifact"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/migrate"
-	runtimecontrol "github.com/CloudEdgeCore/AgentOS/internal/runtime/control"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/reference"
+	gatewayv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/gateway/v1"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/gateway"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/admission"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/policy"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/scheduler"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	postgresstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store/postgres"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/artifact"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/migrate"
+	runtimecontrol "github.com/CloudEdgeCore/Fenced/internal/runtime/control"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/reference"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -422,7 +422,7 @@ func countLoadByPhase(t *testing.T, ctx context.Context, pool *pgxpool.Pool, ten
 }
 
 func loadTasks() int {
-	if value := os.Getenv("AGENTOS_LOAD_TASKS"); value != "" {
+	if value := os.Getenv("FENCED_LOAD_TASKS"); value != "" {
 		if parsed, err := strconv.Atoi(value); err == nil && parsed > 0 {
 			return parsed
 		}
@@ -448,9 +448,9 @@ func serveLoadGateway(t *testing.T, store *postgresstore.Store, engine *policy.E
 
 func newLoadDatabase(t *testing.T) (*pgxpool.Pool, *postgresstore.Store) {
 	t.Helper()
-	url := os.Getenv("AGENTOS_TEST_DATABASE_URL")
+	url := os.Getenv("FENCED_TEST_DATABASE_URL")
 	if url == "" {
-		t.Skip("AGENTOS_TEST_DATABASE_URL is not set")
+		t.Skip("FENCED_TEST_DATABASE_URL is not set")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -458,7 +458,7 @@ func newLoadDatabase(t *testing.T) (*pgxpool.Pool, *postgresstore.Store) {
 	if err != nil {
 		t.Fatalf("open PostgreSQL admin connection: %v", err)
 	}
-	if _, err := admin.Exec(ctx, `CREATE SCHEMA IF NOT EXISTS agentos_load`); err != nil {
+	if _, err := admin.Exec(ctx, `CREATE SCHEMA IF NOT EXISTS fenced_load`); err != nil {
 		admin.Close(ctx)
 		t.Fatalf("create load schema: %v", err)
 	}
@@ -469,7 +469,7 @@ func newLoadDatabase(t *testing.T) (*pgxpool.Pool, *postgresstore.Store) {
 	if err != nil {
 		t.Fatalf("parse database URL: %v", err)
 	}
-	config.ConnConfig.RuntimeParams["search_path"] = "agentos_load"
+	config.ConnConfig.RuntimeParams["search_path"] = "fenced_load"
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		t.Fatalf("open PostgreSQL: %v", err)

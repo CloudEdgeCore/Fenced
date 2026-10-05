@@ -34,7 +34,7 @@ type Shutdown func(context.Context) error
 // environment:
 //
 //	OTEL_EXPORTER_OTLP_ENDPOINT  OTLP/gRPC endpoint (e.g. 127.0.0.1:4317)
-//	OTEL_SERVICE_NAME            service name (default: agentos)
+//	OTEL_SERVICE_NAME            service name (default: fenced)
 //	OTEL_SDK_DISABLED            set to disable telemetry entirely
 //
 // When the endpoint is unset the providers remain the SDK no-ops and slog
@@ -42,7 +42,7 @@ type Shutdown func(context.Context) error
 func Init(ctx context.Context) (Shutdown, error) {
 	serviceName := os.Getenv("OTEL_SERVICE_NAME")
 	if strings.TrimSpace(serviceName) == "" {
-		serviceName = "agentos"
+		serviceName = "fenced"
 	}
 	if strings.EqualFold(os.Getenv("OTEL_SDK_DISABLED"), "true") || strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")) == "" {
 		return func(context.Context) error { return nil }, nil

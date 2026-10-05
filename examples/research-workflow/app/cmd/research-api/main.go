@@ -20,15 +20,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/examples/research-workflow/app/api"
-	"github.com/CloudEdgeCore/AgentOS/examples/research-workflow/app/repository"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/artifact"
+	"github.com/CloudEdgeCore/Fenced/examples/research-workflow/app/api"
+	"github.com/CloudEdgeCore/Fenced/examples/research-workflow/app/repository"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/artifact"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/compat"
 )
 
 func main() {
+	compat.WarnLegacyEnv(os.Stderr, compat.AliasLegacyEnv())
 	listen := flag.String("listen", "127.0.0.1:9095", "HTTP listen address for the research API")
 	controlEndpoint := flag.String("control-endpoint", "http://127.0.0.1:8080", "Control API v1 endpoint")
-	controlToken := flag.String("control-token", os.Getenv("AGENTOS_TOKEN"), "bearer token for the Control API (or AGENTOS_TOKEN)")
+	controlToken := flag.String("control-token", os.Getenv("FENCED_TOKEN"), "bearer token for the Control API (or FENCED_TOKEN)")
 	templatePath := flag.String("workflow-template", "workflow/research-workflow.json", "path to the research workflow template")
 	artifactRoot := flag.String("artifact-root", "tmp/research-artifacts", "artifact store root (report artifacts + mapping files)")
 	tenant := flag.String("tenant", "research-tenant", "tenant the reports are stored under")

@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/effect"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/ipc"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/supervisor"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/effect"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/ipc"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/supervisor"
 	"github.com/google/uuid"
 )
 
@@ -22,7 +22,7 @@ import (
 // 3. CrewAI
 // 4. OpenAI Agents SDK
 // 5. Custom In-House Agent
-// run concurrently on the SAME AgentOS Kernel under the unified Supervisor,
+// run concurrently on the SAME Fenced Kernel under the unified Supervisor,
 // communicate asynchronously via the Kernel IPC Mailbox subsystem,
 // execute fenced external side effects, and self-heal under worker crashes.
 func TestFiveFrameworksEcosystemCoLocation(t *testing.T) {
@@ -172,7 +172,7 @@ func TestFiveFrameworksEcosystemCoLocation(t *testing.T) {
 			}
 		}
 	}
-	t.Log("all 5 framework fleets (10 instances total) are active and running on the AgentOS Kernel.")
+	t.Log("all 5 framework fleets (10 instances total) are active and running on the Fenced Kernel.")
 
 	// 5. Cross-Framework Distributed Workflow via Kernel IPC:
 	// Pipeline: Custom Orchestrator -> LangGraph -> AutoGen -> CrewAI -> OpenAI Agents SDK -> Kernel Effect API -> Custom Orchestrator
@@ -235,7 +235,7 @@ func TestFiveFrameworksEcosystemCoLocation(t *testing.T) {
 
 	// Step B: LangGraph forwards findings to AutoGen GroupChat for multi-agent consensus
 	_, agAddr := sendIPC("langgraph-researcher", "autogen-groupchat", "svc-autogen", "discuss_findings", map[string]any{
-		"findings":  "AgentOS provides Posix-like Syscall ABI and Monotonic Fencing",
+		"findings":  "Fenced provides Posix-like Syscall ABI and Monotonic Fencing",
 		"consensus": "requires_verification",
 	})
 	receiveAndAck(agAddr)
@@ -372,5 +372,5 @@ func TestFiveFrameworksEcosystemCoLocation(t *testing.T) {
 		t.Fatalf("expected 2 running CrewAI instances, got %d", runningCr)
 	}
 
-	t.Log("5-Framework Ecosystem Co-Location Test on AgentOS Kernel PASSED with full self-healing.")
+	t.Log("5-Framework Ecosystem Co-Location Test on Fenced Kernel PASSED with full self-healing.")
 }

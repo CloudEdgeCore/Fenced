@@ -10,12 +10,24 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+
+	"github.com/CloudEdgeCore/Fenced/internal/platform/compat"
 )
 
 // ExecutionHeader carries the agent's execution id (the Runtime Interface
 // executionId, i.e. the attempt id) so a shared endpoint can scope brokered
 // calls to one open execution window.
-const ExecutionHeader = "X-Agentos-Execution"
+const ExecutionHeader = "X-Fenced-Execution"
+
+// executionIdentity reads the execution id from the current header, falling
+// back to the legacy pre-rename header so a worker built before the AgentOS →
+// Fenced rename keeps working.
+func executionIdentity(header http.Header) string {
+	if value := strings.TrimSpace(header.Get(ExecutionHeader)); value != "" {
+		return value
+	}
+	return strings.TrimSpace(header.Get(compat.LegacyExecutionHeader))
+}
 
 type executionContextKey struct{}
 
@@ -103,7 +115,7 @@ func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		writeError(writer, wantsSSE, nil, &Error{Code: codeInvalidRequest, Message: "request body too large"})
 		return
 	}
-	if execution := strings.TrimSpace(request.Header.Get(ExecutionHeader)); execution != "" {
+	if execution := executionIdentity(request.Header); execution != "" {
 		request = request.WithContext(context.WithValue(request.Context(), executionContextKey{}, execution))
 	}
 	parsed, rpcErr := ParseRequest(body)

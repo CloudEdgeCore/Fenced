@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/effect"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/effect"
 )
 
 // SyscallInvoker executes a system call request and returns the system call response.

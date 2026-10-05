@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
-	"github.com/CloudEdgeCore/AgentOS/sdk/conformance"
-	"github.com/CloudEdgeCore/AgentOS/sdk/runtimesdk"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
+	"github.com/CloudEdgeCore/Fenced/sdk/conformance"
+	"github.com/CloudEdgeCore/Fenced/sdk/runtimesdk"
 )
 
 type mockRuntimeHandler struct {

@@ -1,12 +1,12 @@
-"""Tests for AgentOS Python Client SDK."""
+"""Tests for Fenced Python Client SDK."""
 
 import json
 import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from agentos_runtime.client import (
-    AgentOSClient,
+from fenced_runtime.client import (
+    FencedClient,
     AmbiguousEffectError,
     FencingViolationError,
     IdempotencyConflictError,
@@ -117,7 +117,7 @@ class MockControlServerHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
 
-class AgentOSClientTests(unittest.TestCase):
+class FencedClientTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.server = ThreadingHTTPServer(("127.0.0.1", 0), MockControlServerHandler)
@@ -131,7 +131,7 @@ class AgentOSClientTests(unittest.TestCase):
         cls.server.server_close()
 
     def setUp(self):
-        self.client = AgentOSClient(
+        self.client = FencedClient(
             base_url=f"http://127.0.0.1:{self.port}",
             tenant_id="test-tenant",
             execution_id="exec-001",
@@ -158,7 +158,7 @@ class AgentOSClientTests(unittest.TestCase):
         self.assertEqual(res["status"], "COMMITTED")
 
         # Fencing violation
-        stale_client = AgentOSClient(
+        stale_client = FencedClient(
             base_url=f"http://127.0.0.1:{self.port}",
             fencing_token=999,
         )

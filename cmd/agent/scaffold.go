@@ -15,7 +15,7 @@ func ScaffoldAgent(name string) error {
 
 	// 1. Generate agent.manifest.json
 	manifest := map[string]any{
-		"apiVersion": "agentos.dev/v1",
+		"apiVersion": "fenced.dev/v1",
 		"kind":       "AgentManifest",
 		"metadata": map[string]string{
 			"name":      name,
@@ -47,7 +47,7 @@ func ScaffoldAgent(name string) error {
 	// 2. Generate prompt.md
 	promptContent := fmt.Sprintf(`# %s System Prompt
 
-You are an enterprise AI Agent governed by AgentOS, responsible for data analysis and operational diagnostics.
+You are an enterprise AI Agent governed by Fenced, responsible for data analysis and operational diagnostics.
 
 ## Role & Responsibilities
 - Rigorous, professional, and strictly adherent to objective engineering facts.
@@ -131,7 +131,7 @@ func main() {
 	// 5. Generate README.md
 	readmeContent := fmt.Sprintf(`# %s Agent Project
 
-Scaffolded by AgentOS CLI (agent init).
+Scaffolded by Fenced CLI (agent init).
 
 ## Project Layout
 - agent.yaml         : Project-level configuration (cascades over global settings)

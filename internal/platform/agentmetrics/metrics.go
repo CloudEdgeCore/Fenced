@@ -1,4 +1,4 @@
-// Package agentmetrics owns AgentOS operational metrics. Cardinality is kept
+// Package agentmetrics owns Fenced operational metrics. Cardinality is kept
 // bounded deliberately: tenant/task/workflow identifiers belong on traces and
 // logs, never metric attributes.
 package agentmetrics
@@ -33,30 +33,30 @@ var instruments struct {
 
 func initInstruments() {
 	instruments.Do(func() {
-		meter := otel.Meter("agentos.dev/kernel")
-		instruments.schedulerClaims, _ = meter.Int64Counter("agentos.scheduler.claims")
-		instruments.schedulerOutcomes, _ = meter.Int64Counter("agentos.scheduler.outcomes")
-		instruments.workflowClaims, _ = meter.Int64Counter("agentos.orchestrator.claims")
-		instruments.workflowOutcomes, _ = meter.Int64Counter("agentos.orchestrator.outcomes")
-		instruments.spawnOutcomes, _ = meter.Int64Counter("agentos.workflow.spawn.outcomes")
-		instruments.budgetEvents, _ = meter.Int64Counter("agentos.budget.events")
-		instruments.accountingDrift, _ = meter.Int64Counter("agentos.accounting.reconciliation.drift")
-		instruments.queueDepth, _ = meter.Int64Histogram("agentos.queue.depth")
-		instruments.firstTokenLatency, _ = meter.Float64Histogram("agentos.model.first_token_latency_ms",
+		meter := otel.Meter("fenced.dev/kernel")
+		instruments.schedulerClaims, _ = meter.Int64Counter("fenced.scheduler.claims")
+		instruments.schedulerOutcomes, _ = meter.Int64Counter("fenced.scheduler.outcomes")
+		instruments.workflowClaims, _ = meter.Int64Counter("fenced.orchestrator.claims")
+		instruments.workflowOutcomes, _ = meter.Int64Counter("fenced.orchestrator.outcomes")
+		instruments.spawnOutcomes, _ = meter.Int64Counter("fenced.workflow.spawn.outcomes")
+		instruments.budgetEvents, _ = meter.Int64Counter("fenced.budget.events")
+		instruments.accountingDrift, _ = meter.Int64Counter("fenced.accounting.reconciliation.drift")
+		instruments.queueDepth, _ = meter.Int64Histogram("fenced.queue.depth")
+		instruments.firstTokenLatency, _ = meter.Float64Histogram("fenced.model.first_token_latency_ms",
 			metric.WithUnit("ms"),
 			metric.WithDescription("model streaming time-to-first-token, measured at the kernel invoker"))
-		instruments.reconcileDuration, _ = meter.Float64Histogram("agentos.orchestrator.reconcile.duration",
+		instruments.reconcileDuration, _ = meter.Float64Histogram("fenced.orchestrator.reconcile.duration",
 			metric.WithUnit("ms"),
 			metric.WithDescription("duration of one workflow orchestrator reconcile round"))
-		instruments.schedulerDeferrals, _ = meter.Int64Counter("agentos.scheduler.deferral.total",
+		instruments.schedulerDeferrals, _ = meter.Int64Counter("fenced.scheduler.deferral.total",
 			metric.WithDescription("scheduler deferrals due to capacity or lease contention"))
-		instruments.leaseExpirations, _ = meter.Int64Counter("agentos.lease.expiration.total",
+		instruments.leaseExpirations, _ = meter.Int64Counter("fenced.lease.expiration.total",
 			metric.WithDescription("runtime leases observed expired by the recovery controller"))
-		instruments.runtimeTakeovers, _ = meter.Int64Counter("agentos.runtime.takeover.total",
+		instruments.runtimeTakeovers, _ = meter.Int64Counter("fenced.runtime.takeover.total",
 			metric.WithDescription("expired attempts successfully recovered onto a new run"))
-		instruments.dbTransactionRetries, _ = meter.Int64Counter("agentos.db.transaction.retry.total",
+		instruments.dbTransactionRetries, _ = meter.Int64Counter("fenced.db.transaction.retry.total",
 			metric.WithDescription("retryable database transactions retried by the store"))
-		instruments.dbTransactionConflicts, _ = meter.Int64Counter("agentos.db.transaction.conflict.total",
+		instruments.dbTransactionConflicts, _ = meter.Int64Counter("fenced.db.transaction.conflict.total",
 			metric.WithDescription("database transactions that aborted on serialization/version conflict"))
 	})
 }

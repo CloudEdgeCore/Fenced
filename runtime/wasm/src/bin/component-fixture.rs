@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     let out = out.ok_or("--out <path> is required")?;
-    let component = agentos_runtime_wasm::fixture::build_agent_component()?;
+    let component = fenced_runtime_wasm::fixture::build_agent_component()?;
     if let Some(parent) = out.parent() {
         std::fs::create_dir_all(parent)?;
     }

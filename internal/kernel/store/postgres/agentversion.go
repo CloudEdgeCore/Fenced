@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentversion"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )

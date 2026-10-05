@@ -2,7 +2,7 @@ export type JSONPrimitive = string | number | boolean | null;
 export type JSONValue = JSONPrimitive | JSONValue[] | { readonly [key: string]: JSONValue };
 
 export interface AgentManifest {
-  readonly apiVersion: "agentos.dev/v1" | string;
+  readonly apiVersion: "fenced.dev/v1" | string;
   readonly kind: "AgentManifest" | string;
   readonly metadata: {
     readonly name: string;
@@ -21,7 +21,7 @@ export interface AgentManifest {
 
 export interface RuntimeTarget {
   readonly class: string;
-  readonly interface: "agentos.runtime.interface/v1" | string;
+  readonly interface: "fenced.runtime.interface/v1" | string;
   readonly runtimeABI: string;
   readonly entrypoint: readonly string[];
 }

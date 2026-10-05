@@ -1,0 +1,89 @@
+{{- include "fenced.validateProduction" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fenced.fullname" . }}-control
+  labels:
+    app.kubernetes.io/name: fenced-control
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "fenced.controlSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "fenced.controlSelectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "fenced.serviceAccountName" . | quote }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
+      containers:
+        - name: control
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/fenced-control"]
+          args:
+            - {{ printf "-listen=0.0.0.0:%v" .Values.controlPlane.port | quote }}
+            - {{ printf "-oidc-issuer=%s" .Values.security.oidc.issuer | quote }}
+            - {{ printf "-oidc-client-id=%s" .Values.security.oidc.clientID | quote }}
+            - {{ printf "-oidc-tenant-claim=%s" .Values.security.oidc.tenantClaim | quote }}
+            - "-tls-cert=/etc/fenced/tls/tls.crt"
+            - "-tls-key=/etc/fenced/tls/tls.key"
+            - {{ printf "-embedding-endpoint=%s" .Values.embedding.endpoint | quote }}
+            - {{ printf "-audit-signing-key-id=%s" .Values.security.audit.keyID | quote }}
+          ports:
+            - containerPort: {{ .Values.controlPlane.port }}
+              name: https
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.existingSecret | quote }}
+                  key: {{ .Values.database.secretKey | quote }}
+            - name: FENCED_AUDIT_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.security.audit.existingSecret | quote }}
+                  key: {{ .Values.security.audit.privateKeyKey | quote }}
+            - name: FENCED_PACKAGE_TRUST_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.security.packageTrust.existingSecret | quote }}
+                  key: {{ .Values.security.packageTrust.keysKey | quote }}
+            {{- if .Values.embedding.tokenSecret }}
+            - name: FENCED_EMBEDDING_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.embedding.tokenSecret | quote }}
+                  key: {{ .Values.embedding.tokenSecretKey | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: control-tls
+              mountPath: /etc/fenced/tls
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: https
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: https
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.controlPlane.resources | nindent 12 }}
+      volumes:
+        - name: control-tls
+          secret:
+            secretName: {{ .Values.security.tls.existingSecret | quote }}
+            items:
+              - key: {{ .Values.security.tls.certificateKey | quote }}
+                path: tls.crt
+              - key: {{ .Values.security.tls.privateKeyKey | quote }}
+                path: tls.key

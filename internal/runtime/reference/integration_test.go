@@ -15,18 +15,18 @@ import (
 	"testing"
 	"time"
 
-	gatewayv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/gateway/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/gateway"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/admission"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/policy"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/scheduler"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	postgresstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store/postgres"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
-	"github.com/CloudEdgeCore/AgentOS/internal/mcp"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/migrate"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/reference"
+	gatewayv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/gateway/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/gateway"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/admission"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/policy"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/scheduler"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	postgresstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store/postgres"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
+	"github.com/CloudEdgeCore/Fenced/internal/mcp"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/migrate"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/reference"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -75,7 +75,7 @@ func TestSandboxAgentMcpEntryDrivesRealDecisionChain(t *testing.T) {
 
 	identitySlot := reference.NewIdentitySlot()
 	adapter := mcp.NewToolAdapter(reference.NewGrpcToolInvoker(gatewayv1.NewToolGatewayServiceClient(connection)), identitySlot)
-	server := httptest.NewServer(mcp.NewServer("agentos-runtime", "v0.1", adapter))
+	server := httptest.NewServer(mcp.NewServer("fenced-runtime", "v0.1", adapter))
 	t.Cleanup(server.Close)
 
 	// Outside an execution window: fail closed.
@@ -158,9 +158,9 @@ func sandboxMcpCall(t *testing.T, url string, method string, params map[string]a
 
 func prepareReferenceDatabase(t *testing.T) (*pgxpool.Pool, *postgresstore.Store) {
 	t.Helper()
-	url := os.Getenv("AGENTOS_TEST_DATABASE_URL")
+	url := os.Getenv("FENCED_TEST_DATABASE_URL")
 	if url == "" {
-		t.Skip("AGENTOS_TEST_DATABASE_URL is not set")
+		t.Skip("FENCED_TEST_DATABASE_URL is not set")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -168,7 +168,7 @@ func prepareReferenceDatabase(t *testing.T) (*pgxpool.Pool, *postgresstore.Store
 	if err != nil {
 		t.Fatalf("open PostgreSQL admin connection: %v", err)
 	}
-	if _, err := admin.Exec(ctx, `CREATE SCHEMA IF NOT EXISTS agentos_reference_mcp`); err != nil {
+	if _, err := admin.Exec(ctx, `CREATE SCHEMA IF NOT EXISTS fenced_reference_mcp`); err != nil {
 		admin.Close(ctx)
 		t.Fatalf("create schema: %v", err)
 	}
@@ -179,7 +179,7 @@ func prepareReferenceDatabase(t *testing.T) (*pgxpool.Pool, *postgresstore.Store
 	if err != nil {
 		t.Fatalf("parse database URL: %v", err)
 	}
-	config.ConnConfig.RuntimeParams["search_path"] = "agentos_reference_mcp"
+	config.ConnConfig.RuntimeParams["search_path"] = "fenced_reference_mcp"
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		t.Fatalf("open PostgreSQL: %v", err)

@@ -7,7 +7,7 @@ set -euo pipefail
 command -v timeout >/dev/null 2>&1 || { echo "coreutils timeout is required" >&2; exit 1; }
 command -v jq >/dev/null 2>&1 || { echo "jq is required" >&2; exit 1; }
 : "${CONTAINERD_ADDRESS:?CONTAINERD_ADDRESS is required}"
-: "${AGENTOS_OCI_IMAGE:?AGENTOS_OCI_IMAGE must be a digest-pinned image}"
+: "${FENCED_OCI_IMAGE:?FENCED_OCI_IMAGE must be a digest-pinned image}"
 
 CAP_DROP_FLAGS=()
 for capability in \
@@ -17,13 +17,13 @@ for capability in \
   CAP_DROP_FLAGS+=(--cap-drop "$capability")
 done
 
-NAMESPACE="${AGENTOS_OCI_CONTAINERD_NAMESPACE:-agentos-ci}"
-RUNTIME="${AGENTOS_OCI_RUNTIME:-io.containerd.runsc.v1}"
-RUNTIME_CONFIG="${AGENTOS_OCI_RUNTIME_CONFIG:-/etc/containerd/runsc.toml}"
-SNAPSHOTTER="${AGENTOS_OCI_SNAPSHOTTER:-overlayfs}"
-PROBE_ID="agentos-isolation-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}-$$"
-HOST_PROBE_ID="agentos-host-isolation-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}-$$"
-ORPHAN_ID="agentos-orphan-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}-$$"
+NAMESPACE="${FENCED_OCI_CONTAINERD_NAMESPACE:-fenced-ci}"
+RUNTIME="${FENCED_OCI_RUNTIME:-io.containerd.runsc.v1}"
+RUNTIME_CONFIG="${FENCED_OCI_RUNTIME_CONFIG:-/etc/containerd/runsc.toml}"
+SNAPSHOTTER="${FENCED_OCI_SNAPSHOTTER:-overlayfs}"
+PROBE_ID="fenced-isolation-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}-$$"
+HOST_PROBE_ID="fenced-host-isolation-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}-$$"
+ORPHAN_ID="fenced-orphan-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}-$$"
 
 cleanup() {
   timeout 15 ctr -n "$NAMESPACE" tasks delete --force "$PROBE_ID" >/dev/null 2>&1 || true
@@ -48,12 +48,12 @@ test "$cap_eff" = "0000000000000000" || exit 11
 # expose the host PR_SET_NO_NEW_PRIVS bit through its virtual /proc. Assert the
 # exact OCI field against the stored containerd spec in the host-side probe below.
 test "$seccomp" = "2" || exit 13
-if touch /agentos-rootfs-must-remain-read-only 2>/dev/null; then
+if touch /fenced-rootfs-must-remain-read-only 2>/dev/null; then
   echo "root filesystem is writable" >&2
   exit 14
 fi
-dd if=/dev/zero of=/agentos/workspace/within-limit bs=1024 count=1 2>/dev/null || exit 15
-if dd if=/dev/zero of=/agentos/workspace/over-limit bs=1048576 count=9 2>/dev/null; then
+dd if=/dev/zero of=/fenced/workspace/within-limit bs=1024 count=1 2>/dev/null || exit 15
+if dd if=/dev/zero of=/fenced/workspace/over-limit bs=1048576 count=9 2>/dev/null; then
   echo "workspace tmpfs exceeded its 8 MiB limit" >&2
   exit 16
 fi
@@ -76,14 +76,14 @@ if ! timeout --signal=KILL 120 ctr -n "$NAMESPACE" run \
   --seccomp \
   --cpu-quota 100000 \
   --memory-limit 67108864 \
-  --mount type=tmpfs,dst=/agentos/workspace,options=size=8388608 \
-  "$AGENTOS_OCI_IMAGE" "$PROBE_ID" \
+  --mount type=tmpfs,dst=/fenced/workspace,options=size=8388608 \
+  "$FENCED_OCI_IMAGE" "$PROBE_ID" \
   /bin/sh -c "$probe" </dev/null; then
   echo ">> OCI/gVisor isolation assertion: FAIL" >&2
   echo ">> containerd log tail:" >&2
-  tail -n 120 /tmp/agentos-containerd.log >&2 || true
+  tail -n 120 /tmp/fenced-containerd.log >&2 || true
   echo ">> runsc/shim logs:" >&2
-  find /var/log/agentos-runsc -maxdepth 4 -type f -print -exec tail -n 80 {} \; 2>/dev/null >&2 || true
+  find /var/log/fenced-runsc -maxdepth 4 -type f -print -exec tail -n 80 {} \; 2>/dev/null >&2 || true
   exit 1
 fi
 
@@ -104,7 +104,7 @@ timeout 120 ctr -n "$NAMESPACE" run \
   --seccomp \
   --cpu-quota 100000 \
   --memory-limit 67108864 \
-  "$AGENTOS_OCI_IMAGE" "$HOST_PROBE_ID" \
+  "$FENCED_OCI_IMAGE" "$HOST_PROBE_ID" \
   /bin/sleep 120 </dev/null
 
 timeout 15 ctr -n "$NAMESPACE" containers info --spec "$HOST_PROBE_ID" |
@@ -147,4 +147,4 @@ timeout 30 ctr -n "$NAMESPACE" containers delete "$HOST_PROBE_ID" >/dev/null
 echo ">> creating orphan-recovery fixture ${ORPHAN_ID}"
 timeout 60 ctr -n "$NAMESPACE" containers create \
   --snapshotter "$SNAPSHOTTER" \
-  "$AGENTOS_OCI_IMAGE" "$ORPHAN_ID"
+  "$FENCED_OCI_IMAGE" "$ORPHAN_ID"

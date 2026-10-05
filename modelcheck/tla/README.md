@@ -2,7 +2,7 @@
 
 Status: **done for v0.1 core invariants** (2026-08-16).
 
-`AgentOS.tla` models the kernel invariants the tech baseline
+`Fenced.tla` models the kernel invariants the tech baseline
 §18.4 requires verifying before they are trusted in production:
 
 - **I1** Legal state machine: phases advance only along the allowed tables
@@ -30,7 +30,7 @@ Invoke-WebRequest https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tl
     -OutFile ../../tmp/tools/tla/tla2tools.jar
 
 # model check (from this directory)
-java -XX:+UseParallelGC -jar ../../tmp/tools/tla/tla2tools.jar -config AgentOS.cfg AgentOS.tla
+java -XX:+UseParallelGC -jar ../../tmp/tools/tla/tla2tools.jar -config Fenced.cfg Fenced.tla
 ```
 
 ## Verified results (2026-08-16, TLC 2026.08.11)

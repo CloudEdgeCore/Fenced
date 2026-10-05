@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/model/provider"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/model/provider"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )

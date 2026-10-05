@@ -12,19 +12,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 )
 
 // TestV11SingleAgentRealLoop is the Phase 1 headline acceptance: one real
-// Python agent runs fully under AgentOS — manifest-published, scheduled,
+// Python agent runs fully under Fenced — manifest-published, scheduled,
 // model-invoked through the OpenAI-compatible provider layer, tool-called
 // through the MCP-mediated Tool Gateway, memory read/written, checkpointed,
 // audited — and the exactness invariants hold (usage settled once, cost from
 // the pinned price table, credential never observable by the agent).
 func TestV11SingleAgentRealLoop(t *testing.T) {
-	env := newE2EEnv(t, "agentos_e2e_single", 0, 30*time.Second)
+	env := newE2EEnv(t, "fenced_e2e_single", 0, 30*time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	stack := startStack(t, env)
@@ -132,12 +132,12 @@ func TestV11SingleAgentRealLoop(t *testing.T) {
 }
 
 // TestV11ThousandTaskPipeline is the Phase 1 scale acceptance:
-// AGENTOS_E2E_TASKS (default 1000) complete tasks through the real loop with
+// FENCED_E2E_TASKS (default 1000) complete tasks through the real loop with
 // ≥99% success, concurrent workers sharing one agent endpoint, no duplicate
 // settlements and no duplicate results.
 func TestV11ThousandTaskPipeline(t *testing.T) {
-	total := e2eCount("AGENTOS_E2E_TASKS", 1000)
-	env := newE2EEnv(t, "agentos_e2e_scale", 0, 30*time.Second)
+	total := e2eCount("FENCED_E2E_TASKS", 1000)
+	env := newE2EEnv(t, "fenced_e2e_scale", 0, 30*time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -230,10 +230,10 @@ func TestV11ThousandTaskPipeline(t *testing.T) {
 // and a fresh worker restores from the checkpoint — with the confirmed tool
 // side effect never repeated and the task settling exactly once.
 func TestV11RecoveryFaultInjection(t *testing.T) {
-	faults := e2eCount("AGENTOS_E2E_FAULTS", 100)
+	faults := e2eCount("FENCED_E2E_FAULTS", 100)
 	// The slow provider keeps executions alive long enough for the 1s
 	// periodic checkpoint to confirm the tool turn before the kill.
-	env := newE2EEnv(t, "agentos_e2e_fault", 700*time.Millisecond, 2*time.Second)
+	env := newE2EEnv(t, "fenced_e2e_fault", 700*time.Millisecond, 2*time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

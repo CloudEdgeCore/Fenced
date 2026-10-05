@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	kernelmoney "github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/errorcode"
+	kernelmoney "github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/errorcode"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )

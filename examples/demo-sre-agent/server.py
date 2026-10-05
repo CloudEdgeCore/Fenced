@@ -1,4 +1,4 @@
-"""Flagship Showcase: AgentOS Autonomous SRE Self-Healing Agent.
+"""Flagship Showcase: Fenced Autonomous SRE Self-Healing Agent.
 
 Demonstrates production capabilities:
 1. Long-running supervised daemon service with auto-heartbeat
@@ -13,20 +13,21 @@ import os
 import sys
 import time
 
-from agentos_runtime.client import (
-    AgentOSClient,
+from fenced_runtime import apply_legacy_compat
+from fenced_runtime.client import (
+    FencedClient,
     AmbiguousEffectError,
     FencingViolationError,
     IdempotencyConflictError,
 )
-from agentos_runtime.ecosystem import wrap_custom_agent
+from fenced_runtime.ecosystem import wrap_custom_agent
 
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("sre-agent")
 
 
-def handle_sre_incident(request: dict, client: AgentOSClient) -> dict:
-    """Core SRE diagnosis and remediation handler running under AgentOS."""
+def handle_sre_incident(request: dict, client: FencedClient) -> dict:
+    """Core SRE diagnosis and remediation handler running under Fenced."""
     incident = request.get("payload") or {"service": "checkout-api", "alert": "HighLatencyP99", "severity": "P1"}
     service_name = incident.get("service", "unknown-service")
     logger.info("Received SRE Incident: %s (%s)", incident.get("alert"), service_name)
@@ -55,7 +56,7 @@ def handle_sre_incident(request: dict, client: AgentOSClient) -> dict:
         "action": "rollout_restart",
         "targetDeployment": service_name,
         "namespace": "production",
-        "initiatedBy": "AgentOS SRE Agent v1.2",
+        "initiatedBy": "Fenced SRE Agent v1.2",
     }
 
     try:
@@ -74,7 +75,7 @@ def handle_sre_incident(request: dict, client: AgentOSClient) -> dict:
         logger.warning("Idempotency conflict: %s", err)
         raise
     except AmbiguousEffectError as err:
-        logger.error("Ambiguous effect status: %s. Auto-replay forbidden by AgentOS!", err)
+        logger.error("Ambiguous effect status: %s. Auto-replay forbidden by Fenced!", err)
         raise
 
     # Step 5: Save terminal state
@@ -92,6 +93,7 @@ def handle_sre_incident(request: dict, client: AgentOSClient) -> dict:
 
 
 if __name__ == "__main__":
+    apply_legacy_compat()
     port = int(os.environ.get("PORT", "8095"))
     logger.info("Starting Autonomous SRE Agent on port %d...", port)
     wrap_custom_agent(handle_sre_incident, server_port=port, name="sre-agent")

@@ -55,7 +55,7 @@ func TestChaosMatrix(t *testing.T) {
 		// Every fetch fails with 500, but the search step has already seeded
 		// snippet-level evidence → the workflow SUCCEEDs (no duplicate side
 		// effects, deterministic convergence).
-		{"tool-500-exhausted", func(h *harness) { h.webtools.InjectFetchFailures("corpus.agentos.dev", 100) }, "SUCCEEDED", 0},
+		{"tool-500-exhausted", func(h *harness) { h.webtools.InjectFetchFailures("corpus.fenced.dev", 100) }, "SUCCEEDED", 0},
 
 		// ── Runtime failures (§Phase-3 runtime matrix) ──────────────────────────
 		// Worker crash + lease expiry + restart: recovery requeues onto the

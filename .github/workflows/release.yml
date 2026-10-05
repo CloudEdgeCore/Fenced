@@ -23,21 +23,21 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
         env:
-          POSTGRES_DB: agentos_test
-          POSTGRES_USER: agentos
-          POSTGRES_PASSWORD: agentos-test-only
+          POSTGRES_DB: fenced_test
+          POSTGRES_USER: fenced
+          POSTGRES_PASSWORD: fenced-test-only
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U agentos -d agentos_test"
+          --health-cmd "pg_isready -U fenced -d fenced_test"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 20
     env:
-      AGENTOS_TEST_DATABASE_URL: postgres://agentos:agentos-test-only@127.0.0.1:5432/agentos_test?sslmode=disable
-      AGENTOS_TEST_NATS_URL: nats://127.0.0.1:4222
-      AGENTOS_E2E_PYTHON: python3
-      AGENTOS_E2E_WORKFLOWS: 100
+      FENCED_TEST_DATABASE_URL: postgres://fenced:fenced-test-only@127.0.0.1:5432/fenced_test?sslmode=disable
+      FENCED_TEST_NATS_URL: nats://127.0.0.1:4222
+      FENCED_E2E_PYTHON: python3
+      FENCED_E2E_WORKFLOWS: 100
     steps:
       - name: Check out immutable tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -64,7 +64,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          source_version="$(go run ./cmd/agentos version -json | jq -r .semver)"
+          source_version="$(go run ./cmd/fenced version -json | jq -r .semver)"
           test "$GITHUB_REF_NAME" = "v${source_version}"
           test "$(git tag --points-at HEAD)" = "$GITHUB_REF_NAME"
           git diff --exit-code
@@ -72,7 +72,7 @@ jobs:
 
       - name: Run GA gates
         run: |
-          docker run --detach --name agentos-release-nats --publish 4222:4222 nats:2.14.1-alpine@sha256:ea17b9b7f74279b9239cf65e5786c0133e9a7c353bf218d29004abf2e7a33181 --jetstream
+          docker run --detach --name fenced-release-nats --publish 4222:4222 nats:2.14.1-alpine@sha256:ea17b9b7f74279b9239cf65e5786c0133e9a7c353bf218d29004abf2e7a33181 --jetstream
           go vet ./...
           go run honnef.co/go/tools/cmd/staticcheck@v0.7.0 ./...
           go test -race -count=1 ./...
@@ -99,17 +99,17 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          commands=(agentos agentos-conformance agentos-control agentos-controller agentos-gateway agentos-migrate agentos-orchestrator agentos-outbox agentos-pkg agentos-projector agentos-runtime-adapter agentos-runtime-control agentos-runtime-oci agentos-runtime-reference agentos-slo agentos-svid)
+          commands=(fenced fenced-conformance fenced-control fenced-controller fenced-gateway fenced-migrate fenced-orchestrator fenced-outbox fenced-pkg fenced-projector fenced-runtime-adapter fenced-runtime-control fenced-runtime-oci fenced-runtime-reference fenced-slo fenced-svid)
           platforms=(linux-amd64 linux-arm64 darwin-amd64 darwin-arm64 windows-amd64)
           commit="$(git rev-parse HEAD)"
           build_time="$(git show -s --format=%cI HEAD)"
           export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
-          ldflags="-s -w -X github.com/CloudEdgeCore/AgentOS/internal/version.Commit=${commit} -X github.com/CloudEdgeCore/AgentOS/internal/version.BuildTime=${build_time}"
-          cargo +1.97.1 build --release --locked --bin agentos-runtime-wasm
+          ldflags="-s -w -X github.com/CloudEdgeCore/Fenced/internal/version.Commit=${commit} -X github.com/CloudEdgeCore/Fenced/internal/version.BuildTime=${build_time}"
+          cargo +1.97.1 build --release --locked --bin fenced-runtime-wasm
           for platform in "${platforms[@]}"; do
             goos="${platform%-*}"
             goarch="${platform#*-}"
-            stage="${RUNNER_TEMP}/agentos-${GITHUB_REF_NAME}-${platform}"
+            stage="${RUNNER_TEMP}/fenced-${GITHUB_REF_NAME}-${platform}"
             mkdir -p "$stage"
             for command in "${commands[@]}"; do
               suffix=""
@@ -117,12 +117,12 @@ jobs:
               CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" go build -trimpath -ldflags "$ldflags" -o "$stage/${command}${suffix}" "./cmd/${command}"
             done
             if [[ "$platform" == linux-amd64 ]]; then
-              cp target/release/agentos-runtime-wasm "$stage/agentos-runtime-wasm"
+              cp target/release/fenced-runtime-wasm "$stage/fenced-runtime-wasm"
             fi
             if [[ "$goos" == windows ]]; then
-              (cd "$stage" && zip -q -9 -r "${GITHUB_WORKSPACE}/dist/agentos-${GITHUB_REF_NAME}-${platform}.zip" .)
+              (cd "$stage" && zip -q -9 -r "${GITHUB_WORKSPACE}/dist/fenced-${GITHUB_REF_NAME}-${platform}.zip" .)
             else
-              tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owner -C "$stage" -czf "dist/agentos-${GITHUB_REF_NAME}-${platform}.tar.gz" .
+              tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owner -C "$stage" -czf "dist/fenced-${GITHUB_REF_NAME}-${platform}.tar.gz" .
             fi
           done
           python3 -m pip wheel --no-deps --wheel-dir dist sdk/python
@@ -133,15 +133,15 @@ jobs:
           COSIGN_YES: "true"
         run: |
           set -euo pipefail
-          cyclonedx-gomod mod -json -output-version 1.6 -output "dist/agentos-${GITHUB_REF_NAME}.cdx.json" .
+          cyclonedx-gomod mod -json -output-version 1.6 -output "dist/fenced-${GITHUB_REF_NAME}.cdx.json" .
           cargo +1.97.1 cyclonedx --format json
           rust_sbom="$(find runtime/wasm -maxdepth 1 -type f \( -name '*.cdx.json' -o -name 'bom.json' \) -print -quit)"
           test -n "$rust_sbom"
-          mv "$rust_sbom" "dist/agentos-${GITHUB_REF_NAME}-rust.cdx.json"
-          (cd sdk/typescript && npm sbom --sbom-format cyclonedx) > "dist/agentos-${GITHUB_REF_NAME}-typescript.cdx.json"
-          python3 -m venv "$RUNNER_TEMP/agentos-sbom-venv"
-          "$RUNNER_TEMP/agentos-sbom-venv/bin/pip" install cyclonedx-bom==7.3.1 dist/*.whl
-          "$RUNNER_TEMP/agentos-sbom-venv/bin/cyclonedx-py" environment --output-format JSON --output-file "dist/agentos-${GITHUB_REF_NAME}-python.cdx.json"
+          mv "$rust_sbom" "dist/fenced-${GITHUB_REF_NAME}-rust.cdx.json"
+          (cd sdk/typescript && npm sbom --sbom-format cyclonedx) > "dist/fenced-${GITHUB_REF_NAME}-typescript.cdx.json"
+          python3 -m venv "$RUNNER_TEMP/fenced-sbom-venv"
+          "$RUNNER_TEMP/fenced-sbom-venv/bin/pip" install cyclonedx-bom==7.3.1 dist/*.whl
+          "$RUNNER_TEMP/fenced-sbom-venv/bin/cyclonedx-py" environment --output-format JSON --output-file "dist/fenced-${GITHUB_REF_NAME}-python.cdx.json"
           (cd dist && sha256sum *.tar.gz *.zip *.whl *.tgz *.cdx.json > checksums.txt)
           cosign sign-blob --yes --bundle "dist/checksums.txt.sigstore.json" "dist/checksums.txt"
 
@@ -161,5 +161,5 @@ jobs:
             gh release upload "$GITHUB_REF_NAME" dist/* --clobber
           else
             echo "Release $GITHUB_REF_NAME does not exist, creating..."
-            gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --generate-notes --title "AgentOS $GITHUB_REF_NAME"
+            gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --generate-notes --title "Fenced $GITHUB_REF_NAME"
           fi

@@ -21,7 +21,7 @@ type corpusEntry struct {
 // P1-06 conservative reserve envelope corpus. The categories are exactly the
 // ones the remediation acceptance names: English, Chinese, JSON, tool-call
 // arguments, reasoning-style prose, multilingual, and an over-long prompt.
-// AgentOS deliberately ships a conservative envelope rather than an exact
+// Fenced deliberately ships a conservative envelope rather than an exact
 // in-process tokenizer (tiktoken/SentencePiece/HF) — an exact tokenizer is a
 // future per-provider plug-in resolved by Executor.Tokenizer(); until one is
 // registered the reservation must provably over-reserve, and settlement uses
