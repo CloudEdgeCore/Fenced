@@ -1,0 +1,55 @@
+# BEFORE the rename — a pre-rename Docker Compose deployment.
+#
+# Kept only as the migration source of truth; do not deploy from this file.
+# The migrated counterpart is compose/docker-compose.fenced.yml.
+#
+# The repository's own deploy/dev/compose.yaml deliberately does not
+# containerise the control plane (development identity requires a
+# loopback-only listener, which a port-published container cannot provide).
+# This file shows the production-shaped alternative that does.
+name: agentos
+
+services:
+  postgres:
+    # pgvector: the Memory slice (ADR-009) needs the vector extension
+    # alongside FTS/pg_trgm.
+    image: pgvector/pgvector:pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
+    environment:
+      POSTGRES_DB: agentos
+      POSTGRES_USER: agentos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentos -d agentos"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - agentos-postgres:/var/lib/postgresql
+
+  nats:
+    image: nats:2.14.1-alpine@sha256:ea17b9b7f74279b9239cf65e5786c0133e9a7c353bf218d29004abf2e7a33181
+    command: ["--jetstream", "--store_dir", "/data"]
+    volumes:
+      - agentos-nats:/data
+
+  control:
+    image: ghcr.io/cloudedgecore/agentos:1.3.0
+    command: ["/usr/local/bin/agentos-control", "-listen", "0.0.0.0:8080"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # No product prefix: unchanged by the rename.
+      DATABASE_URL: postgres://agentos:${POSTGRES_PASSWORD:?}@postgres:5432/agentos?sslmode=disable
+      # Renamed AGENTOS_* -> FENCED_*.
+      AGENTOS_AUDIT_SIGNING_KEY: ${AGENTOS_AUDIT_SIGNING_KEY:?}
+      AGENTOS_PACKAGE_TRUST_KEYS: ${AGENTOS_PACKAGE_TRUST_KEYS:?}
+      AGENTOS_EMBEDDING_TOKEN: ${AGENTOS_EMBEDDING_TOKEN:-}
+      AGENTOS_CONTROL_URL: http://127.0.0.1:8080
+      AGENTOS_TENANT_ID: ${AGENTOS_TENANT_ID:-default}
+    ports:
+      - "127.0.0.1:8080:8080"
+
+volumes:
+  agentos-postgres:
+  agentos-nats:

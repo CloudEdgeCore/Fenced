@@ -1,0 +1,34 @@
+# BEFORE the rename — a pre-rename systemd deployment.
+#
+# Kept only as the migration source of truth; do not deploy from this file.
+# The migrated counterpart is systemd/fenced-control.service.
+[Unit]
+Description=AgentOS Control API
+Documentation=https://github.com/CloudEdgeCore/Fenced
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=agentos
+Group=agentos
+WorkingDirectory=/opt/agentos
+ExecStart=/opt/agentos/bin/agentos-control -listen 127.0.0.1:8080
+EnvironmentFile=/etc/agentos/control.env
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+
+# Hardening. The Control API never needs a writable system.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+ReadWritePaths=/var/lib/agentos
+
+[Install]
+WantedBy=multi-user.target

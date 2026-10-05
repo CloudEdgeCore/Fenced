@@ -1,0 +1,44 @@
+# AFTER the rename — the target state of systemd/agentos-control.service.
+#
+# Differences from the pre-rename unit, all of them mechanical:
+#   Description      AgentOS        -> Fenced
+#   User/Group       agentos        -> fenced
+#   WorkingDirectory /opt/agentos   -> /opt/fenced
+#   ExecStart        agentos-control-> fenced-control
+#   EnvironmentFile  /etc/agentos/  -> /etc/fenced/
+#   ReadWritePaths   /var/lib/agentos -> /var/lib/fenced
+#
+# The compatibility layer means the EnvironmentFile may still contain
+# AGENTOS_* names when this unit first starts: fenced-control aliases them to
+# FENCED_* and logs one deprecation line. Migrate env/agentos.env -> env/fenced.env
+# when convenient; see ../README.md.
+[Unit]
+Description=Fenced Control API
+Documentation=https://github.com/CloudEdgeCore/Fenced
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=fenced
+Group=fenced
+WorkingDirectory=/opt/fenced
+ExecStart=/opt/fenced/bin/fenced-control -listen 127.0.0.1:8080
+EnvironmentFile=/etc/fenced/control.env
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+
+# Hardening. The Control API never needs a writable system.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+ReadWritePaths=/var/lib/fenced
+
+[Install]
+WantedBy=multi-user.target

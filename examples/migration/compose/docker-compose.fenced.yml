@@ -1,0 +1,72 @@
+# AFTER the rename — the target state of compose/docker-compose.agentos.yml.
+#
+# Every difference from the pre-rename file is mechanical:
+#   project name     agentos      -> fenced
+#   image repository cloudedgecore/agentos -> cloudedgecore/fenced
+#   entrypoint       agentos-control -> fenced-control
+#   env prefix       AGENTOS_*    -> FENCED_*
+#   volume names     agentos-*    -> fenced-*
+#   database name    agentos      -> fenced
+#
+# The database name and volume names are NOT rewritten automatically: the
+# compatibility layer covers environment variables, headers and manifest
+# identifiers, not the schema name or the volume. Renaming them is a separate
+# data migration. If you would rather not move data, leave POSTGRES_DB and the
+# volume names as they are — they are internal to your deployment and carry no
+# protocol meaning.
+name: fenced
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
+    environment:
+      POSTGRES_DB: fenced
+      POSTGRES_USER: fenced
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fenced -d fenced"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - fenced-postgres:/var/lib/postgresql
+
+  nats:
+    image: nats:2.14.1-alpine@sha256:ea17b9b7f74279b9239cf65e5786c0133e9a7c353bf218d29004abf2e7a33181
+    command: ["--jetstream", "--store_dir", "/data"]
+    volumes:
+      - fenced-nats:/data
+
+  control:
+    image: ghcr.io/cloudedgecore/fenced:1.3.0
+    command: ["/usr/local/bin/fenced-control", "-listen", "0.0.0.0:8080"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # No product prefix: unchanged by the rename.
+      DATABASE_URL: postgres://fenced:${POSTGRES_PASSWORD:?}@postgres:5432/fenced?sslmode=disable
+
+      # Renamed AGENTOS_* -> FENCED_*.
+      FENCED_AUDIT_SIGNING_KEY: ${FENCED_AUDIT_SIGNING_KEY:?}
+      FENCED_PACKAGE_TRUST_KEYS: ${FENCED_PACKAGE_TRUST_KEYS:?}
+      FENCED_EMBEDDING_TOKEN: ${FENCED_EMBEDDING_TOKEN:-}
+      FENCED_CONTROL_URL: http://127.0.0.1:8080
+      FENCED_TENANT_ID: ${FENCED_TENANT_ID:-default}
+
+      # ---------------------------------------------------------------------
+      # Migration window only. fenced-control aliases these to the FENCED_*
+      # names above at start-up, so an existing .env keeps working. Delete this
+      # block once your .env uses FENCED_* names; the deprecation notice in the
+      # container logs is the signal that it is still in use.
+      #
+      # AGENTOS_AUDIT_SIGNING_KEY: ${AGENTOS_AUDIT_SIGNING_KEY:-}
+      # AGENTOS_PACKAGE_TRUST_KEYS: ${AGENTOS_PACKAGE_TRUST_KEYS:-}
+      # AGENTOS_EMBEDDING_TOKEN: ${AGENTOS_EMBEDDING_TOKEN:-}
+      # ---------------------------------------------------------------------
+    ports:
+      - "127.0.0.1:8080:8080"
+
+volumes:
+  fenced-postgres:
+  fenced-nats:
