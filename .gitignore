@@ -35,6 +35,8 @@ __pycache__/
 !/docs/feature-status.md
 !/docs/user-guide.md
 !/docs/development.md
+!/docs/NAMING.md
+!/docs/COMPATIBILITY.md
 
 # Local-only model endpoints and tenant policy overrides (private infra)
 deploy/dev/*.local.json
@@ -61,7 +63,7 @@ Thumbs.db
 
 # TLC scratch
 modelcheck/tla/states/
-modelcheck/tla/AgentOS_TTrace*
+modelcheck/tla/Fenced_TTrace*
 
 research-e2e.log
 research-final.log
