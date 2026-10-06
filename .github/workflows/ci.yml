@@ -178,7 +178,7 @@ jobs:
       - name: Audit Rust dependencies
         run: |
           cargo +1.97.1 install cargo-audit --version 0.22.2 --locked
-          cargo +1.97.1 audit --ignore RUSTSEC-2026-0315 --ignore RUSTSEC-2026-0316
+          cargo +1.97.1 audit
 
   # v0.7 real-machine leg: containerd + runsc on a Linux host, environment
   # fingerprint, the OCI/gVisor conformance leg, and the Firecracker KVM

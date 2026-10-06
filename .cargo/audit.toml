@@ -2,9 +2,8 @@
 # https://rustsec.org/
 
 [advisories]
-# Ignore upstream wasmtime fuel accounting advisories published 2026-09-24;
-# scheduled for upgrade during runtime v0.8 release cycle.
-ignore = [
-    "RUSTSEC-2026-0315", # call_ref and exception catch fuel accounting
-    "RUSTSEC-2026-0316", # Dynamic record lifting hostcall fuel limit
-]
+# No ignores. The wasmtime 47 fuel-accounting advisories that used to be listed
+# here (RUSTSEC-2026-0315, RUSTSEC-2026-0316) are fixed in wasmtime 48.0.3+,
+# which this workspace now pins, so suppressing them would mask a regression if
+# the pin were ever rolled back.
+ignore = []
