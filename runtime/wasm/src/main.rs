@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 
-use fenced_runtime_wasm::sandbox::{CHECKPOINT_SCHEMA, PROVIDER_NAME, RUNTIME_ABI, Sandbox};
 use anyhow::{Context, Result, bail};
+use fenced_runtime_wasm::sandbox::{CHECKPOINT_SCHEMA, PROVIDER_NAME, RUNTIME_ABI, Sandbox};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
@@ -160,11 +160,7 @@ async fn run_once(
             goal_sha256: goal_digest,
             step: "prepared".into(),
         })?;
-        let state = write_artifact(
-            settings,
-            "application/vnd.fenced.wasm-state+json",
-            &logical,
-        )?;
+        let state = write_artifact(settings, "application/vnd.fenced.wasm-state+json", &logical)?;
         version = client
             .commit_checkpoint(Request::new(CommitCheckpointRequest {
                 identity: Some(identity.clone()),
