@@ -61,6 +61,10 @@ agent.yaml
 .DS_Store
 Thumbs.db
 
+# Local agent workspace (session logs and working memory; developer-specific,
+# never part of the build or the shipped product)
+.workbuddy-ai/
+
 # TLC scratch
 modelcheck/tla/states/
 modelcheck/tla/Fenced_TTrace*
