@@ -29,17 +29,17 @@ func (f *fakeCluster) handler() http.Handler {
 		writer.Header().Set("Content-Type", "application/json")
 		_, _ = writer.Write([]byte(`{"status":"green"}`))
 	})
-	mux.HandleFunc("/agentos-memory", func(writer http.ResponseWriter, request *http.Request) {
+	mux.HandleFunc("/fenced-memory", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 	})
-	mux.HandleFunc("/agentos-memory/_doc/", func(writer http.ResponseWriter, request *http.Request) {
+	mux.HandleFunc("/fenced-memory/_doc/", func(writer http.ResponseWriter, request *http.Request) {
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		if f.fail != "" {
 			writer.WriteHeader(503)
 			return
 		}
-		id := strings.TrimPrefix(request.URL.EscapedPath(), "/agentos-memory/_doc/")
+		id := strings.TrimPrefix(request.URL.EscapedPath(), "/fenced-memory/_doc/")
 		switch request.Method {
 		case http.MethodGet:
 			doc, ok := f.docs[id]
@@ -79,7 +79,7 @@ func newClient(t *testing.T, fake *fakeCluster) *Client {
 	t.Helper()
 	server := httptest.NewServer(fake.handler())
 	t.Cleanup(server.Close)
-	client, err := New(server.URL, "agentos-memory", WithHTTPClient(server.Client()))
+	client, err := New(server.URL, "fenced-memory", WithHTTPClient(server.Client()))
 	if err != nil {
 		t.Fatalf("new client: %v", err)
 	}

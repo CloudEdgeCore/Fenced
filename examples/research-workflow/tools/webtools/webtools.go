@@ -1,5 +1,5 @@
 // Package webtools implements the research tools of the reference
-// workflow as webhook-backed tool endpoints behind the AgentOS Tool
+// workflow as webhook-backed tool endpoints behind the Fenced Tool
 // Gateway:
 //
 //	web.search@1.0.0     query a fixed research corpus (offline deterministic)
@@ -535,7 +535,7 @@ func SelfSignedTLSListener(handler http.Handler) (listener net.Listener, client 
 	}
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().UnixNano()),
-		Subject:      pkix.Name{CommonName: "agentos-research-webtools"},
+		Subject:      pkix.Name{CommonName: "fenced-research-webtools"},
 		NotBefore:    time.Now().Add(-time.Minute),
 		NotAfter:     time.Now().Add(time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,

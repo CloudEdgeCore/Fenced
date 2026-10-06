@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/syscall"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/syscall"
 )
 
 // SyscallService exposes the unified Agent Syscall ABI over HTTP.

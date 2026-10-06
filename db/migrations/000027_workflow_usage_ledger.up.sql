@@ -15,14 +15,14 @@ CREATE TABLE workflow_usage_ledgers (
     FOREIGN KEY (tenant_id, workflow_id) REFERENCES workflows(tenant_id, id) ON DELETE CASCADE
 );
 
-CREATE FUNCTION agentos_workflow_usage_workflow_insert() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE FUNCTION fenced_workflow_usage_workflow_insert() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   INSERT INTO workflow_usage_ledgers(tenant_id,workflow_id,updated_at)
     VALUES(NEW.tenant_id,NEW.id,now()) ON CONFLICT DO NOTHING;
   RETURN NEW;
 END $$;
 CREATE TRIGGER workflow_usage_workflow_insert AFTER INSERT ON workflows
-  FOR EACH ROW EXECUTE FUNCTION agentos_workflow_usage_workflow_insert();
+  FOR EACH ROW EXECUTE FUNCTION fenced_workflow_usage_workflow_insert();
 
 INSERT INTO workflow_usage_ledgers(tenant_id,workflow_id,task_count,settled_tokens,
     settled_cost_micro_usd,reserved_tokens,reserved_cost_micro_usd,pending_tasks,updated_at)
@@ -40,7 +40,7 @@ LEFT JOIN LATERAL (
 ) s ON true
 GROUP BY w.tenant_id,w.id;
 
-CREATE FUNCTION agentos_workflow_usage_task_insert() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE FUNCTION fenced_workflow_usage_task_insert() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   IF NEW.workflow_id IS NOT NULL THEN
     INSERT INTO workflow_usage_ledgers(tenant_id,workflow_id,task_count,pending_tasks,updated_at)
@@ -52,9 +52,9 @@ BEGIN
   RETURN NEW;
 END $$;
 CREATE TRIGGER workflow_usage_task_insert AFTER INSERT ON tasks
-  FOR EACH ROW EXECUTE FUNCTION agentos_workflow_usage_task_insert();
+  FOR EACH ROW EXECUTE FUNCTION fenced_workflow_usage_task_insert();
 
-CREATE FUNCTION agentos_workflow_usage_task_terminal() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE FUNCTION fenced_workflow_usage_task_terminal() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE budget task_budget_ledgers%ROWTYPE;
 BEGIN
   IF NEW.workflow_id IS NOT NULL AND OLD.phase NOT IN ('SUCCEEDED','FAILED','CANCELLED')
@@ -68,9 +68,9 @@ BEGIN
   RETURN NEW;
 END $$;
 CREATE TRIGGER workflow_usage_task_terminal AFTER UPDATE OF phase ON tasks
-  FOR EACH ROW EXECUTE FUNCTION agentos_workflow_usage_task_terminal();
+  FOR EACH ROW EXECUTE FUNCTION fenced_workflow_usage_task_terminal();
 
-CREATE FUNCTION agentos_workflow_usage_budget_insert() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE FUNCTION fenced_workflow_usage_budget_insert() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE workflow uuid; terminal boolean;
 BEGIN
   SELECT workflow_id,phase IN ('SUCCEEDED','FAILED','CANCELLED') INTO workflow,terminal
@@ -83,9 +83,9 @@ BEGIN
   RETURN NEW;
 END $$;
 CREATE TRIGGER workflow_usage_budget_insert AFTER INSERT ON task_budget_ledgers
-  FOR EACH ROW EXECUTE FUNCTION agentos_workflow_usage_budget_insert();
+  FOR EACH ROW EXECUTE FUNCTION fenced_workflow_usage_budget_insert();
 
-CREATE FUNCTION agentos_workflow_usage_settlement_insert() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE FUNCTION fenced_workflow_usage_settlement_insert() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE workflow uuid; terminal boolean;
 BEGIN
   SELECT workflow_id,phase IN ('SUCCEEDED','FAILED','CANCELLED') INTO workflow,terminal
@@ -100,4 +100,4 @@ BEGIN
   RETURN NEW;
 END $$;
 CREATE TRIGGER workflow_usage_settlement_insert AFTER INSERT ON task_budget_settlements
-  FOR EACH ROW EXECUTE FUNCTION agentos_workflow_usage_settlement_insert();
+  FOR EACH ROW EXECUTE FUNCTION fenced_workflow_usage_settlement_insert();

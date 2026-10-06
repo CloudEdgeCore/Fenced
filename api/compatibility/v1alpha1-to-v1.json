@@ -8,19 +8,19 @@
   },
   "current": {
     "controlApi": "v1",
-    "agentManifest": "agentos.dev/v1",
-    "runtimeProtocol": "agentos.runtime.v1",
-    "runtimeInterface": "agentos.runtime.interface/v1",
-    "gatewayProtocol": "agentos.gateway.v1",
-    "modelProtocol": "agentos.model.v1"
+    "agentManifest": "fenced.dev/v1",
+    "runtimeProtocol": "fenced.runtime.v1",
+    "runtimeInterface": "fenced.runtime.interface/v1",
+    "gatewayProtocol": "fenced.gateway.v1",
+    "modelProtocol": "fenced.model.v1"
   },
   "legacy": {
     "controlApi": "v1alpha1",
-    "agentManifest": "agentos.dev/v1alpha1",
-    "runtimeProtocol": "agentos.runtime.v1alpha1",
-    "runtimeInterface": "agentos.runtime.interface/v1alpha1",
-    "gatewayProtocol": "agentos.gateway.v1alpha1",
-    "modelProtocol": "agentos.model.v1alpha1",
+    "agentManifest": "fenced.dev/v1alpha1",
+    "runtimeProtocol": "fenced.runtime.v1alpha1",
+    "runtimeInterface": "fenced.runtime.interface/v1alpha1",
+    "gatewayProtocol": "fenced.gateway.v1alpha1",
+    "modelProtocol": "fenced.model.v1alpha1",
     "deprecatedAt": "2026-08-21",
     "removeNotBefore": "2027-02-17",
     "readCompatible": true

@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 // HTTPEmbedder calls a preconfigured HTTPS embedding boundary. The endpoint
@@ -55,7 +55,7 @@ func (e *HTTPEmbedder) Embed(ctx context.Context, content string) ([]float32, er
 	}
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Accept", "application/json")
-	request.Header.Set("User-Agent", "AgentOS-Memory-Gateway/1.0")
+	request.Header.Set("User-Agent", "Fenced-Memory-Gateway/1.0")
 	if e.token != "" {
 		request.Header.Set("Authorization", "Bearer "+e.token)
 	}

@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 var defaultCapabilitiesToDrop = []string{
@@ -49,7 +49,7 @@ func NewRunscExecutor(options ...RunscOption) (Executor, error) {
 		return nil, fmt.Errorf("containerd CLI (ctr) is required by the OCI/gVisor provider: %w", err)
 	}
 	executor := &ctrExecutor{
-		ctrPath: path, namespace: "agentos", runtime: "io.containerd.runsc.v1",
+		ctrPath: path, namespace: "fenced", runtime: "io.containerd.runsc.v1",
 		runtimeConfigPath: "/etc/containerd/runsc.toml", snapshotter: "overlayfs",
 		pullTimeout: 10 * time.Minute, outputLimit: 1 << 20,
 	}
@@ -69,7 +69,7 @@ func (e *ctrExecutor) Prepare(ctx context.Context, spec ExecutionSpec) (Executio
 	if strings.ContainsAny(spec.AttemptID, " \t\n\"'") {
 		return nil, fmt.Errorf("attempt ID is not a safe container identifier")
 	}
-	containerID := "agentos-" + spec.AttemptID
+	containerID := "fenced-" + spec.AttemptID
 	// Claim ownership before reaping so concurrent Prepares never delete each
 	// other's containers, then clean up containers orphaned by crashed
 	// workers (hardening checklist §4.3).
@@ -92,7 +92,7 @@ func (e *ctrExecutor) Prepare(ctx context.Context, spec ExecutionSpec) (Executio
 		}
 	}
 
-	inputDir, err := os.MkdirTemp("", "agentos-input-*")
+	inputDir, err := os.MkdirTemp("", "fenced-input-*")
 	if err != nil {
 		e.unregister(containerID)
 		return nil, fmt.Errorf("create workload input directory: %w", err)
@@ -119,7 +119,7 @@ func (e *ctrExecutor) Prepare(ctx context.Context, spec ExecutionSpec) (Executio
 	for _, mount := range e.mounts(inputPath, spec.WorkspaceBytes) {
 		args = append(args, "--mount", mount)
 	}
-	for _, env := range e.environment(spec, "/agentos/input/workload.json") {
+	for _, env := range e.environment(spec, "/fenced/input/workload.json") {
 		args = append(args, "--env", env)
 	}
 	// Sandbox limits (hardening checklist §4.1): the ctr flags encode the OCI
@@ -147,7 +147,7 @@ func (e *ctrExecutor) Prepare(ctx context.Context, spec ExecutionSpec) (Executio
 	spoolPipe, spoolWriter := io.Pipe()
 	stdoutRef, stdoutTruncated, spoolErr := make(chan *store.ArtifactReference, 1), make(chan bool, 1), make(chan error, 1)
 	go func() {
-		ref, truncated, err := spoolOutput(ctx, spec.OutputSpooler, spec.TenantID, spec.AttemptID, "application/vnd.agentos.stdout+octet-stream", spoolPipe)
+		ref, truncated, err := spoolOutput(ctx, spec.OutputSpooler, spec.TenantID, spec.AttemptID, "application/vnd.fenced.stdout+octet-stream", spoolPipe)
 		spoolPipe.CloseWithError(err)
 		stdoutRef <- ref
 		stdoutTruncated <- truncated
@@ -175,7 +175,7 @@ func (e *ctrExecutor) Prepare(ctx context.Context, spec ExecutionSpec) (Executio
 }
 
 // reapOrphans deletes containers with our prefix that no live execution
-// owns (hardening checklist §4.3): a worker that crashed leaves agentos-*
+// owns (hardening checklist §4.3): a worker that crashed leaves fenced-*
 // containers behind; the next Prepare cleans them up before pulling.
 func (e *ctrExecutor) reapOrphans(ctx context.Context) error {
 	listed, err := e.runOutput(ctx, "containers", "list", "-q")
@@ -216,21 +216,21 @@ func (e *ctrExecutor) Destroy(ctx context.Context, execution Execution) error {
 // file is ever mounted into the sandbox.
 func (e *ctrExecutor) mounts(inputPath string, workspaceBytes int64) []string {
 	mounts := []string{
-		"type=bind,src=" + inputPath + ",dst=/agentos/input/workload.json,options=rbind:ro",
+		"type=bind,src=" + inputPath + ",dst=/fenced/input/workload.json,options=rbind:ro",
 	}
 	if workspaceBytes > 0 {
-		mounts = append(mounts, fmt.Sprintf("type=tmpfs,dst=/agentos/workspace,options=size=%d", workspaceBytes))
+		mounts = append(mounts, fmt.Sprintf("type=tmpfs,dst=/fenced/workspace,options=size=%d", workspaceBytes))
 	}
 	return mounts
 }
 
 func (e *ctrExecutor) environment(spec ExecutionSpec, inputPath string) []string {
 	return []string{
-		"AGENTOS_TENANT_ID=" + spec.TenantID,
-		"AGENTOS_ATTEMPT_ID=" + spec.AttemptID,
-		"AGENTOS_AGENT_VERSION_REF=" + spec.AgentVersionRef,
-		"AGENTOS_INPUT_PATH=" + inputPath,
-		"AGENTOS_WORKSPACE_PATH=/agentos/workspace",
+		"FENCED_TENANT_ID=" + spec.TenantID,
+		"FENCED_ATTEMPT_ID=" + spec.AttemptID,
+		"FENCED_AGENT_VERSION_REF=" + spec.AgentVersionRef,
+		"FENCED_INPUT_PATH=" + inputPath,
+		"FENCED_WORKSPACE_PATH=/fenced/workspace",
 	}
 }
 

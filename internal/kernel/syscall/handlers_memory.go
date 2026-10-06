@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/capability"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/memory"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/capability"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/memory"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 // MemoryInvoker defines the memory execution boundary.

@@ -3,7 +3,7 @@
 // human approval, cancellation propagation and restart recovery. The
 // orchestrator decides who executes when and creates ordinary Tasks; it
 // never schedules (that stays with the scheduler) and agents never talk to
-// each other directly — Agent A's result reaches Agent B through AgentOS.
+// each other directly — Agent A's result reaches Agent B through Fenced.
 package workflow
 
 import (
@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 

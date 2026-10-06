@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
 )
 
 // Options configures one keeper run.

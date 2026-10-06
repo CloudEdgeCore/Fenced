@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	kernelworkflow "github.com/CloudEdgeCore/AgentOS/internal/kernel/workflow"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/agentmetrics"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	kernelworkflow "github.com/CloudEdgeCore/Fenced/internal/kernel/workflow"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/agentmetrics"
 	"github.com/google/uuid"
 )
 

@@ -3,7 +3,7 @@ package workflow
 import (
 	"context"
 
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 // approvalRejected is the durable decision value that marks a rejected

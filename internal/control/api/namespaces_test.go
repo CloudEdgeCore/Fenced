@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	controlapi "github.com/CloudEdgeCore/AgentOS/internal/control/api"
-	"github.com/CloudEdgeCore/AgentOS/internal/control/auth"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/namespace"
+	controlapi "github.com/CloudEdgeCore/Fenced/internal/control/api"
+	"github.com/CloudEdgeCore/Fenced/internal/control/auth"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/namespace"
 )
 
 func TestNamespaceEndpointsLifecycle(t *testing.T) {

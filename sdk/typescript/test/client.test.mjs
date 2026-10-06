@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import test from "node:test";
 
-import { AgentOSError, ControlClient, RuntimeClient } from "../dist/index.js";
+import { FencedError, ControlClient, RuntimeClient } from "../dist/index.js";
 
 test("control client preserves idempotency, authorization, and CAS", async (t) => {
   const requests = [];
@@ -20,7 +20,7 @@ test("control client preserves idempotency, authorization, and CAS", async (t) =
   t.after(() => server.close());
   const address = server.address();
   const client = new ControlClient(`http://127.0.0.1:${address.port}`, { token: "secret" });
-  const created = await client.createWorkflow({ goal: "ship", workflow: { apiVersion: "agentos.dev/workflow/v1", kind: "Workflow", steps: [] } }, "workflow-fixed");
+  const created = await client.createWorkflow({ goal: "ship", workflow: { apiVersion: "fenced.dev/workflow/v1", kind: "Workflow", steps: [] } }, "workflow-fixed");
   await client.cancelWorkflow(created.value.id, created.value.resourceVersion);
   assert.equal(created.etag, 'W/"4"');
   assert.equal(requests[0].headers.authorization, "Bearer secret");
@@ -38,15 +38,15 @@ test("client returns structured API errors", async (t) => {
   t.after(() => server.close());
   const address = server.address();
   const client = new ControlClient(`http://127.0.0.1:${address.port}`);
-  await assert.rejects(client.getTask("task-1"), (error) => error instanceof AgentOSError && error.status === 409 && error.code === "CONFLICT");
+  await assert.rejects(client.getTask("task-1"), (error) => error instanceof FencedError && error.status === 409 && error.code === "CONFLICT");
 });
 
 test("runtime client uses the stable interface route", async (t) => {
   const server = createServer((request, response) => {
     assert.equal(request.url, "/v1/health");
-    assert.equal(request.headers["agentos-runtime-interface"], "agentos.runtime.interface/v1");
+    assert.equal(request.headers["fenced-runtime-interface"], "fenced.runtime.interface/v1");
     response.setHeader("Content-Type", "application/json");
-    response.end('{"status":"SERVING","adapter":"test","protocolVersions":["agentos.runtime.interface/v1"]}');
+    response.end('{"status":"SERVING","adapter":"test","protocolVersions":["fenced.runtime.interface/v1"]}');
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   t.after(() => server.close());

@@ -1,22 +1,22 @@
-# AgentOS Architecture Specification
+# Fenced Architecture Specification
 
-This document provides the authoritative architectural blueprint for AgentOS, the production operating system and control plane for autonomous AI agents.
+This document provides the authoritative architectural blueprint for Fenced, the production operating system and control plane for autonomous AI agents.
 
 ---
 
 ## 1. High-Level Architectural Overview
 
-AgentOS abstracts the underlying compute, storage, communication, and model infrastructure into a unified kernel interface, separating untrusted agent logic from privileged operating system services.
+Fenced abstracts the underlying compute, storage, communication, and model infrastructure into a unified kernel interface, separating untrusted agent logic from privileged operating system services.
 
 ```mermaid
 flowchart TD
     subgraph Control_Plane ["Control Plane & API Layer"]
-        CLI["CLI (`agentos`)"]
+        CLI["CLI (`fenced`)"]
         REST["Control REST API (v1)"]
         GRPC["Gateway & Syscall gRPC"]
     end
 
-    subgraph AgentOS_Kernel ["AgentOS Kernel"]
+    subgraph Fenced_Kernel ["Fenced Kernel"]
         Admission["Admission Controller & Policy Engine (Rego)"]
         Scheduler["Placement Scheduler & Capacity Ledger"]
         Supervisor["Agent Service Supervisor (Process / Daemon Engine)"]
@@ -45,9 +45,9 @@ flowchart TD
         Vault["Secret Broker (OpenBao / SPIFFE)"]
     end
 
-    Control_Plane --> AgentOS_Kernel
-    AgentOS_Kernel <--> Storage_Infrastructure
-    AgentOS_Kernel --> Execution_Runtimes
+    Control_Plane --> Fenced_Kernel
+    Fenced_Kernel <--> Storage_Infrastructure
+    Fenced_Kernel --> Execution_Runtimes
     Frameworks --> Colocated
     Colocated --> SyscallDispatcher
 ```
@@ -58,7 +58,7 @@ flowchart TD
 
 ### 2.1 Dual Execution Model: Task vs Daemon Service
 
-AgentOS is built around two complementary workload abstractions:
+Fenced is built around two complementary workload abstractions:
 
 | Workload Type | Unit of Work | Lifecycle | Supervision Policy | Use Cases |
 | :--- | :--- | :--- | :--- | :--- |
@@ -129,7 +129,7 @@ External side-effects (third-party API calls, transactions, webhooks) require tr
 
 ## 3. High Availability, Self-Healing, and Soak Invariants
 
-AgentOS is verified under sustained continuous load and chaos conditions (manual/fixed-host 72-hour and 7-day soak tests completed; scheduled CI reproduction pending self-hosted runners; see [`docs/evidence/soak-process-system-72h-7d.md`](../evidence/soak-process-system-72h-7d.md)):
+Fenced is verified under sustained continuous load and chaos conditions (manual/fixed-host 72-hour and 7-day soak tests completed; scheduled CI reproduction pending self-hosted runners; see [`docs/evidence/soak-process-system-72h-7d.md`](../evidence/soak-process-system-72h-7d.md)):
 - **Zero Lost Tasks**: All tasks reliably reach a verified terminal phase (`COMPLETED`, `FAILED`, `CANCELLED`).
 - **Zero Lost IPC Messages**: Every dispatched message is either acknowledged or available in the mailbox.
 - **Monotonic Fencing Invariant**: Fencing tokens never regress under worker crashes or network partitions.

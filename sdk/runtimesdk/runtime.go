@@ -1,5 +1,5 @@
-// Package runtimesdk provides the developer kit for building third-party AgentOS Runtimes
-// conforming to agentos.runtime.interface/v1.
+// Package runtimesdk provides the developer kit for building third-party Fenced Runtimes
+// conforming to fenced.runtime.interface/v1.
 package runtimesdk
 
 import (
@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 )
 
 // LifecycleHandler defines the 7 explicit lifecycle methods a third-party runtime implements:
@@ -27,7 +27,7 @@ type LifecycleHandler interface {
 	Stop(ctx context.Context, executionID string) (agent.StopResponse, error)
 }
 
-// HandlerToHTTP creates an http.Handler serving the agentos.runtime.interface/v1 specification
+// HandlerToHTTP creates an http.Handler serving the fenced.runtime.interface/v1 specification
 // from a LifecycleHandler implementation.
 func HandlerToHTTP(h LifecycleHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -252,14 +252,14 @@ func Serve(h LifecycleHandler, addr string) error {
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
-	w.Header().Set("AgentOS-Runtime-Interface", agent.ProtocolVersion)
+	w.Header().Set("Fenced-Runtime-Interface", agent.ProtocolVersion)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(data)
 }
 
 func writeError(w http.ResponseWriter, status int, err error) {
-	w.Header().Set("AgentOS-Runtime-Interface", agent.ProtocolVersion)
+	w.Header().Set("Fenced-Runtime-Interface", agent.ProtocolVersion)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(map[string]any{

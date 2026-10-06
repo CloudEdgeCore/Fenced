@@ -5,7 +5,7 @@ import threading
 import time
 from typing import Any, Callable
 
-from agentos_runtime import serve
+from fenced_runtime import apply_legacy_compat, serve
 
 
 class EchoAgent:
@@ -34,6 +34,7 @@ def _timestamp() -> str:
 
 
 if __name__ == "__main__":
+    apply_legacy_compat()
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8088)

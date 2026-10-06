@@ -3,7 +3,7 @@ package store
 import (
 	"testing"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
 )
 
 func TestSetTenantQuotaInputValid(t *testing.T) {

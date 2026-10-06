@@ -18,15 +18,15 @@ import (
 	"strings"
 	"time"
 
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentversion"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/mcp"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/redact"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/attemptstate"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/leasekeeper"
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/mcp"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/redact"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/attemptstate"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/leasekeeper"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -34,9 +34,9 @@ import (
 
 const (
 	ProviderName        = "adapter-http"
-	CheckpointSchema    = "agentos.adapter-checkpoint/v1"
-	checkpointMediaType = "application/vnd.agentos.adapter-checkpoint+json"
-	resultMediaType     = "application/vnd.agentos.adapter-result+json"
+	CheckpointSchema    = "fenced.adapter-checkpoint/v1"
+	checkpointMediaType = "application/vnd.fenced.adapter-checkpoint+json"
+	resultMediaType     = "application/vnd.fenced.adapter-result+json"
 	controlRPCTimeout   = 15 * time.Second
 	defaultPollInterval = 250 * time.Millisecond
 	maxPollInterval     = 2 * time.Second
@@ -69,7 +69,7 @@ type Worker struct {
 	heartbeatTTL      time.Duration
 	pollInterval      time.Duration
 	window            ExecutionWindow
-	// bindings resolve logical manifest entrypoints (agentos-binding://…)
+	// bindings resolve logical manifest entrypoints (fenced-binding://…)
 	// to concrete deployment endpoints, keeping mutable endpoint state out
 	// of immutable AgentVersions. The resolved client is assignment-local:
 	// resolveRuntime never mutates shared worker state, so a future

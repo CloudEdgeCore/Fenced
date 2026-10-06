@@ -8,7 +8,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
 	"github.com/google/uuid"
 )
 

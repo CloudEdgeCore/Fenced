@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
 )
 
 // Snapshot is the current fenced Attempt state returned by the control plane.

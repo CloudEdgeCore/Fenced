@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	kernelmoney "github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	kernelworkflow "github.com/CloudEdgeCore/AgentOS/internal/kernel/workflow"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	kernelmoney "github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	kernelworkflow "github.com/CloudEdgeCore/Fenced/internal/kernel/workflow"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

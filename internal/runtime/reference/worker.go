@@ -14,15 +14,15 @@ import (
 	"strings"
 	"time"
 
-	gatewayv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/gateway/v1"
-	modelv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/model/v1"
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/workload"
-	"github.com/CloudEdgeCore/AgentOS/internal/mcp"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/attemptstate"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/leasekeeper"
+	gatewayv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/gateway/v1"
+	modelv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/model/v1"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/workload"
+	"github.com/CloudEdgeCore/Fenced/internal/mcp"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/attemptstate"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/leasekeeper"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -49,10 +49,10 @@ var (
 
 const (
 	ProviderName        = "reference-go"
-	RuntimeABI          = "agentos.reference/v1"
-	CheckpointSchema    = "agentos.reference-state/v1"
-	checkpointMediaType = "application/vnd.agentos.reference-state+json"
-	resultMediaType     = "application/vnd.agentos.reference-result+json"
+	RuntimeABI          = "fenced.reference/v1"
+	CheckpointSchema    = "fenced.reference-state/v1"
+	checkpointMediaType = "application/vnd.fenced.reference-state+json"
+	resultMediaType     = "application/vnd.fenced.reference-result+json"
 )
 
 type ArtifactStore interface {

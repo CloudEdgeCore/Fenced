@@ -1,10 +1,10 @@
 {
-  "schema": "agentos.dev/v1",
+  "schema": "fenced.dev/v1",
   "name": "remote-http-runtime",
   "version": "1.0.0",
   "runtime": {
     "provider": "remote-http",
-    "protocolVersion": "agentos.runtime.interface/v1",
+    "protocolVersion": "fenced.runtime.interface/v1",
     "endpoint": "http://127.0.0.1:8086",
     "conformance": {
       "certified": true,

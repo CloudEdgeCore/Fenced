@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/observability"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/observability"
 	"github.com/google/uuid"
 )
 

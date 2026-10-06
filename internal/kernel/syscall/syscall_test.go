@@ -7,12 +7,12 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/ipc"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/memory"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/model"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/supervisor"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/ipc"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/memory"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/model"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/supervisor"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
 	"github.com/google/uuid"
 )
 

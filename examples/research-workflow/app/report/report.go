@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/artifact"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/artifact"
 )
 
 // Document mirrors the writer agent's report record.

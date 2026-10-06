@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 func TestAccountingReconciliationDetectsAndRepairsDerivedCounters(t *testing.T) {

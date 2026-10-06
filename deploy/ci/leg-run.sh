@@ -2,11 +2,11 @@
 # v0.7: run the OCI/gVisor real-machine leg from a clean Linux host (root).
 # Used by the runtime-linux-leg CI job's local equivalent and by self-hosted
 # KVM runners. Assumes a checkout at the current directory, Go on PATH, and
-# AGENTOS_TEST_DATABASE_URL pointing at a reachable PostgreSQL.
+# FENCED_TEST_DATABASE_URL pointing at a reachable PostgreSQL.
 set -euo pipefail
 
-: "${AGENTOS_TEST_DATABASE_URL:?AGENTOS_TEST_DATABASE_URL is required}"
-: "${AGENTOS_OCI_CONTAINERD_NAMESPACE:=agentos-ci}"
+: "${FENCED_TEST_DATABASE_URL:?FENCED_TEST_DATABASE_URL is required}"
+: "${FENCED_OCI_CONTAINERD_NAMESPACE:=fenced-ci}"
 # Pinned runtime toolchain; CI overrides these with the approved matrix.
 : "${CONTAINERD_VERSION:=2.2.7}"
 : "${CONTAINERD_SHA256:=91cd216ea26a1b8b512219d3f205375c967e7b7de4dae571bc3dd16bfacd34b5}"
@@ -29,18 +29,18 @@ bash deploy/ci/env-fingerprint.sh | tee /tmp/runtime-fingerprint.txt
 
 # Build the provider and put it on PATH (the conformance worker is spawned
 # by the test through exec.LookPath).
-go build -o /usr/local/bin/agentos-runtime-oci ./cmd/agentos-runtime-oci
+go build -o /usr/local/bin/fenced-runtime-oci ./cmd/fenced-runtime-oci
 
 # The conformance worker runs with --skip-image-pull, so the workload image
 # must already live in the namespace. The default is immutable so a local run
 # validates the same workload bytes as CI.
-if [ -z "${AGENTOS_OCI_IMAGE:-}" ]; then
-  ctr -n "$AGENTOS_OCI_CONTAINERD_NAMESPACE" images pull \
+if [ -z "${FENCED_OCI_IMAGE:-}" ]; then
+  ctr -n "$FENCED_OCI_CONTAINERD_NAMESPACE" images pull \
     --snapshotter "$SNAPSHOTTER" docker.io/library/alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
-  export AGENTOS_OCI_IMAGE="docker.io/library/alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b"
+  export FENCED_OCI_IMAGE="docker.io/library/alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b"
 fi
-export AGENTOS_OCI_SNAPSHOTTER="$SNAPSHOTTER"
-export AGENTOS_OCI_RUNTIME_CONFIG="${RUNSC_CONFIG_PATH:-/etc/containerd/runsc.toml}"
+export FENCED_OCI_SNAPSHOTTER="$SNAPSHOTTER"
+export FENCED_OCI_RUNTIME_CONFIG="${RUNSC_CONFIG_PATH:-/etc/containerd/runsc.toml}"
 
 bash deploy/ci/runtime-isolation.sh
 

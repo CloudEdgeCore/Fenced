@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/admission"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/scheduler"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	postgresstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store/postgres"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/admission"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/scheduler"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	postgresstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store/postgres"
 	"github.com/google/uuid"
 )
 
@@ -40,7 +40,7 @@ func TestRuntimeCheckpointCompletionAndIdempotency(t *testing.T) {
 	checkpointInput := kernelstore.CommitCheckpointInput{
 		TenantID: "tenant-a", AttemptID: assignment.Attempt.ID, FencingToken: 1,
 		ExpectedAttemptVersion: running.ResourceVersion, IdempotencyKey: "checkpoint-1", CheckpointID: uuid.New(),
-		AgentVersionRef: "agent@1", Provider: "reference-go", RuntimeABI: "agentos.reference/v1",
+		AgentVersionRef: "agent@1", Provider: "reference-go", RuntimeABI: "fenced.reference/v1",
 		SchemaVersion: "state/v1", State: artifactReference("artifact://tenant-a/sha256/checkpoint", "checkpoint-state"),
 		ConfirmedReceiptIDs: []string{"receipt-b", "receipt-a", "receipt-a"},
 	}
@@ -112,7 +112,7 @@ func TestExpiredRuntimeRecoversCheckpointWithHigherFence(t *testing.T) {
 	checkpoint, _, err := repository.CommitCheckpoint(ctx, kernelstore.CommitCheckpointInput{
 		TenantID: "tenant-a", AttemptID: assignment.Attempt.ID, FencingToken: 1,
 		ExpectedAttemptVersion: running.ResourceVersion, IdempotencyKey: "recoverable-checkpoint", CheckpointID: uuid.New(),
-		AgentVersionRef: "agent@1", Provider: "reference-go", RuntimeABI: "agentos.reference/v1",
+		AgentVersionRef: "agent@1", Provider: "reference-go", RuntimeABI: "fenced.reference/v1",
 		SchemaVersion: "state/v1", State: artifactReference("artifact://tenant-a/sha256/recovery", "recoverable-state"),
 	})
 	if err != nil {

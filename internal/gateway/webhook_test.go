@@ -8,13 +8,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
 )
 
 func TestWebhookExecutorPinsHTTPSDestinationAndBoundsProtocol(t *testing.T) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if request.Header.Get("AgentOS-Secret-Handle") != "opaque" || request.Header.Get("Content-Type") != "application/json" {
+		if request.Header.Get("Fenced-Secret-Handle") != "opaque" || request.Header.Get("Content-Type") != "application/json" {
 			t.Errorf("security headers were not injected")
 		}
 		var body map[string]json.RawMessage

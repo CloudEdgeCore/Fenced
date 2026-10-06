@@ -20,16 +20,16 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/control/auth"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentpkg"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentversion"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/memory"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/namespace"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/observability"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/supervisor"
-	"github.com/CloudEdgeCore/AgentOS/internal/version"
+	"github.com/CloudEdgeCore/Fenced/internal/control/auth"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentpkg"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/memory"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/namespace"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/observability"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/supervisor"
+	"github.com/CloudEdgeCore/Fenced/internal/version"
 	"github.com/google/uuid"
 )
 
@@ -1833,7 +1833,7 @@ func (h *Handler) writeDecodeProblem(writer http.ResponseWriter, request *http.R
 func (h *Handler) writeProblem(writer http.ResponseWriter, request *http.Request, status int, reasonCode, detail, traceID string) {
 	writer.Header().Set("Content-Type", "application/problem+json")
 	writeJSON(writer, status, problem{
-		Type:  "https://agentos.dev/problems/" + strings.ToLower(strings.ReplaceAll(reasonCode, "_", "-")),
+		Type:  "https://fenced.dev/problems/" + strings.ToLower(strings.ReplaceAll(reasonCode, "_", "-")),
 		Title: http.StatusText(status), Status: status, Detail: detail,
 		Instance: request.URL.Path, ReasonCode: reasonCode, TraceID: traceID,
 	})

@@ -3,9 +3,9 @@
 //
 // Backend selection (roadmap P1):
 //   - default: the embedded deterministic corpus (CI / offline)
-//   - AGENTOS_RESEARCH_LIVE_WEB=1: real internet backends — search provider
-//     via AGENTOS_RESEARCH_SEARCH_PROVIDER ("doubao"|"brave"|"bing") with its key in
-//     AGENTOS_RESEARCH_SEARCH_KEY, and the hardened live fetcher.
+//   - FENCED_RESEARCH_LIVE_WEB=1: real internet backends — search provider
+//     via FENCED_RESEARCH_SEARCH_PROVIDER ("doubao"|"brave"|"bing") with its key in
+//     FENCED_RESEARCH_SEARCH_KEY, and the hardened live fetcher.
 package main
 
 import (
@@ -13,14 +13,16 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/CloudEdgeCore/AgentOS/examples/research-workflow/tools/webtools"
+	"github.com/CloudEdgeCore/Fenced/examples/research-workflow/tools/webtools"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/compat"
 )
 
 func main() {
+	compat.WarnLegacyEnv(os.Stderr, compat.AliasLegacyEnv())
 	server := webtools.New(webtools.Corpus())
-	if os.Getenv("AGENTOS_RESEARCH_LIVE_WEB") == "1" {
-		provider := os.Getenv("AGENTOS_RESEARCH_SEARCH_PROVIDER")
-		key := os.Getenv("AGENTOS_RESEARCH_SEARCH_KEY")
+	if os.Getenv("FENCED_RESEARCH_LIVE_WEB") == "1" {
+		provider := os.Getenv("FENCED_RESEARCH_SEARCH_PROVIDER")
+		key := os.Getenv("FENCED_RESEARCH_SEARCH_KEY")
 		var search webtools.SearchProvider
 		switch provider {
 		case "doubao", "volcengine":
@@ -30,7 +32,7 @@ func main() {
 		case "bing":
 			search = &webtools.BingSearch{APIKey: key}
 		default:
-			log.Fatalf("unknown AGENTOS_RESEARCH_SEARCH_PROVIDER %q (want doubao, brave or bing)", provider)
+			log.Fatalf("unknown FENCED_RESEARCH_SEARCH_PROVIDER %q (want doubao, brave or bing)", provider)
 		}
 		server = server.WithBackend(&webtools.CompositeBackend{
 			SearchProvider: search,

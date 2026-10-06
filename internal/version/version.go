@@ -4,20 +4,20 @@
 package version
 
 const (
-	Product             = "AgentOS"
+	Product             = "Fenced"
 	ProductVersion      = "1.3.0.0"
 	SemVer              = "1.3.0"
 	ReleaseStage        = "GA"
-	Manifest            = "agentos.dev/v1"
-	RuntimeProtocol     = "agentos.runtime.v1"
-	RuntimeInterface    = "agentos.runtime.interface/v1"
-	GatewayProtocol     = "agentos.gateway.v1"
-	ModelProtocol       = "agentos.model.v1"
+	Manifest            = "fenced.dev/v1"
+	RuntimeProtocol     = "fenced.runtime.v1"
+	RuntimeInterface    = "fenced.runtime.interface/v1"
+	GatewayProtocol     = "fenced.gateway.v1"
+	ModelProtocol       = "fenced.model.v1"
 	ControlAPI          = "v1"
 	SyscallABI          = "1.0.0"
-	IPCProtocol         = "agentos.ipc.v1"
-	ServiceProtocol     = "agentos.service.v1"
-	EffectProtocol      = "agentos.effect.v1"
+	IPCProtocol         = "fenced.ipc.v1"
+	ServiceProtocol     = "fenced.service.v1"
+	EffectProtocol      = "fenced.effect.v1"
 	LegacyRemovalBefore = "2027-02-17"
 )
 

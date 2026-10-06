@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 )
 
@@ -38,8 +38,8 @@ func (h *harness) publishWasmAgent(t *testing.T, name string) {
 		"runtimeClassPolicy": map[string]any{"allowed": []string{"research-wasm", "research-network"}, "preferred": "research-wasm"},
 		"lifecycle":          map[string]any{"maxAttempts": 3},
 		"runtimes": []any{
-			map[string]any{"class": "research-wasm", "interface": "agentos.runtime.interface/v1", "runtimeABI": "agentos.wasm-component/v1", "entrypoint": []string{"agentos-binding://devops"}},
-			map[string]any{"class": "research-network", "interface": "agentos.runtime.interface/v1", "runtimeABI": "agentos.adapter-http/v1", "entrypoint": []string{"agentos-binding://devops"}},
+			map[string]any{"class": "research-wasm", "interface": "fenced.runtime.interface/v1", "runtimeABI": "fenced.wasm-component/v1", "entrypoint": []string{"fenced-binding://devops"}},
+			map[string]any{"class": "research-network", "interface": "fenced.runtime.interface/v1", "runtimeABI": "fenced.adapter-http/v1", "entrypoint": []string{"fenced-binding://devops"}},
 		},
 		"capabilities": map[string]any{"tools": []string{"hello.echo@1.0.0"}, "models": []any{}, "memory": []any{}, "secrets": []any{}},
 		"budget":       map[string]any{"tokens": 2000, "costUsd": 0.10, "toolCalls": 8, "wallSeconds": 120},
@@ -56,7 +56,7 @@ func (h *harness) publishWasmAgent(t *testing.T, name string) {
 // startWasmWorker starts the real Wasmtime worker as a subprocess.
 func (h *harness) startWasmWorker(t *testing.T, packageRoot string) *exec.Cmd {
 	t.Helper()
-	workerBin := resolveBinary(t, filepath.Join("..", "..", "..", "..", "target", "release", "agentos-runtime-wasm"))
+	workerBin := resolveBinary(t, filepath.Join("..", "..", "..", "..", "target", "release", "fenced-runtime-wasm"))
 	cmd := exec.Command(workerBin,
 		"--control-endpoint", h.listener.Addr().String(),
 		"--tenant", devopsTenant,
@@ -84,7 +84,7 @@ func genWasmComponent(t *testing.T, packageRoot string) {
 
 // TestWasmtimeIsolation is the B-path isolation drill: a task whose spec
 // targets a Wasmtime component is placed on the `research-wasm` pool,
-// executed by the real agentos-runtime-wasm worker inside a Wasmtime
+// executed by the real fenced-runtime-wasm worker inside a Wasmtime
 // sandbox, and completes successfully.
 func TestWasmtimeIsolation(t *testing.T) {
 	h := newHarness(t, "wasm-iso", false)

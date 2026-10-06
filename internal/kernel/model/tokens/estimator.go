@@ -3,7 +3,7 @@
 // provider-reported usage at Finish remains the authoritative settlement,
 // so every estimator errs on the high side.
 //
-// Envelope contract (P1-06). AgentOS reserves against a proven conservative
+// Envelope contract (P1-06). Fenced reserves against a proven conservative
 // envelope, not an exact in-process tokenizer. The contract every estimator
 // upholds is a one-sided guarantee: for any input the reservation is at or
 // above the true token count a real tokenizer would report, never below it

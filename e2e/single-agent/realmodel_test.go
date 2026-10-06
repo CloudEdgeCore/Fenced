@@ -4,9 +4,9 @@
 // against a live self-hosted endpoint (no PostgreSQL needed). Point it at
 // your deployment:
 //
-//	AGENTOS_REAL_MODEL_URL=http://host:8080/v1
-//	AGENTOS_REAL_MODEL_NAME=DeepSeek-V4-Flash-w8a8-mtp
-//	AGENTOS_REAL_MODEL_KEY=optional-bearer (unset for keyless vLLM)
+//	FENCED_REAL_MODEL_URL=http://host:8080/v1
+//	FENCED_REAL_MODEL_NAME=DeepSeek-V4-Flash-w8a8-mtp
+//	FENCED_REAL_MODEL_KEY=optional-bearer (unset for keyless vLLM)
 //
 // Unset variables skip the test.
 package e2e_test
@@ -19,20 +19,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/model/provider"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/model/provider"
 )
 
 func TestV11RealModelSmoke(t *testing.T) {
-	baseURL := os.Getenv("AGENTOS_REAL_MODEL_URL")
-	modelName := os.Getenv("AGENTOS_REAL_MODEL_NAME")
+	baseURL := os.Getenv("FENCED_REAL_MODEL_URL")
+	modelName := os.Getenv("FENCED_REAL_MODEL_NAME")
 	if baseURL == "" || modelName == "" {
-		t.Skip("AGENTOS_REAL_MODEL_URL and AGENTOS_REAL_MODEL_NAME are not set")
+		t.Skip("FENCED_REAL_MODEL_URL and FENCED_REAL_MODEL_NAME are not set")
 	}
 	config := provider.Config{
 		Name: "real", BaseURL: baseURL, TimeoutMs: 120000, MaxAttempts: 2,
 		BreakerOpens: 5, BreakerCoolMs: 30000,
 	}
-	if key := os.Getenv("AGENTOS_REAL_MODEL_KEY"); key != "" {
+	if key := os.Getenv("FENCED_REAL_MODEL_KEY"); key != "" {
 		config.APIKey = key
 	}
 	executor := provider.NewExecutor(config, nil)
@@ -43,7 +43,7 @@ func TestV11RealModelSmoke(t *testing.T) {
 		t.Fatalf("health probe against the real endpoint: %v", err)
 	}
 
-	messages := []provider.Message{{Role: "user", Content: "Reply with exactly: agentos real model smoke ok"}}
+	messages := []provider.Message{{Role: "user", Content: "Reply with exactly: fenced real model smoke ok"}}
 
 	// Non-streaming: exact provider-reported usage and request id.
 	complete, err := executor.Complete(ctx, provider.Invocation{ModelName: modelName, Messages: messages, MaxOutputTokens: 64})
@@ -94,15 +94,15 @@ func truncate(text string, limit int) string {
 // a live self-hosted model: real inference flows through the fenced Model
 // Gateway (policy, budget, ledger, audit), the agent writes its run summary
 // to memory, and the task completes with the exact live usage settled once.
-// Same environment gates as the smoke test plus AGENTOS_TEST_DATABASE_URL.
+// Same environment gates as the smoke test plus FENCED_TEST_DATABASE_URL.
 func TestV11RealAgentAgainstLiveModel(t *testing.T) {
-	baseURL := os.Getenv("AGENTOS_REAL_MODEL_URL")
-	modelName := os.Getenv("AGENTOS_REAL_MODEL_NAME")
+	baseURL := os.Getenv("FENCED_REAL_MODEL_URL")
+	modelName := os.Getenv("FENCED_REAL_MODEL_NAME")
 	if baseURL == "" || modelName == "" {
-		t.Skip("AGENTOS_REAL_MODEL_URL and AGENTOS_REAL_MODEL_NAME are not set")
+		t.Skip("FENCED_REAL_MODEL_URL and FENCED_REAL_MODEL_NAME are not set")
 	}
-	if os.Getenv("AGENTOS_TEST_DATABASE_URL") == "" {
-		t.Skip("AGENTOS_TEST_DATABASE_URL is not set")
+	if os.Getenv("FENCED_TEST_DATABASE_URL") == "" {
+		t.Skip("FENCED_TEST_DATABASE_URL is not set")
 	}
 	e2eLiveModel.provider, e2eLiveModel.name, e2eLiveModel.url = "deepseek", modelName, baseURL
 	e2eModelRef = "deepseek/" + modelName
@@ -111,7 +111,7 @@ func TestV11RealAgentAgainstLiveModel(t *testing.T) {
 		e2eModelRef = "fake/agent-model"
 	}()
 
-	env := newE2EEnv(t, "agentos_e2e_live", 0, 30*time.Second)
+	env := newE2EEnv(t, "fenced_e2e_live", 0, 30*time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	stack := startStack(t, env)
@@ -175,21 +175,21 @@ func TestV11RealAgentAgainstLiveModel(t *testing.T) {
 }
 
 // TestRealModelToolCalling is the P1-04 live acceptance: a real
-// OpenAI-compatible model, handed the AgentOS tool surface, autonomously emits
+// OpenAI-compatible model, handed the Fenced tool surface, autonomously emits
 // a weather.lookup tool call; the Tool Gateway executes the real webhook, the
 // result is re-injected, and the model produces a final answer — the full
 // real-model↔real-tool loop the fake provider only simulates. It also proves
 // capability filtering (a never-granted tool never reaches the model) and the
 // budget/audit chain. Same env gates as the live smoke test plus
-// AGENTOS_TEST_DATABASE_URL; skipped otherwise (nightly / needs-real-run).
+// FENCED_TEST_DATABASE_URL; skipped otherwise (nightly / needs-real-run).
 func TestRealModelToolCalling(t *testing.T) {
-	baseURL := os.Getenv("AGENTOS_REAL_MODEL_URL")
-	modelName := os.Getenv("AGENTOS_REAL_MODEL_NAME")
+	baseURL := os.Getenv("FENCED_REAL_MODEL_URL")
+	modelName := os.Getenv("FENCED_REAL_MODEL_NAME")
 	if baseURL == "" || modelName == "" {
-		t.Skip("AGENTOS_REAL_MODEL_URL and AGENTOS_REAL_MODEL_NAME are not set")
+		t.Skip("FENCED_REAL_MODEL_URL and FENCED_REAL_MODEL_NAME are not set")
 	}
-	if os.Getenv("AGENTOS_TEST_DATABASE_URL") == "" {
-		t.Skip("AGENTOS_TEST_DATABASE_URL is not set")
+	if os.Getenv("FENCED_TEST_DATABASE_URL") == "" {
+		t.Skip("FENCED_TEST_DATABASE_URL is not set")
 	}
 	e2eLiveModel.provider, e2eLiveModel.name, e2eLiveModel.url = "deepseek", modelName, baseURL
 	e2eModelRef = "deepseek/" + modelName
@@ -200,7 +200,7 @@ func TestRealModelToolCalling(t *testing.T) {
 		e2eExposeLiveTools = false
 	}()
 
-	env := newE2EEnv(t, "agentos_e2e_livetool", 0, 30*time.Second)
+	env := newE2EEnv(t, "fenced_e2e_livetool", 0, 30*time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	stack := startStack(t, env)
@@ -312,7 +312,7 @@ func TestRealModelToolCalling(t *testing.T) {
 
 	// Credential isolation (only when the live endpoint uses a bearer key): the
 	// provider key must never reach an agent-visible surface.
-	if key := os.Getenv("AGENTOS_REAL_MODEL_KEY"); key != "" {
+	if key := os.Getenv("FENCED_REAL_MODEL_KEY"); key != "" {
 		if strings.Contains(resultDocument(t, env, finished), key) {
 			t.Fatal("result document leaks the provider credential")
 		}

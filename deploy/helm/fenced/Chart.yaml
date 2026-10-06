@@ -1,0 +1,18 @@
+apiVersion: v2
+name: fenced
+description: A Helm chart for Fenced - The Agent Operating System Kernel and Control Plane
+type: application
+version: 1.3.0
+appVersion: "1.3.0"
+keywords:
+  - fenced
+  - ai-agents
+  - operating-system
+  - kernel
+  - orchestration
+home: https://github.com/CloudEdgeCore/Fenced
+sources:
+  - https://github.com/CloudEdgeCore/Fenced
+maintainers:
+  - name: Fenced Maintainers
+    url: https://github.com/CloudEdgeCore/Fenced

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/model/tokens"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/model/tokens"
 )
 
 // Registry resolves provider names (the first path segment of a model

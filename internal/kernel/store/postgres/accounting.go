@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/agentmetrics"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/agentmetrics"
 )
 
 // AccountingReconciliation reports drift between append-only ledgers and

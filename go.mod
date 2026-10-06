@@ -1,4 +1,4 @@
-module github.com/CloudEdgeCore/AgentOS
+module github.com/CloudEdgeCore/Fenced
 
 go 1.26.0
 

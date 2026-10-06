@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/admission"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/scheduler"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store/postgres"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/admission"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/scheduler"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store/postgres"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -33,7 +33,7 @@ func TestSoakSmokePipelineRepeated(t *testing.T) {
 	ctx := context.Background()
 	tasksPerIter := 2000
 	iterations := 3
-	hasDocker := os.Getenv("AGENTOS_SOAK_DOCKER") != ""
+	hasDocker := os.Getenv("FENCED_SOAK_DOCKER") != ""
 
 	pool, repository := newSoakDatabase(t)
 	tenant := "tenant-a"
@@ -107,7 +107,7 @@ func soakPGrestart(t *testing.T, ctx context.Context, pool *pgxpool.Pool, reposi
 		}
 	}
 
-	out, err := exec.Command("docker", "restart", "agentos-pg").CombinedOutput()
+	out, err := exec.Command("docker", "restart", "fenced-pg").CombinedOutput()
 	if err != nil {
 		t.Fatalf("docker restart: %v\n%s", err, string(out))
 	}
@@ -155,9 +155,9 @@ func countPhase(t *testing.T, ctx context.Context, pool *pgxpool.Pool, tenant st
 
 func newSoakDatabase(t *testing.T) (*pgxpool.Pool, *postgres.Store) {
 	t.Helper()
-	url := os.Getenv("AGENTOS_TEST_DATABASE_URL")
+	url := os.Getenv("FENCED_TEST_DATABASE_URL")
 	if url == "" {
-		t.Skip("AGENTOS_TEST_DATABASE_URL is not set")
+		t.Skip("FENCED_TEST_DATABASE_URL is not set")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

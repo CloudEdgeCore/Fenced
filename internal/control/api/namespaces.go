@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/control/auth"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/namespace"
+	"github.com/CloudEdgeCore/Fenced/internal/control/auth"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/namespace"
 )
 
 type createNamespaceRequest struct {
@@ -55,7 +55,7 @@ type namespaceUsageResponse struct {
 
 func formatNamespaceResponse(ns *namespace.Namespace, traceID string) namespaceResponse {
 	return namespaceResponse{
-		APIVersion:  "agentos.dev/v1",
+		APIVersion:  "fenced.dev/v1",
 		Kind:        "Namespace",
 		TenantID:    ns.TenantID,
 		Name:        ns.Name,
@@ -174,7 +174,7 @@ func (h *Handler) listNamespaces(writer http.ResponseWriter, request *http.Reque
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(writer).Encode(map[string]any{
-		"apiVersion": "agentos.dev/v1",
+		"apiVersion": "fenced.dev/v1",
 		"kind":       "NamespaceList",
 		"items":      items,
 		"traceId":    traceID,
@@ -365,7 +365,7 @@ func (h *Handler) getNamespaceUsage(writer http.ResponseWriter, request *http.Re
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(writer).Encode(namespaceUsageResponse{
-		APIVersion: "agentos.dev/v1",
+		APIVersion: "fenced.dev/v1",
 		Kind:       "NamespaceUsage",
 		TenantID:   principal.TenantID,
 		Namespace:  name,

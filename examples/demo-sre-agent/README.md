@@ -1,6 +1,6 @@
 # Autonomous SRE Self-Healing Agent Showcase
 
-This example demonstrates a production-grade **Autonomous SRE Agent** running on the AgentOS Kernel.
+This example demonstrates a production-grade **Autonomous SRE Agent** running on the Fenced Kernel.
 
 ---
 
@@ -26,22 +26,22 @@ python examples/demo-sre-agent/server.py
 
 ### 2. Verify Conformance
 
-Run the AgentOS Conformance Suite to prove compatibility:
+Run the Fenced Conformance Suite to prove compatibility:
 
 ```bash
-agentos conformance -endpoint http://127.0.0.1:8095
+fenced conformance -endpoint http://127.0.0.1:8095
 ```
 
 Output:
 ```text
-AgentOS Compatible = PASS
+Fenced Compatible = PASS
 ```
 
-### 3. Deploy to AgentOS
+### 3. Deploy to Fenced
 
-Publish and run on the AgentOS control plane:
+Publish and run on the Fenced control plane:
 
 ```bash
-agentos publish -manifest examples/demo-sre-agent/agent.json
-agentos service create -name sre-service -agent production/sre-agent@1.2.0 -replicas 2
+fenced publish -manifest examples/demo-sre-agent/agent.json
+fenced service create -name sre-service -agent production/sre-agent@1.2.0 -replicas 2
 ```

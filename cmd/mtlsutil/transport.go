@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/spiffe"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/spiffe"
 	"google.golang.org/grpc/credentials"
 )
 

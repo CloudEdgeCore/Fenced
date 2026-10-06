@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	research "github.com/CloudEdgeCore/AgentOS/examples/research-workflow/runtime"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	research "github.com/CloudEdgeCore/Fenced/examples/research-workflow/runtime"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
@@ -249,7 +249,7 @@ func TestResearchWorkflowInsufficientEvidence(t *testing.T) {
 // effects: injected fetch failures are absorbed and the workflow completes.
 func TestResearchWorkflowToolFailureRecovery(t *testing.T) {
 	h := newHarness(t, "toolfailure", nil)
-	h.webtools.InjectFetchFailures("corpus.agentos.dev", 2)
+	h.webtools.InjectFetchFailures("corpus.fenced.dev", 2)
 	before := h.fetches.total()
 	id, err := h.createResearch("Assess sandboxing strategies for reader agents fetching untrusted content")
 	if err != nil {
@@ -462,10 +462,10 @@ func TestResearchWorkflowRecovery(t *testing.T) {
 }
 
 // Scale gate: 100 concurrent research workflows must all complete. Heavy —
-// enabled explicitly with AGENTOS_RESEARCH_SCALE=1.
+// enabled explicitly with FENCED_RESEARCH_SCALE=1.
 func TestResearch100Concurrent(t *testing.T) {
-	if os.Getenv("AGENTOS_RESEARCH_SCALE") != "1" {
-		t.Skip("set AGENTOS_RESEARCH_SCALE=1 to run the 100-way scale scenario")
+	if os.Getenv("FENCED_RESEARCH_SCALE") != "1" {
+		t.Skip("set FENCED_RESEARCH_SCALE=1 to run the 100-way scale scenario")
 	}
 	h := newHarness(t, "scale100", nil)
 	const fanOut = 100
@@ -605,7 +605,7 @@ type liveEvidence struct {
 
 func TestLiveEvidenceSchemaContainsMetricsAndNoCredentialFields(t *testing.T) {
 	encoded, err := json.Marshal(liveEvidence{
-		SchemaVersion: "agentos.research.live-evidence/v1", Commit: strings.Repeat("a", 40),
+		SchemaVersion: "fenced.research.live-evidence/v1", Commit: strings.Repeat("a", 40),
 		Status: "SUCCEEDED", liveMetrics: liveMetrics{WorkflowID: uuid.NewString(), EvidenceCount: 3},
 	})
 	if err != nil {
@@ -655,14 +655,14 @@ func writeLiveEvidence(t *testing.T, testName, goal, status string, started time
 	t.Helper()
 	commit, dirty := gitEvidenceIdentity(t)
 	evidence := liveEvidence{
-		SchemaVersion: "agentos.research.live-evidence/v1", Test: testName,
+		SchemaVersion: "fenced.research.live-evidence/v1", Test: testName,
 		Commit: commit, CommitDirty: dirty, Goal: goal,
-		SearchProvider: strings.ToLower(envOr("AGENTOS_RESEARCH_SEARCH_PROVIDER", "corpus")),
-		ModelProvider:  envOr("AGENTOS_RESEARCH_MODEL_PROVIDER", "openai"),
+		SearchProvider: strings.ToLower(envOr("FENCED_RESEARCH_SEARCH_PROVIDER", "corpus")),
+		ModelProvider:  envOr("FENCED_RESEARCH_MODEL_PROVIDER", "openai"),
 		Models: map[string]string{
-			"fast":      envOr("AGENTOS_RESEARCH_MODEL_FAST", "gpt-4o-mini"),
-			"reader":    envOr("AGENTOS_RESEARCH_MODEL_READER", envOr("AGENTOS_RESEARCH_MODEL_FAST", "gpt-4o-mini")),
-			"reasoning": envOr("AGENTOS_RESEARCH_MODEL_REASONING", "gpt-4o"),
+			"fast":      envOr("FENCED_RESEARCH_MODEL_FAST", "gpt-4o-mini"),
+			"reader":    envOr("FENCED_RESEARCH_MODEL_READER", envOr("FENCED_RESEARCH_MODEL_FAST", "gpt-4o-mini")),
+			"reasoning": envOr("FENCED_RESEARCH_MODEL_REASONING", "gpt-4o"),
 		},
 		Status: status, StartedAt: started.UTC().Format(time.RFC3339Nano),
 		CompletedAt: time.Now().UTC().Format(time.RFC3339Nano), liveMetrics: metrics,
@@ -671,13 +671,13 @@ func writeLiveEvidence(t *testing.T, testName, goal, status string, started time
 	if err != nil {
 		t.Fatalf("encode live evidence: %v", err)
 	}
-	for _, credentialName := range []string{"AGENTOS_RESEARCH_SEARCH_KEY", "AGENTOS_RESEARCH_MODEL_KEY"} {
+	for _, credentialName := range []string{"FENCED_RESEARCH_SEARCH_KEY", "FENCED_RESEARCH_MODEL_KEY"} {
 		credential := os.Getenv(credentialName)
 		if credential != "" && bytes.Contains(encoded, []byte(credential)) {
 			t.Fatalf("live evidence contains credential %s", credentialName)
 		}
 	}
-	directory := strings.TrimSpace(os.Getenv("AGENTOS_RESEARCH_EVIDENCE_DIR"))
+	directory := strings.TrimSpace(os.Getenv("FENCED_RESEARCH_EVIDENCE_DIR"))
 	if directory == "" {
 		directory = filepath.Join(repositoryRoot(t), "artifacts", "research-live")
 	}
@@ -738,7 +738,7 @@ func (h *harness) collectLiveMetrics(id uuid.UUID, started time.Time) liveMetric
 		if err != nil {
 			continue
 		}
-		if host := parsed.Hostname(); host != "" && host != "corpus.agentos.dev" {
+		if host := parsed.Hostname(); host != "" && host != "corpus.fenced.dev" {
 			domains[host] = true
 		}
 	}
@@ -789,8 +789,8 @@ func (h *harness) collectLiveMetrics(id uuid.UUID, started time.Time) liveMetric
 
 func requireLiveModelEnv(t *testing.T) {
 	t.Helper()
-	if os.Getenv("AGENTOS_RESEARCH_LIVE") != "1" {
-		t.Skip("set AGENTOS_RESEARCH_LIVE=1 with AGENTOS_RESEARCH_MODEL_BASE_URL/KEY to run the live-model acceptance")
+	if os.Getenv("FENCED_RESEARCH_LIVE") != "1" {
+		t.Skip("set FENCED_RESEARCH_LIVE=1 with FENCED_RESEARCH_MODEL_BASE_URL/KEY to run the live-model acceptance")
 	}
 }
 
@@ -867,13 +867,13 @@ func TestResearchWorkerFleetMatchesFanout(t *testing.T) {
 
 func TestResearchWorkflowLiveFull(t *testing.T) {
 	requireLiveModelEnv(t)
-	if os.Getenv("AGENTOS_RESEARCH_LIVE_WEB") != "1" {
-		t.Skip("set AGENTOS_RESEARCH_LIVE_WEB=1 with AGENTOS_RESEARCH_SEARCH_PROVIDER/KEY for full live research")
+	if os.Getenv("FENCED_RESEARCH_LIVE_WEB") != "1" {
+		t.Skip("set FENCED_RESEARCH_LIVE_WEB=1 with FENCED_RESEARCH_SEARCH_PROVIDER/KEY for full live research")
 	}
 	started := time.Now()
-	goal := strings.TrimSpace(os.Getenv("AGENTOS_RESEARCH_LIVE_GOAL"))
+	goal := strings.TrimSpace(os.Getenv("FENCED_RESEARCH_LIVE_GOAL"))
 	if goal == "" {
-		t.Fatal("set AGENTOS_RESEARCH_LIVE_GOAL with a real research question")
+		t.Fatal("set FENCED_RESEARCH_LIVE_GOAL with a real research question")
 	}
 	h := newHarness(t, "live-full", nil)
 	id, err := h.createResearch(goal)
@@ -981,13 +981,13 @@ func (h *harness) forceReaderLeaseRecovery(id uuid.UUID, timeout time.Duration) 
 
 func TestResearchWorkflowLiveRecovery(t *testing.T) {
 	requireLiveModelEnv(t)
-	if os.Getenv("AGENTOS_RESEARCH_LIVE_WEB") != "1" {
-		t.Skip("set AGENTOS_RESEARCH_LIVE_WEB=1 with AGENTOS_RESEARCH_SEARCH_PROVIDER/KEY for live recovery")
+	if os.Getenv("FENCED_RESEARCH_LIVE_WEB") != "1" {
+		t.Skip("set FENCED_RESEARCH_LIVE_WEB=1 with FENCED_RESEARCH_SEARCH_PROVIDER/KEY for live recovery")
 	}
 	started := time.Now()
-	goal := strings.TrimSpace(os.Getenv("AGENTOS_RESEARCH_LIVE_GOAL"))
+	goal := strings.TrimSpace(os.Getenv("FENCED_RESEARCH_LIVE_GOAL"))
 	if goal == "" {
-		t.Fatal("set AGENTOS_RESEARCH_LIVE_GOAL with a real research question")
+		t.Fatal("set FENCED_RESEARCH_LIVE_GOAL with a real research question")
 	}
 	h := newHarness(t, "live-recovery", nil)
 	id, err := h.createResearch(goal)

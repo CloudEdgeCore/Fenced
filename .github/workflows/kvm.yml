@@ -1,4 +1,4 @@
-# Firecracker KVM evidence: standalone workflow so a missing agentos-kvm
+# Firecracker KVM evidence: standalone workflow so a missing fenced-kvm
 # runner can never block the rest of the nightly production evidence. This
 # workflow runs independently and reports its own status.
 #
@@ -8,8 +8,8 @@
 # runner is missing" into an explicit skip, so every run ends in a state an
 # operator can act on.
 #
-# Operator action: once the `agentos-kvm` runner is online, set the
-# repository variable AGENTOS_KVM_RUNNER_PROVISIONED to "true". Until then
+# Operator action: once the `fenced-kvm` runner is online, set the
+# repository variable FENCED_KVM_RUNNER_PROVISIONED to "true". Until then
 # this job is skipped with a notice and never queues. The gate never turns a
 # missing runner into a pass: the KVM job still asserts real /dev/kvm.
 name: firecracker-kvm-evidence
@@ -33,17 +33,17 @@ jobs:
     outputs:
       provisioned: ${{ steps.check.outputs.provisioned }}
     steps:
-      - name: Check whether the agentos-kvm runner is provisioned
+      - name: Check whether the fenced-kvm runner is provisioned
         id: check
         env:
-          AGENTOS_KVM_RUNNER_PROVISIONED: ${{ vars.AGENTOS_KVM_RUNNER_PROVISIONED }}
+          FENCED_KVM_RUNNER_PROVISIONED: ${{ vars.FENCED_KVM_RUNNER_PROVISIONED }}
         run: |
-          if [ "${AGENTOS_KVM_RUNNER_PROVISIONED}" = "true" ]; then
+          if [ "${FENCED_KVM_RUNNER_PROVISIONED}" = "true" ]; then
             echo "provisioned=true" >> "$GITHUB_OUTPUT"
-            echo "agentos-kvm runner declared provisioned"
+            echo "fenced-kvm runner declared provisioned"
           else
             echo "provisioned=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::the agentos-kvm runner is NOT provisioned. Skipping the Firecracker KVM probe instead of leaving it queued forever. Set the repository variable AGENTOS_KVM_RUNNER_PROVISIONED=true once the runner is online."
+            echo "::notice::the fenced-kvm runner is NOT provisioned. Skipping the Firecracker KVM probe instead of leaving it queued forever. Set the repository variable FENCED_KVM_RUNNER_PROVISIONED=true once the runner is online."
           fi
 
   firecracker-kvm:
@@ -51,7 +51,7 @@ jobs:
     if: >-
       (github.event_name == 'workflow_dispatch' || github.event.schedule == '17 18 * * *')
       && needs.runner-preflight.outputs.provisioned == 'true'
-    runs-on: [self-hosted, Linux, X64, agentos-kvm]
+    runs-on: [self-hosted, Linux, X64, fenced-kvm]
     timeout-minutes: 60
     steps:
       - name: Check out source

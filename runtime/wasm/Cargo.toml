@@ -1,5 +1,5 @@
 [package]
-name = "agentos-runtime-wasm"
+name = "fenced-runtime-wasm"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
@@ -18,10 +18,16 @@ tokio = { version = "1.48.0", features = ["macros", "rt-multi-thread", "signal",
 tonic = { version = "0.14.6", features = ["transport"] }
 tonic-prost = "0.14.6"
 uuid = { version = "1.18.1", features = ["v7"] }
-wasmtime = { version = "47.0.3", default-features = false, features = ["anyhow", "component-model", "cranelift", "runtime", "std", "wat"] }
-wat = "1.256"
-wit-component = "0.252"
-wit-parser = "0.252"
+# Pinned to the 48.0.x line for RUSTSEC-2026-0315/0316/0325/0326/0327, all of
+# which are fixed in 48.0.4. `wit-component`/`wit-parser`/`wat` must stay on the
+# same wasm-tools generation as wasmtime (the `wasmparser` version is the shared
+# ABI), so they move together. `wat` is pinned with `=` because a caret range
+# would pull a second wasm-tools generation (`wast 261` -> `wasm-encoder 0.261`)
+# into the graph alongside wasmtime's 0.254.
+wasmtime = { version = "48.0.5", default-features = false, features = ["anyhow", "component-model", "cranelift", "runtime", "std", "wat"] }
+wat = "=1.254.2"
+wit-component = "0.254.2"
+wit-parser = "0.254.2"
 
 [build-dependencies]
 prost-build = "0.14.4"

@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
 )
 
 // DynamicCredentials are the username/password material issued by the

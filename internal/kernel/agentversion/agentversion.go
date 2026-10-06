@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	APIVersion       = "agentos.dev/v1"
-	LegacyAPIVersion = "agentos.dev/v1alpha1"
+	APIVersion       = "fenced.dev/v1"
+	LegacyAPIVersion = "fenced.dev/v1alpha1"
 	Kind             = "AgentVersion"
 
 	MaxNameLength    = 128

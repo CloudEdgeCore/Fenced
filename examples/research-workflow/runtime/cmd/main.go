@@ -1,5 +1,5 @@
 // research-runtime serves the seven research workflow roles behind the
-// AgentOS Runtime Interface (HTTP). One process hosts the whole fleet: the
+// Fenced Runtime Interface (HTTP). One process hosts the whole fleet: the
 // assignment's agent version reference selects the role.
 package main
 
@@ -9,12 +9,15 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 
-	research "github.com/CloudEdgeCore/AgentOS/examples/research-workflow/runtime"
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	research "github.com/CloudEdgeCore/Fenced/examples/research-workflow/runtime"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/compat"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 )
 
 func main() {
+	compat.WarnLegacyEnv(os.Stderr, compat.AliasLegacyEnv())
 	listen := flag.String("listen", "127.0.0.1:8091", "Runtime Interface listen address")
 	mcp := flag.String("mcp", "", "loopback MCP endpoint of the runtime adapter (required)")
 	fast := flag.String("model-fast", "research/fast", "gateway model reference for search-tier calls")

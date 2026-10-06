@@ -1,4 +1,4 @@
-# AgentOS configuration template (agent.yaml.example)
+# Fenced configuration template (agent.yaml.example)
 # Usage: cp agent.yaml.example agent.yaml
 version: "1.0"
 environment: "development"

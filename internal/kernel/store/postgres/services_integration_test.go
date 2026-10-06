@@ -6,8 +6,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/ipc"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/supervisor"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/ipc"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/supervisor"
 )
 
 func TestPostgresServiceAndInstancePersistence(t *testing.T) {

@@ -1,6 +1,6 @@
 // Runtime bindings decouple mutable deployment endpoints from immutable
 // AgentVersions. A manifest's remote-class entrypoint is a logical
-// reference (agentos-binding://agent-name/remote); operators map version
+// reference (fenced-binding://agent-name/remote); operators map version
 // refs or agent names to concrete Runtime Interface endpoints in a binding
 // file, so promoting one AgentVersion digest across dev/staging/prod or
 // across regions never requires re-signing or re-publishing it.
@@ -26,12 +26,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 )
 
 // BindingScheme is the URI scheme of a logical (environment-independent)
 // runtime entrypoint embedded in an immutable AgentVersion.
-const BindingScheme = "agentos-binding://"
+const BindingScheme = "fenced-binding://"
 
 // EndpointPolicy is the transport-security boundary for Runtime Interface
 // endpoints. The zero value is the production policy: plaintext HTTP is

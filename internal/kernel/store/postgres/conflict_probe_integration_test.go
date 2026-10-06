@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 // TestConcurrentCompletionConflictRate is the load evidence behind ADR-002's

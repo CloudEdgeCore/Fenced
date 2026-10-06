@@ -107,7 +107,7 @@ type StandardMetrics struct {
 // NewStandardMetrics creates a new StandardMetrics collector.
 func NewStandardMetrics() *StandardMetrics {
 	m := &StandardMetrics{}
-	meter := otel.Meter("agentos.kernel.ipc")
+	meter := otel.Meter("fenced.kernel.ipc")
 
 	m.otelSentCounter, _ = meter.Int64Counter("ipc_message_sent_total")
 	m.otelReceivedCounter, _ = meter.Int64Counter("ipc_message_received_total")
@@ -264,7 +264,7 @@ func NewService(cfg ServiceConfig) *Service {
 		cfg.Metrics = NewStandardMetrics()
 	}
 	if cfg.Tracer == nil {
-		cfg.Tracer = otel.Tracer("agentos/kernel/ipc")
+		cfg.Tracer = otel.Tracer("fenced/kernel/ipc")
 	}
 
 	return &Service{

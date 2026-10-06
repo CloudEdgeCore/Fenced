@@ -1,5 +1,5 @@
 -- A failed or interrupted provider request may have incurred external usage
--- even when no final usage frame reached AgentOS. Never equate that unknown
+-- even when no final usage frame reached Fenced. Never equate that unknown
 -- outcome with known zero usage.
 ALTER TABLE model_calls
     ADD COLUMN usage_certainty text NOT NULL DEFAULT 'UNKNOWN_USAGE'

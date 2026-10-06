@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 )
 
 // HTTPMCPClient posts JSON-RPC tool calls to the runtime's loopback MCP
@@ -22,7 +22,7 @@ type HTTPMCPClient struct {
 	http     *http.Client
 }
 
-const executionHeader = "X-Agentos-Execution"
+const executionHeader = "X-Fenced-Execution"
 
 // NewHTTPMCPClient binds the client to the MCP endpoint URL.
 func NewHTTPMCPClient(endpoint string) *HTTPMCPClient {

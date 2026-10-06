@@ -13,7 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/examples/quality-agent/tools"
+	"github.com/CloudEdgeCore/Fenced/examples/quality-agent/tools"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/compat"
 )
 
 type ToolReceipt struct {
@@ -24,7 +25,8 @@ type ToolReceipt struct {
 }
 
 func main() {
-	fmt.Println("[info] starting AgentOS quality traceability verification suite (scenario B)")
+	compat.WarnLegacyEnv(os.Stderr, compat.AliasLegacyEnv())
+	fmt.Println("[info] starting Fenced quality traceability verification suite (scenario B)")
 	fmt.Println("[gateway] starting custom tool gateway on :18081...")
 
 	toolServer := tools.NewToolServer(18081)
@@ -235,8 +237,8 @@ func streamOpenRouter(apiKey, model, systemPrompt, userPrompt string) (int, erro
 		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("HTTP-Referer", "https://agentos.dev")
-	req.Header.Set("X-Title", "AgentOS-Quality-Demo")
+	req.Header.Set("HTTP-Referer", "https://fenced.dev")
+	req.Header.Set("X-Title", "Fenced-Quality-Demo")
 
 	tr := &http.Transport{
 		ResponseHeaderTimeout: 45 * time.Second,

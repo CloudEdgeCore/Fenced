@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/effect"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/ipc"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/supervisor"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/effect"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/ipc"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/supervisor"
 	"github.com/google/uuid"
 )
 
@@ -40,9 +40,9 @@ func TestProcessSystemSoakValidation(t *testing.T) {
 	defer cancel()
 
 	// Configurable soak duration: default to fast smoke validation (2s) for unit test runs,
-	// or up to full soak runs when AGENTOS_SOAK_DURATION is specified.
+	// or up to full soak runs when FENCED_SOAK_DURATION is specified.
 	duration := 2 * time.Second
-	if val := os.Getenv("AGENTOS_SOAK_DURATION"); val != "" {
+	if val := os.Getenv("FENCED_SOAK_DURATION"); val != "" {
 		if d, err := time.ParseDuration(val); err == nil && d > 0 {
 			duration = d
 		}

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentpkg"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentpkg"
 )
 
 func createTestPackage(t *testing.T, abiVersion string, secrets []string) (*agentpkg.Package, *agentpkg.Registry, *agentpkg.SigningKey) {

@@ -83,7 +83,7 @@ func (p *fakeOIDCProvider) roundTrip(t *testing.T, handler http.Handler, token s
 
 func TestOIDCMiddlewareAcceptsValidToken(t *testing.T) {
 	provider := newFakeOIDCProvider(t)
-	handler, err := OIDCMiddleware(provider.server.URL, "agentos-control", "tenant",
+	handler, err := OIDCMiddleware(provider.server.URL, "fenced-control", "tenant",
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			principal, ok := PrincipalFromContext(request.Context())
 			if !ok || principal.Subject != "user-42" || principal.TenantID != "tenant-a" {
@@ -95,7 +95,7 @@ func TestOIDCMiddlewareAcceptsValidToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OIDCMiddleware: %v", err)
 	}
-	token := provider.token(t, provider.server.URL, "agentos-control", "user-42", "tenant", "tenant-a", time.Now().Add(time.Hour))
+	token := provider.token(t, provider.server.URL, "fenced-control", "user-42", "tenant", "tenant-a", time.Now().Add(time.Hour))
 	if response := provider.roundTrip(t, handler, token); response.Code != http.StatusOK {
 		t.Fatalf("status = %d: %s", response.Code, response.Body.String())
 	}
@@ -103,7 +103,7 @@ func TestOIDCMiddlewareAcceptsValidToken(t *testing.T) {
 
 func TestOIDCMiddlewareHonorsCustomTenantClaim(t *testing.T) {
 	provider := newFakeOIDCProvider(t)
-	handler, err := OIDCMiddleware(provider.server.URL, "agentos-control", "org",
+	handler, err := OIDCMiddleware(provider.server.URL, "fenced-control", "org",
 		http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			principal, ok := PrincipalFromContext(request.Context())
 			if !ok || principal.TenantID != "org-9" {
@@ -115,7 +115,7 @@ func TestOIDCMiddlewareHonorsCustomTenantClaim(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OIDCMiddleware: %v", err)
 	}
-	token := provider.token(t, provider.server.URL, "agentos-control", "user-1", "org", "org-9", time.Now().Add(time.Hour))
+	token := provider.token(t, provider.server.URL, "fenced-control", "user-1", "org", "org-9", time.Now().Add(time.Hour))
 	if response := provider.roundTrip(t, handler, token); response.Code != http.StatusOK {
 		t.Fatalf("status = %d: %s", response.Code, response.Body.String())
 	}
@@ -123,7 +123,7 @@ func TestOIDCMiddlewareHonorsCustomTenantClaim(t *testing.T) {
 
 func TestOIDCMiddlewareRejectsInvalidTokens(t *testing.T) {
 	provider := newFakeOIDCProvider(t)
-	handler, err := OIDCMiddleware(provider.server.URL, "agentos-control", "tenant", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	handler, err := OIDCMiddleware(provider.server.URL, "fenced-control", "tenant", http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 	if err != nil {
 		t.Fatalf("OIDCMiddleware: %v", err)
 	}
@@ -164,15 +164,15 @@ func TestOIDCMiddlewareRejectsInvalidTokens(t *testing.T) {
 	assertReason(provider.roundTrip(t, handler, wrongAudience), "INVALID_ID_TOKEN")
 
 	// Expired token.
-	expired := provider.token(t, provider.server.URL, "agentos-control", "user-1", "tenant", "tenant-a", time.Now().Add(-time.Hour))
+	expired := provider.token(t, provider.server.URL, "fenced-control", "user-1", "tenant", "tenant-a", time.Now().Add(-time.Hour))
 	assertReason(provider.roundTrip(t, handler, expired), "INVALID_ID_TOKEN")
 
 	// Wrong issuer.
-	wrongIssuer := provider.token(t, "https://evil.example", "agentos-control", "user-1", "tenant", "tenant-a", time.Now().Add(time.Hour))
+	wrongIssuer := provider.token(t, "https://evil.example", "fenced-control", "user-1", "tenant", "tenant-a", time.Now().Add(time.Hour))
 	assertReason(provider.roundTrip(t, handler, wrongIssuer), "INVALID_ID_TOKEN")
 
 	// Missing tenant claim.
-	noTenant := provider.token(t, provider.server.URL, "agentos-control", "user-1", "", "", time.Now().Add(time.Hour))
+	noTenant := provider.token(t, provider.server.URL, "fenced-control", "user-1", "", "", time.Now().Add(time.Hour))
 	assertReason(provider.roundTrip(t, handler, noTenant), "TENANT_CLAIM_REQUIRED")
 }
 

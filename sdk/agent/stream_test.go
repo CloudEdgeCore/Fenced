@@ -89,7 +89,7 @@ func TestClientStreamDetectsV1OnlyRuntime(t *testing.T) {
 		mu.Lock()
 		served++
 		mu.Unlock()
-		writer.Header().Set("AgentOS-Runtime-Interface", ProtocolVersion)
+		writer.Header().Set("Fenced-Runtime-Interface", ProtocolVersion)
 		writeProblem(writer, http.StatusNotFound, "ROUTE_NOT_FOUND", "runtime execution route not found")
 	}))
 	defer v1Only.Close()
@@ -195,7 +195,7 @@ func TestHostSlowStreamClientDoesNotStallHostWrites(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer stalled.Close()
-	if _, err := stalled.Write([]byte("GET /v1/executions/chatty/events/stream?after=0 HTTP/1.1\r\nHost: agentos\r\n\r\n")); err != nil {
+	if _, err := stalled.Write([]byte("GET /v1/executions/chatty/events/stream?after=0 HTTP/1.1\r\nHost: fenced\r\n\r\n")); err != nil {
 		t.Fatal(err)
 	}
 	header := make([]byte, 512)

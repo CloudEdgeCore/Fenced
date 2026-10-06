@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/ipc"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/ipc"
 	"github.com/google/uuid"
 )
 

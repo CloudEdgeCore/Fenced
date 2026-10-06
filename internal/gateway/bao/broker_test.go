@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
 )
 
 // fakeBao simulates an OpenBao KV v2 endpoint.
@@ -65,7 +65,7 @@ func scope() tool.SecretScope {
 
 func TestIssueReadsValueKey(t *testing.T) {
 	fake := &fakeBao{token: "root", secrets: map[string]map[string]any{
-		"agentos/tenant-a/fs.read/fs:%2Ftmp%2Fnotes": {"value": "scoped-credential"},
+		"fenced/tenant-a/fs.read/fs:%2Ftmp%2Fnotes": {"value": "scoped-credential"},
 	}}
 	broker, _ := newBroker(t, fake)
 	handle, err := broker.Issue(context.Background(), scope())
@@ -79,7 +79,7 @@ func TestIssueReadsValueKey(t *testing.T) {
 
 func TestIssueRendersJSONDataWithoutValueKey(t *testing.T) {
 	fake := &fakeBao{token: "root", secrets: map[string]map[string]any{
-		"agentos/tenant-a/fs.read/fs:%2Ftmp%2Fnotes": {"username": "svc", "host": "db.internal"},
+		"fenced/tenant-a/fs.read/fs:%2Ftmp%2Fnotes": {"username": "svc", "host": "db.internal"},
 	}}
 	broker, _ := newBroker(t, fake)
 	handle, err := broker.Issue(context.Background(), scope())
@@ -102,7 +102,7 @@ func TestIssueFailClosed(t *testing.T) {
 		t.Fatalf("missing secret error = %v, want ErrSecretNotFound", err)
 	}
 	denied := &fakeBao{token: "root"}
-	denied.secrets = map[string]map[string]any{"agentos/tenant-a/fs.read/fs:%2Ftmp%2Fnotes": {"value": "x"}}
+	denied.secrets = map[string]map[string]any{"fenced/tenant-a/fs.read/fs:%2Ftmp%2Fnotes": {"value": "x"}}
 	broker, _ = newBroker(t, denied)
 	denied.token = "different"
 	if _, err := broker.Issue(context.Background(), scope()); !errors.Is(err, ErrSecretUnavailable) {
@@ -120,7 +120,7 @@ func TestIssueFailClosed(t *testing.T) {
 
 func TestIssueCachesWithinTTL(t *testing.T) {
 	fake := &fakeBao{token: "root", secrets: map[string]map[string]any{
-		"agentos/tenant-a/fs.read/fs:%2Ftmp%2Fnotes": {"value": "scoped-credential"},
+		"fenced/tenant-a/fs.read/fs:%2Ftmp%2Fnotes": {"value": "scoped-credential"},
 	}}
 	broker, _ := newBroker(t, fake)
 	clock := time.Date(2026, 8, 16, 12, 0, 0, 0, time.UTC)
@@ -149,8 +149,8 @@ func TestIssueCachesWithinTTL(t *testing.T) {
 
 func TestIssueScopesAreIsolated(t *testing.T) {
 	fake := &fakeBao{token: "root", secrets: map[string]map[string]any{
-		"agentos/tenant-a/fs.read/fs:%2Ftmp%2Fnotes": {"value": "tenant-a-secret"},
-		"agentos/tenant-b/fs.read/fs:%2Ftmp%2Fnotes": {"value": "tenant-b-secret"},
+		"fenced/tenant-a/fs.read/fs:%2Ftmp%2Fnotes": {"value": "tenant-a-secret"},
+		"fenced/tenant-b/fs.read/fs:%2Ftmp%2Fnotes": {"value": "tenant-b-secret"},
 	}}
 	broker, _ := newBroker(t, fake)
 	tenantA, err := broker.Issue(context.Background(), tool.SecretScope{TenantID: "tenant-a", ToolName: "fs.read", Resource: "fs:/tmp/notes"})
@@ -185,7 +185,7 @@ func TestScopePathEscapesResource(t *testing.T) {
 		t.Fatalf("new broker: %v", err)
 	}
 	path := broker.scopePath(tool.SecretScope{TenantID: "tenant-a", ToolName: "db.query", Resource: "postgres://prod"})
-	if path != "agentos/tenant-a/db.query/postgres:%2F%2Fprod" {
+	if path != "fenced/tenant-a/db.query/postgres:%2F%2Fprod" {
 		t.Fatalf("scope path = %q", path)
 	}
 }

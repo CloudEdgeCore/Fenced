@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/errorcode"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/errorcode"
 	"github.com/google/uuid"
 )
 
@@ -594,7 +594,7 @@ func TestEngineRunsSequentialDependencyChain(t *testing.T) {
 	if len(steps) != 2 || steps[0].Status != kernelstore.StepSucceeded || steps[1].Status != kernelstore.StepSucceeded {
 		t.Fatalf("steps = %+v", steps)
 	}
-	// A's result reached B's goal through AgentOS.
+	// A's result reached B's goal through Fenced.
 	if !strings.Contains(tasks.goals[*steps[1].TaskID], "research says 42") {
 		t.Fatalf("downstream goal missing upstream output: %q", tasks.goals[*steps[1].TaskID])
 	}
@@ -692,8 +692,8 @@ func TestEngineDoesNotCloseEmptySpawnGroupBeforeParentCompletes(t *testing.T) {
 }
 
 func TestV13Orchestrates10KDynamicTasks(t *testing.T) {
-	if os.Getenv("AGENTOS_V13_SCALE_TEST") != "1" {
-		t.Skip("set AGENTOS_V13_SCALE_TEST=1 to run the 10k dynamic-task acceptance leg")
+	if os.Getenv("FENCED_V13_SCALE_TEST") != "1" {
+		t.Skip("set FENCED_V13_SCALE_TEST=1 to run the 10k dynamic-task acceptance leg")
 	}
 	deadline := time.Now().UTC().Add(time.Hour).Format(time.RFC3339)
 	spec := fmt.Sprintf(`{

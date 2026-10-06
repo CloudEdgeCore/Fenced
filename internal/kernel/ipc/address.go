@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// AgentAddress is the unified address of an agent in the AgentOS kernel.
+// AgentAddress is the unified address of an agent in the Fenced kernel.
 // It supports both logical agent addressing (InstanceID is empty) and
 // specific instance addressing (InstanceID is non-empty).
 type AgentAddress struct {

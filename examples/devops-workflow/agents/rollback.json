@@ -1,11 +1,11 @@
 {
-  "apiVersion": "agentos.dev/v1",
+  "apiVersion": "fenced.dev/v1",
   "kind": "AgentVersion",
   "metadata": { "name": "devops-rollback", "version": "1.0.0", "namespace": "default" },
   "spec": {
     "runtimeClassPolicy": { "allowed": ["research-network"], "preferred": "research-network" },
     "lifecycle": { "maxAttempts": 3 },
-    "runtimes": [{ "class": "research-network", "interface": "agentos.runtime.interface/v1", "runtimeABI": "agentos.adapter-http/v1", "entrypoint": ["agentos-binding://devops"] }],
+    "runtimes": [{ "class": "research-network", "interface": "fenced.runtime.interface/v1", "runtimeABI": "fenced.adapter-http/v1", "entrypoint": ["fenced-binding://devops"] }],
     "capabilities": { "tools": ["kubernetes.scale@1.0.0", "server.exec@1.0.0"], "models": ["__MODEL_FAST__"], "memory": ["devops/*"], "secrets": [] },
     "budget": { "tokens": 8000, "costUsd": 1.20, "toolCalls": 8, "wallSeconds": 300 },
     "checkpoint": { "mode": "logical", "schemaVersion": "devops/v1", "intervalSeconds": 30 }

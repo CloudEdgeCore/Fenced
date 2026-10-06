@@ -13,24 +13,24 @@ import (
 	"testing"
 	"time"
 
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	postgresstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store/postgres"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/migrate"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/control"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	postgresstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store/postgres"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/migrate"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/control"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-const testDatabaseEnvironment = "AGENTOS_TEST_DATABASE_URL"
+const testDatabaseEnvironment = "FENCED_TEST_DATABASE_URL"
 
 // securityDatabaseName is the dedicated database for the security suite: the
 // suite runs sequence-sensitive takeover scenarios, and other packages reset
 // shared test tables in parallel, so it must not share a database with them.
-const securityDatabaseName = "agentos_security"
+const securityDatabaseName = "fenced_security"
 
 // prepareSecurity connects to the dedicated security test database (created
 // on demand), applies migrations and resets the runtime tables.
@@ -182,7 +182,7 @@ func TestFencingReplayRejectedAfterTakeover(t *testing.T) {
 		Identity: staleIdentity, CheckpointId: uuid.New().String(),
 		ExpectedAttemptVersion: running.ResourceVersion, IdempotencyKey: "replay-checkpoint-1",
 		AgentVersionRef: "research-agent@1.0.0", Provider: "reference-go",
-		RuntimeAbi: "agentos.reference/v1", SchemaVersion: "state/v1",
+		RuntimeAbi: "fenced.reference/v1", SchemaVersion: "state/v1",
 		State: &runtimev1.ArtifactReference{
 			Uri: "artifact://tenant-a/sha256/stale", Sha256: hex.EncodeToString(digest[:]),
 			SizeBytes: int64(len("stale-state")), MediaType: "application/octet-stream",

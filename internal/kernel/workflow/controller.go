@@ -18,9 +18,9 @@ import (
 	"sync"
 	"time"
 
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/agentmetrics"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/errorcode"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/agentmetrics"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/errorcode"
 	"github.com/google/uuid"
 	"github.com/santhosh-tekuri/jsonschema/v6"
 )
@@ -635,7 +635,7 @@ func decodeStoredSpec(raw json.RawMessage) (WorkflowSpec, error) {
 }
 
 // renderGoal appends the bounded dependency outputs to the step goal so
-// Agent A's result reaches Agent B through AgentOS, never peer to peer.
+// Agent A's result reaches Agent B through Fenced, never peer to peer.
 func renderGoal(goal string, outputs map[string]string) string {
 	if len(outputs) == 0 {
 		return goal

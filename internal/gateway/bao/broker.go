@@ -1,7 +1,7 @@
 // Package bao implements the reference Secret Broker backed by OpenBao
 // (ADR-012). Secrets live in KV v2 under
 //
-//	<mount>/agentos/<tenant>/<tool>/<resource>
+//	<mount>/fenced/<tenant>/<tool>/<resource>
 //
 // and are read on demand per invocation scope; issued handles are cached for
 // a bounded TTL so the gateway does not hammer the broker on every tool call.
@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
 )
 
 var (
@@ -228,7 +228,7 @@ func (b *Broker) scopePath(scope tool.SecretScope) string {
 	if strings.TrimSpace(scope.SecretRef) != "" {
 		resource = scope.SecretRef
 	}
-	segments := []string{"agentos", scope.TenantID, scope.ToolName, url.PathEscape(resource)}
+	segments := []string{"fenced", scope.TenantID, scope.ToolName, url.PathEscape(resource)}
 	return strings.Join(segments, "/")
 }
 

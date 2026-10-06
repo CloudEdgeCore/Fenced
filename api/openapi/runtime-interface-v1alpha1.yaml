@@ -185,7 +185,7 @@ components:
         status: { type: string, const: SERVING }
         protocolVersions:
           type: array
-          contains: { const: agentos.runtime.interface/v1alpha1 }
+          contains: { const: fenced.runtime.interface/v1alpha1 }
         adapter: { type: string, minLength: 1 }
         maxConcurrent: { type: integer, minimum: 1 }
         activeExecutions: { type: integer, minimum: 0 }

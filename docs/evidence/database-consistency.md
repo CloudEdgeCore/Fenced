@@ -1,6 +1,6 @@
 # Database Consistency Model
 
-> 仓库：`CloudEdgeCore/AgentOS`  
+> 仓库：`CloudEdgeCore/Fenced`  
 > 对应版本：2026-09-02 审计，涵盖 Task Claim、Lease、Attempt Fencing、Capacity Reservation 等核心路径。
 
 ## 1. Isolation Assumption

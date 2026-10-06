@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/mcp"
+	"github.com/CloudEdgeCore/Fenced/internal/mcp"
 	"github.com/google/uuid"
 )
 

@@ -1,9 +1,9 @@
 // Package research implements the seven agent roles of the multi-agent
-// research workflow as one AgentOS-native runtime. Every role executes
+// research workflow as one Fenced-native runtime. Every role executes
 // inside the fenced attempt context the platform injects: models are invoked
-// through the brokered agentos.model.invoke system tool, side effects go
+// through the brokered fenced.model.invoke system tool, side effects go
 // through tenant tools behind the Tool Gateway, artifacts land in namespaced
-// memory, and dynamic fan-out happens through agentos.task.spawn - the
+// memory, and dynamic fan-out happens through fenced.task.spawn - the
 // runtime never talks to providers, stores or the kernel directly.
 package research
 
@@ -67,7 +67,7 @@ func invokeModelWithLimit(ctx context.Context, mcp MCPClient, executionID, model
 	if maxOutputTokens <= 0 || maxOutputTokens > researchMaxOutputTokens {
 		return ChatTurn{}, fmt.Errorf("model maxOutputTokens %d is outside (0,%d]", maxOutputTokens, researchMaxOutputTokens)
 	}
-	response, err := mcp.CallTool(ctx, executionID, "agentos.model.invoke", map[string]any{
+	response, err := mcp.CallTool(ctx, executionID, "fenced.model.invoke", map[string]any{
 		"modelRef":        modelRef,
 		"messages":        messages,
 		"maxOutputTokens": maxOutputTokens,
@@ -118,7 +118,7 @@ func PutMemory(ctx context.Context, mcp MCPClient, executionID, namespace, key, 
 	if err != nil {
 		return fmt.Errorf("encode memory content: %w", err)
 	}
-	_, err = CallTenantTool(ctx, mcp, executionID, "agentos.memory.put", map[string]any{
+	_, err = CallTenantTool(ctx, mcp, executionID, "fenced.memory.put", map[string]any{
 		"namespace": namespace, "key": key, "contentType": contentType, "content": string(content),
 	})
 	return err
@@ -138,7 +138,7 @@ func SearchMemory(ctx context.Context, mcp MCPClient, executionID, namespace, qu
 	if limit <= 0 || limit > 100 {
 		limit = 50
 	}
-	raw, err := CallTenantTool(ctx, mcp, executionID, "agentos.memory.search", map[string]any{
+	raw, err := CallTenantTool(ctx, mcp, executionID, "fenced.memory.search", map[string]any{
 		"query": query, "namespace": namespace, "limit": limit,
 	})
 	if err != nil {
@@ -189,7 +189,7 @@ func SpawnChild(ctx context.Context, mcp MCPClient, executionID, name, childRef,
 	if spec := childPlacementSpec(childRef); spec != nil {
 		args["spec"] = spec
 	}
-	raw, err := mcp.CallTool(ctx, executionID, "agentos.task.spawn", args)
+	raw, err := mcp.CallTool(ctx, executionID, "fenced.task.spawn", args)
 	var outcome struct {
 		Outcome string `json:"outcome"`
 		Message string `json:"message"`
@@ -260,7 +260,7 @@ type FetchedDocument struct {
 	FetchedAt string `json:"fetchedAt"`
 }
 
-const envelopePrefix = "AGENTOS-RESEARCH/v1 "
+const envelopePrefix = "FENCED-RESEARCH/v1 "
 
 // EnvelopePrefix exposes the goal envelope marker to application publishers.
 func EnvelopePrefix() string { return envelopePrefix }

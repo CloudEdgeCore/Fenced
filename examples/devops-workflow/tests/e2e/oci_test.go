@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -23,7 +23,7 @@ import (
 // ociImageName is the containerd image name the OCI drill runs. The CI job
 // builds deploy/oci/agent-runtime/Dockerfile and imports it before running
 // this test.
-const ociImageName = "docker.io/library/agentos-runtime:latest"
+const ociImageName = "docker.io/library/fenced-runtime:latest"
 
 // ociWorkerCommand returns the binary and arguments to start the OCI worker,
 // wrapping with sudo when the containerd socket requires root access.
@@ -58,8 +58,8 @@ func ociArtifactRoot(t *testing.T) string {
 // environment is available; skips otherwise.
 func requireOCIDrillEnvironment(t *testing.T) {
 	t.Helper()
-	if os.Getenv("AGENTOS_RUN_OCI_DRILL") != "1" {
-		t.Skip("AGENTOS_RUN_OCI_DRILL is not set; the OCI/gVisor drill runs in its dedicated CI job")
+	if os.Getenv("FENCED_RUN_OCI_DRILL") != "1" {
+		t.Skip("FENCED_RUN_OCI_DRILL is not set; the OCI/gVisor drill runs in its dedicated CI job")
 	}
 	// containerd CLI must be present.
 	if _, err := exec.LookPath("ctr"); err != nil {
@@ -68,9 +68,9 @@ func requireOCIDrillEnvironment(t *testing.T) {
 	// The agent image must be imported into containerd. ctr must talk to the
 	// root-owned containerd socket, so run it through sudo like the workflow
 	// does (the drill CI job runs as a non-root user).
-	listCommand := exec.Command("ctr", "-n", "agentos", "images", "ls", "-q")
+	listCommand := exec.Command("ctr", "-n", "fenced", "images", "ls", "-q")
 	if _, err := exec.LookPath("sudo"); err == nil {
-		listCommand = exec.Command("sudo", "-n", "ctr", "-n", "agentos", "images", "ls", "-q")
+		listCommand = exec.Command("sudo", "-n", "ctr", "-n", "fenced", "images", "ls", "-q")
 	}
 	out, err := listCommand.CombinedOutput()
 	if err != nil {
@@ -83,7 +83,7 @@ func requireOCIDrillEnvironment(t *testing.T) {
 
 // TestOCIIsolation is the A-path isolation drill: a task whose spec targets
 // an OCI container is placed on the `oci` pool, executed by the real
-// agentos-runtime-oci worker inside a gVisor sandbox, and completes
+// fenced-runtime-oci worker inside a gVisor sandbox, and completes
 // successfully.
 func TestOCIIsolation(t *testing.T) {
 	requireOCIDrillEnvironment(t)
@@ -95,8 +95,8 @@ func TestOCIIsolation(t *testing.T) {
 		"runtimeClassPolicy": map[string]any{"allowed": []string{"oci", "research-network"}, "preferred": "oci"},
 		"lifecycle":          map[string]any{"maxAttempts": 3},
 		"runtimes": []any{
-			map[string]any{"class": "oci", "interface": "agentos.runtime.interface/v1", "runtimeABI": "agentos.oci/v1", "entrypoint": []string{"oci://agent-runtime"}},
-			map[string]any{"class": "research-network", "interface": "agentos.runtime.interface/v1", "runtimeABI": "agentos.adapter-http/v1", "entrypoint": []string{"agentos-binding://devops"}},
+			map[string]any{"class": "oci", "interface": "fenced.runtime.interface/v1", "runtimeABI": "fenced.oci/v1", "entrypoint": []string{"oci://agent-runtime"}},
+			map[string]any{"class": "research-network", "interface": "fenced.runtime.interface/v1", "runtimeABI": "fenced.adapter-http/v1", "entrypoint": []string{"fenced-binding://devops"}},
 		},
 		"capabilities": map[string]any{"tools": []string{"hello.echo@1.0.0"}, "models": []any{}, "memory": []any{}, "secrets": []any{}},
 		"budget":       map[string]any{"tokens": 2000, "costUsd": 0.10, "toolCalls": 8, "wallSeconds": 120}, "checkpoint": map[string]any{"mode": "logical", "schemaVersion": "hello/v1", "intervalSeconds": 30},
@@ -109,9 +109,9 @@ func TestOCIIsolation(t *testing.T) {
 	}
 
 	// Build the OCI worker binary and start it as a subprocess.
-	ociWorkerBin := filepath.Join("..", "..", "..", "..", "bin", "agentos-runtime-oci")
+	ociWorkerBin := filepath.Join("..", "..", "..", "..", "bin", "fenced-runtime-oci")
 	if _, err := os.Stat(ociWorkerBin); err != nil {
-		t.Skipf("agentos-runtime-oci binary not found at %s (build with: go build ./cmd/agentos-runtime-oci)", ociWorkerBin)
+		t.Skipf("fenced-runtime-oci binary not found at %s (build with: go build ./cmd/fenced-runtime-oci)", ociWorkerBin)
 	}
 	artifactRoot := ociArtifactRoot(t)
 	workerBin, workerArgs := ociWorkerCommand(ociWorkerBin,
@@ -124,9 +124,9 @@ func TestOCIIsolation(t *testing.T) {
 		"-dev-mode",
 	)
 	// When the containerd shim path is unavailable (e.g. WSL2), the
-	// environment variable AGENTOS_RUNSC_DIRECT switches to the direct runsc
+	// environment variable FENCED_RUNSC_DIRECT switches to the direct runsc
 	// executor which bypasses containerd.
-	if os.Getenv("AGENTOS_RUNSC_DIRECT") == "1" {
+	if os.Getenv("FENCED_RUNSC_DIRECT") == "1" {
 		workerArgs = append(workerArgs, "-runsc-direct", "-runsc-platform", "kvm")
 	}
 	workerCmd := exec.Command(workerBin, workerArgs...)
@@ -217,8 +217,8 @@ func TestOCICrossClassPlacement(t *testing.T) {
 		},
 		"lifecycle": map[string]any{"maxAttempts": 3},
 		"runtimes": []any{
-			map[string]any{"class": "oci", "interface": "agentos.runtime.interface/v1", "runtimeABI": "agentos.oci/v1", "entrypoint": []string{"oci://agent-runtime"}},
-			map[string]any{"class": "research-network", "interface": "agentos.runtime.interface/v1", "runtimeABI": "agentos.adapter-http/v1", "entrypoint": []string{"agentos-binding://devops"}},
+			map[string]any{"class": "oci", "interface": "fenced.runtime.interface/v1", "runtimeABI": "fenced.oci/v1", "entrypoint": []string{"oci://agent-runtime"}},
+			map[string]any{"class": "research-network", "interface": "fenced.runtime.interface/v1", "runtimeABI": "fenced.adapter-http/v1", "entrypoint": []string{"fenced-binding://devops"}},
 		},
 		"capabilities": map[string]any{"tools": []string{"hello.echo@1.0.0"}, "models": []any{}, "memory": []any{}, "secrets": []any{}},
 		"budget":       map[string]any{"tokens": 2000, "costUsd": 0.10, "toolCalls": 8, "wallSeconds": 120},
@@ -231,9 +231,9 @@ func TestOCICrossClassPlacement(t *testing.T) {
 		t.Fatalf("publish dual agent: %v", err)
 	}
 
-	ociWorkerBin := filepath.Join("..", "..", "..", "..", "bin", "agentos-runtime-oci")
+	ociWorkerBin := filepath.Join("..", "..", "..", "..", "bin", "fenced-runtime-oci")
 	if _, err := os.Stat(ociWorkerBin); err != nil {
-		t.Skipf("agentos-runtime-oci binary not found")
+		t.Skipf("fenced-runtime-oci binary not found")
 	}
 	workerBin, workerArgs := ociWorkerCommand(ociWorkerBin,
 		"-control-address", h.listener.Addr().String(),
@@ -244,7 +244,7 @@ func TestOCICrossClassPlacement(t *testing.T) {
 		"-skip-image-pull",
 		"-dev-mode",
 	)
-	if os.Getenv("AGENTOS_RUNSC_DIRECT") == "1" {
+	if os.Getenv("FENCED_RUNSC_DIRECT") == "1" {
 		workerArgs = append(workerArgs, "-runsc-direct", "-runsc-platform", "kvm")
 	}
 	workerCmd := exec.Command(workerBin, workerArgs...)
@@ -347,8 +347,8 @@ func TestOCIRealTakeover(t *testing.T) {
 		},
 		"lifecycle": map[string]any{"maxAttempts": 3},
 		"runtimes": []any{
-			map[string]any{"class": "oci", "interface": "agentos.runtime.interface/v1", "runtimeABI": "agentos.oci/v1", "entrypoint": []string{"oci://agent-runtime"}},
-			map[string]any{"class": "research-network", "interface": "agentos.runtime.interface/v1", "runtimeABI": "agentos.adapter-http/v1", "entrypoint": []string{"agentos-binding://devops"}},
+			map[string]any{"class": "oci", "interface": "fenced.runtime.interface/v1", "runtimeABI": "fenced.oci/v1", "entrypoint": []string{"oci://agent-runtime"}},
+			map[string]any{"class": "research-network", "interface": "fenced.runtime.interface/v1", "runtimeABI": "fenced.adapter-http/v1", "entrypoint": []string{"fenced-binding://devops"}},
 		},
 		"capabilities": map[string]any{"tools": []string{"hello.echo@1.0.0"}, "models": []any{}, "memory": []any{}, "secrets": []any{}},
 		"budget":       map[string]any{"tokens": 2000, "costUsd": 0.10, "toolCalls": 8, "wallSeconds": 120},
@@ -361,9 +361,9 @@ func TestOCIRealTakeover(t *testing.T) {
 		t.Fatalf("publish dual agent: %v", err)
 	}
 
-	ociWorkerBin := filepath.Join("..", "..", "..", "..", "bin", "agentos-runtime-oci")
+	ociWorkerBin := filepath.Join("..", "..", "..", "..", "bin", "fenced-runtime-oci")
 	if _, err := os.Stat(ociWorkerBin); err != nil {
-		t.Skipf("agentos-runtime-oci binary not found")
+		t.Skipf("fenced-runtime-oci binary not found")
 	}
 	// Long-running workload: sleep 30 in the alpine image. The worker is
 	// configured with the same alpine reference so the workload pin matches
@@ -378,7 +378,7 @@ func TestOCIRealTakeover(t *testing.T) {
 		"-skip-image-pull",
 		"-dev-mode",
 	)
-	if os.Getenv("AGENTOS_RUNSC_DIRECT") == "1" {
+	if os.Getenv("FENCED_RUNSC_DIRECT") == "1" {
 		workerArgs = append(workerArgs, "-runsc-direct", "-runsc-platform", "kvm")
 	}
 	workerCmd := exec.Command(workerBin, workerArgs...)

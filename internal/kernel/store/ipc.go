@@ -43,7 +43,7 @@ const (
 
 	// IPCMessageEventAggregateType is the outbox aggregate type of the event
 	// that announces a stored message. The outbox renders subjects as
-	// "agentos.events.<aggregate_type lowercased>.<event_type lowercased>" and
+	// "fenced.events.<aggregate_type lowercased>.<event_type lowercased>" and
 	// requires both tokens to match ^[A-Za-z][A-Za-z0-9_]{0,127}$, so the value
 	// is pinned here before any delivery code exists: it may not contain '.' or
 	// '-'.
@@ -52,7 +52,7 @@ const (
 	// IPCMessageStoredEventType is the outbox event type of the notification
 	// that announces a stored message. Like the aggregate type it is pinned
 	// before the delivery code exists, because the outbox renders both into one
-	// NATS subject ("agentos.events.ipc.messagestored") and validates each token
+	// NATS subject ("fenced.events.ipc.messagestored") and validates each token
 	// against ^[A-Za-z][A-Za-z0-9_]{0,127}$.
 	//
 	// The event announces that a message reached a mailbox. It does not mean the
@@ -306,7 +306,7 @@ type AcknowledgeIPCMessagesResult struct {
 // AppendIPCMessage enqueues the dispatch event in the same transaction, so a
 // stored message and its announcement cannot diverge. Publishing that event to
 // NATS is the dispatcher's job (internal/platform/outbox), and notifying a
-// receiver is deliberately absent: agentos.runtime.v1 is pull-only, so a
+// receiver is deliberately absent: fenced.runtime.v1 is pull-only, so a
 // receiver drains its mailbox on its own schedule and no method here pretends
 // otherwise.
 type IPCStore interface {

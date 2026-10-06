@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 )
 
 func TestRemoteAdaptersPassTheUnifiedSuite(t *testing.T) {

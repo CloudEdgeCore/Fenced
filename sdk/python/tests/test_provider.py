@@ -1,7 +1,7 @@
 """Unit tests for Python Provider SDK and Reference Providers."""
 
 import unittest
-from agentos_runtime.provider import (
+from fenced_runtime.provider import (
     BrowserProviderRef,
     OpenAIProvider,
     PostgresMemoryProvider,
@@ -53,7 +53,7 @@ class TestProviderSDK(unittest.TestCase):
 
     def test_browser_provider(self):
         p = BrowserProviderRef()
-        nav = p.navigate("https://agentos.dev")
+        nav = p.navigate("https://fenced.dev")
         self.assertEqual(nav["status_code"], 200)
 
         shot = p.screenshot()

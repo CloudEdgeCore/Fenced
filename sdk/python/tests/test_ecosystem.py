@@ -3,7 +3,7 @@
 import threading
 import unittest
 
-from agentos_runtime.ecosystem import FrameworkAdapterRuntime
+from fenced_runtime.ecosystem import FrameworkAdapterRuntime
 
 
 class EcosystemWrapperTests(unittest.TestCase):

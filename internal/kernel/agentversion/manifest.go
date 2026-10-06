@@ -9,19 +9,20 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/compat"
 )
 
 const (
 	// ManifestAPIVersion identifies the frozen GA Agent Manifest contract.
 	// LegacyManifestAPIVersion remains readable for the published N-1 window.
-	ManifestAPIVersion       = "agentos.dev/v1"
-	LegacyManifestAPIVersion = "agentos.dev/v1alpha1"
+	ManifestAPIVersion       = "fenced.dev/v1"
+	LegacyManifestAPIVersion = "fenced.dev/v1alpha1"
 	ManifestKind             = "AgentManifest"
 	// RuntimeInterfaceV1 is the frozen provider-neutral lifecycle boundary.
-	RuntimeInterfaceV1 = "agentos.runtime.interface/v1"
+	RuntimeInterfaceV1 = "fenced.runtime.interface/v1"
 	// RuntimeInterfaceV1Alpha1 is accepted only for legacy manifests.
-	RuntimeInterfaceV1Alpha1 = "agentos.runtime.interface/v1alpha1"
+	RuntimeInterfaceV1Alpha1 = "fenced.runtime.interface/v1alpha1"
 
 	CheckpointNone    = "none"
 	CheckpointLogical = "logical"
@@ -109,6 +110,7 @@ func DecodeManifest(raw []byte) (Manifest, json.RawMessage, [sha256.Size]byte, e
 	if err := ensureJSONEOF(decoder); err != nil {
 		return manifest, nil, zero, err
 	}
+	manifest.NormalizeLegacyIdentifiers()
 	if err := manifest.Validate(); err != nil {
 		return manifest, nil, zero, err
 	}
@@ -117,6 +119,23 @@ func DecodeManifest(raw []byte) (Manifest, json.RawMessage, [sha256.Size]byte, e
 		return manifest, nil, zero, fmt.Errorf("canonicalize agent manifest: %w", err)
 	}
 	return manifest, canonical, sha256.Sum256(canonical), nil
+}
+
+// NormalizeLegacyIdentifiers rewrites identifiers that predate the AgentOS →
+// Fenced rename into their canonical Fenced form. DecodeManifest applies it
+// before validation, so a manifest published under the former name stays
+// loadable instead of failing with "runtimes[0].interface must be
+// fenced.runtime.interface/v1".
+//
+// The canonical JSON and SHA-256 returned by DecodeManifest are computed on the
+// normalized document, so a legacy manifest has a different identity after the
+// rename. See docs/COMPATIBILITY.md.
+func (m *Manifest) NormalizeLegacyIdentifiers() {
+	m.APIVersion = compat.NormalizeProtocol(m.APIVersion)
+	for i := range m.Spec.Runtimes {
+		m.Spec.Runtimes[i].Interface = compat.NormalizeProtocol(m.Spec.Runtimes[i].Interface)
+		m.Spec.Runtimes[i].RuntimeABI = compat.NormalizeProtocol(m.Spec.Runtimes[i].RuntimeABI)
+	}
 }
 
 func (m Manifest) Validate() error {
@@ -240,8 +259,8 @@ func validatePlatformSpecForInterface(spec Spec, runtimeInterface string) error 
 			}
 		}
 		for _, tool := range spec.Capabilities.Tools {
-			if strings.HasPrefix(strings.ToLower(tool), "agentos.") {
-				return fmt.Errorf("capabilities.tools cannot claim reserved agentos.* system tools")
+			if strings.HasPrefix(strings.ToLower(tool), "fenced.") {
+				return fmt.Errorf("capabilities.tools cannot claim reserved fenced.* system tools")
 			}
 		}
 		if spec.Capabilities.ChildAgents != nil {

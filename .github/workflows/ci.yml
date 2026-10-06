@@ -22,20 +22,20 @@ jobs:
 
       - name: Install pinned Helm and render dependencies
         run: |
-          mkdir -p "$RUNNER_TEMP/agentos-helm"
+          mkdir -p "$RUNNER_TEMP/fenced-helm"
           curl --fail --silent --show-error --location --retry 3 \
             https://get.helm.sh/helm-v3.19.0-linux-amd64.tar.gz \
-            --output "$RUNNER_TEMP/agentos-helm/helm.tar.gz"
+            --output "$RUNNER_TEMP/fenced-helm/helm.tar.gz"
           printf '%s  %s\n' \
             a7f81ce08007091b86d8bd696eb4d86b8d0f2e1b9f6c714be62f82f96a594496 \
-            "$RUNNER_TEMP/agentos-helm/helm.tar.gz" | sha256sum --check
-          tar -xzf "$RUNNER_TEMP/agentos-helm/helm.tar.gz" -C "$RUNNER_TEMP/agentos-helm"
+            "$RUNNER_TEMP/fenced-helm/helm.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/fenced-helm/helm.tar.gz" -C "$RUNNER_TEMP/fenced-helm"
           python3 -m pip install PyYAML==6.0.3
 
       - name: Verify production chart rendering
         env:
-          HELM: ${{ runner.temp }}/agentos-helm/linux-amd64/helm
-        run: python3 deploy/helm/agentos/tests/render_test.py
+          HELM: ${{ runner.temp }}/fenced-helm/linux-amd64/helm
+        run: python3 deploy/helm/fenced/tests/render_test.py
 
   kernel:
     runs-on: ubuntu-latest
@@ -49,26 +49,26 @@ jobs:
         # extension alongside FTS/pg_trgm.
         image: pgvector/pgvector:pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
         env:
-          POSTGRES_DB: agentos_test
-          POSTGRES_USER: agentos
-          POSTGRES_PASSWORD: agentos-test-only
+          POSTGRES_DB: fenced_test
+          POSTGRES_USER: fenced
+          POSTGRES_PASSWORD: fenced-test-only
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U agentos -d agentos_test"
+          --health-cmd "pg_isready -U fenced -d fenced_test"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 20
 
     env:
-      AGENTOS_TEST_DATABASE_URL: postgres://agentos:agentos-test-only@127.0.0.1:5432/agentos_test?sslmode=disable
-      AGENTOS_TEST_NATS_URL: nats://127.0.0.1:4222
-      AGENTOS_WASMTIME_RUNTIME: ${{ github.workspace }}/target/debug/agentos-runtime-wasm
-      AGENTOS_WASMTIME_PACKAGE_ROOT: ${{ github.workspace }}/target/conformance
+      FENCED_TEST_DATABASE_URL: postgres://fenced:fenced-test-only@127.0.0.1:5432/fenced_test?sslmode=disable
+      FENCED_TEST_NATS_URL: nats://127.0.0.1:4222
+      FENCED_WASMTIME_RUNTIME: ${{ github.workspace }}/target/debug/fenced-runtime-wasm
+      FENCED_WASMTIME_PACKAGE_ROOT: ${{ github.workspace }}/target/conformance
       # v1.1 acceptance evidence: the e2e/single-agent suite launches the
       # real Python agent from the repository tree.
-      AGENTOS_E2E_PYTHON: python3
-      AGENTOS_E2E_WORKFLOWS: 100
+      FENCED_E2E_PYTHON: python3
+      FENCED_E2E_WORKFLOWS: 100
 
     steps:
       - name: Check out source
@@ -81,7 +81,7 @@ jobs:
           cache-dependency-path: go.sum
 
       - name: Start NATS JetStream
-        run: docker run --detach --name agentos-nats --publish 4222:4222 nats:2.14.1-alpine@sha256:ea17b9b7f74279b9239cf65e5786c0133e9a7c353bf218d29004abf2e7a33181 --jetstream
+        run: docker run --detach --name fenced-nats --publish 4222:4222 nats:2.14.1-alpine@sha256:ea17b9b7f74279b9239cf65e5786c0133e9a7c353bf218d29004abf2e7a33181 --jetstream
 
       - name: Verify module graph
         run: go mod verify
@@ -114,8 +114,8 @@ jobs:
 
       - name: Verify stable release contracts and Python SDK
         run: |
-          test "$(go run ./cmd/agentos version -json | jq -r .productVersion)" = "1.3.0.0"
-          python3 -m compileall -q sdk/python/agentos_runtime adapters examples/agents
+          test "$(go run ./cmd/fenced version -json | jq -r .productVersion)" = "1.3.0.0"
+          python3 -m compileall -q sdk/python/fenced_runtime adapters examples/agents
           (cd sdk/python && python3 -m unittest discover -s tests -v)
           python3 -m pip wheel --no-deps --wheel-dir "$RUNNER_TEMP/wheels" sdk/python
 
@@ -142,7 +142,7 @@ jobs:
       - name: Build Wasmtime provider
         env:
           CARGO_PROFILE_DEV_DEBUG: "0"
-        run: cargo +1.97.1 build --bin agentos-runtime-wasm --locked
+        run: cargo +1.97.1 build --bin fenced-runtime-wasm --locked
 
       - name: Build conformance component
         env:
@@ -159,11 +159,11 @@ jobs:
       # conformance leg needs a containerd + runsc host; this step guarantees
       # the linux build and unit tests (already run above with -race), and
       # puts the binary on PATH so an opt-in sandbox job can enable the
-      # conformance leg with AGENTOS_OCI_CONTAINERD_NAMESPACE.
+      # conformance leg with FENCED_OCI_CONTAINERD_NAMESPACE.
       - name: Build OCI/gVisor provider
         run: |
           mkdir -p "$RUNNER_TEMP/bin"
-          go build -o "$RUNNER_TEMP/bin/agentos-runtime-oci" ./cmd/agentos-runtime-oci
+          go build -o "$RUNNER_TEMP/bin/fenced-runtime-oci" ./cmd/fenced-runtime-oci
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
 
       - name: Check Rust formatting
@@ -178,13 +178,13 @@ jobs:
       - name: Audit Rust dependencies
         run: |
           cargo +1.97.1 install cargo-audit --version 0.22.2 --locked
-          cargo +1.97.1 audit --ignore RUSTSEC-2026-0315 --ignore RUSTSEC-2026-0316
+          cargo +1.97.1 audit
 
   # v0.7 real-machine leg: containerd + runsc on a Linux host, environment
   # fingerprint, the OCI/gVisor conformance leg, and the Firecracker KVM
   # probe. GitHub-hosted runners have no /dev/kvm, so the probe reports
   # KVM-absent there by design; a self-hosted runner with KVM (label
-  # agentos-kvm) runs the same leg without --allow-no-kvm.
+  # fenced-kvm) runs the same leg without --allow-no-kvm.
   #
   # Runtime archives and workload images are immutable and integrity checked;
   # the job fails closed if the approved matrix no longer installs or boots.
@@ -195,24 +195,24 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
         env:
-          POSTGRES_DB: agentos_test
-          POSTGRES_USER: agentos
-          POSTGRES_PASSWORD: agentos-test-only
+          POSTGRES_DB: fenced_test
+          POSTGRES_USER: fenced
+          POSTGRES_PASSWORD: fenced-test-only
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U agentos -d agentos_test"
+          --health-cmd "pg_isready -U fenced -d fenced_test"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 20
 
     env:
-      AGENTOS_TEST_DATABASE_URL: postgres://agentos:agentos-test-only@127.0.0.1:5432/agentos_test?sslmode=disable
-      AGENTOS_OCI_CONTAINERD_NAMESPACE: agentos-ci
-      AGENTOS_OCI_IMAGE: docker.io/library/alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
-      AGENTOS_OCI_RUNTIME_CONFIG: /etc/containerd/runsc.toml
-      AGENTOS_OCI_SNAPSHOTTER: overlayfs
-      CONTAINERD_ADDRESS: /run/agentos-containerd/containerd.sock
+      FENCED_TEST_DATABASE_URL: postgres://fenced:fenced-test-only@127.0.0.1:5432/fenced_test?sslmode=disable
+      FENCED_OCI_CONTAINERD_NAMESPACE: fenced-ci
+      FENCED_OCI_IMAGE: docker.io/library/alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+      FENCED_OCI_RUNTIME_CONFIG: /etc/containerd/runsc.toml
+      FENCED_OCI_SNAPSHOTTER: overlayfs
+      CONTAINERD_ADDRESS: /run/fenced-containerd/containerd.sock
       CONTAINERD_VERSION: "2.2.7"
       CONTAINERD_SHA256: "91cd216ea26a1b8b512219d3f205375c967e7b7de4dae571bc3dd16bfacd34b5"
       RUNSC_TAG: "20260810.0"
@@ -254,11 +254,11 @@ jobs:
       - name: Build OCI/gVisor provider
         run: |
           mkdir -p "$RUNNER_TEMP/bin"
-          go build -o "$RUNNER_TEMP/bin/agentos-runtime-oci" ./cmd/agentos-runtime-oci
+          go build -o "$RUNNER_TEMP/bin/fenced-runtime-oci" ./cmd/fenced-runtime-oci
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
 
       - name: Pin and pull the conformance workload image
-        run: ctr -n "$AGENTOS_OCI_CONTAINERD_NAMESPACE" images pull --snapshotter "$AGENTOS_OCI_SNAPSHOTTER" "$AGENTOS_OCI_IMAGE"
+        run: ctr -n "$FENCED_OCI_CONTAINERD_NAMESPACE" images pull --snapshotter "$FENCED_OCI_SNAPSHOTTER" "$FENCED_OCI_IMAGE"
 
       - name: Assert OCI/gVisor isolation boundary
         run: sudo -E bash deploy/ci/runtime-isolation.sh
@@ -268,7 +268,7 @@ jobs:
 
       - name: Verify OCI orphan recovery and cleanup
         run: |
-          leftovers="$(ctr -n "$AGENTOS_OCI_CONTAINERD_NAMESPACE" containers list -q | grep '^agentos-' || true)"
+          leftovers="$(ctr -n "$FENCED_OCI_CONTAINERD_NAMESPACE" containers list -q | grep '^fenced-' || true)"
           if [ -n "$leftovers" ]; then
             echo "provider-owned containers remain after conformance:" >&2
             echo "$leftovers" >&2

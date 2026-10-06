@@ -22,9 +22,9 @@ import (
 	"testing"
 	"time"
 
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentversion"
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 	"github.com/google/uuid"
 )
 
@@ -97,7 +97,7 @@ func bindingManifest(t *testing.T, entrypoint string) []byte {
 		RuntimeClassPolicy: agentversion.RuntimeClassPolicy{Allowed: []string{"remote"}, Preferred: "remote"},
 		Runtimes: []agentversion.RuntimeTarget{{
 			Class: "remote", Interface: agentversion.RuntimeInterfaceV1,
-			RuntimeABI: "agentos.remote/v1", Entrypoint: []string{entrypoint},
+			RuntimeABI: "fenced.remote/v1", Entrypoint: []string{entrypoint},
 		}},
 		Capabilities: &agentversion.Capabilities{Tools: []string{}, Models: []string{}, Memory: []string{}, Secrets: []string{}},
 		Resources:    &agentversion.ResourceLimits{CPUMillis: 100, MemoryMiB: 128},
@@ -184,12 +184,12 @@ func TestWorkerFallsBackToPollingOnV1OnlyRuntime(t *testing.T) {
 	resultCalls := 0
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/executions:start", func(writer http.ResponseWriter, request *http.Request) {
-		writer.Header().Set("AgentOS-Runtime-Interface", "agentos.runtime.interface/v1")
+		writer.Header().Set("Fenced-Runtime-Interface", "fenced.runtime.interface/v1")
 		writeJSONResponse(writer, http.StatusAccepted, map[string]any{"executionId": "legacy", "status": "ACCEPTED"})
 	})
 	mux.HandleFunc("/v1/executions/", func(writer http.ResponseWriter, request *http.Request) {
 		path := request.URL.Path
-		writer.Header().Set("AgentOS-Runtime-Interface", "agentos.runtime.interface/v1")
+		writer.Header().Set("Fenced-Runtime-Interface", "fenced.runtime.interface/v1")
 		switch {
 		case strings.HasSuffix(path, "/events"):
 			writeJSONResponse(writer, http.StatusOK, map[string]any{
@@ -414,7 +414,7 @@ func writeTestCertMaterial(t *testing.T) (string, string, string) {
 	}
 	caTemplate := &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: "agentos-test-ca"},
+		Subject:               pkix.Name{CommonName: "fenced-test-ca"},
 		NotBefore:             time.Now().Add(-time.Hour),
 		NotAfter:              time.Now().Add(time.Hour),
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
@@ -435,7 +435,7 @@ func writeTestCertMaterial(t *testing.T) (string, string, string) {
 	}
 	clientTemplate := &x509.Certificate{
 		SerialNumber: big.NewInt(2),
-		Subject:      pkix.Name{CommonName: "agentos-test-runtime-client"},
+		Subject:      pkix.Name{CommonName: "fenced-test-runtime-client"},
 		NotBefore:    time.Now().Add(-time.Hour),
 		NotAfter:     time.Now().Add(time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature,
@@ -579,7 +579,7 @@ func (s *streamDropServer) handler() http.Handler {
 		s.mu.Unlock()
 		after, _ := strconv.ParseInt(request.URL.Query().Get("after"), 10, 64)
 		writer.Header().Set("Content-Type", "text/event-stream")
-		writer.Header().Set("AgentOS-Runtime-Interface", "agentos.runtime.interface/v1")
+		writer.Header().Set("Fenced-Runtime-Interface", "fenced.runtime.interface/v1")
 		writer.WriteHeader(http.StatusOK)
 		for sequence := after + 1; sequence <= 2; sequence++ {
 			fmt.Fprint(writer, streamEventFrame(sequence))
@@ -605,7 +605,7 @@ func (s *streamDropServer) handler() http.Handler {
 				"occurredAt": "2026-08-23T00:00:00Z",
 			})
 		}
-		writer.Header().Set("AgentOS-Runtime-Interface", "agentos.runtime.interface/v1")
+		writer.Header().Set("Fenced-Runtime-Interface", "fenced.runtime.interface/v1")
 		writeJSONResponse(writer, http.StatusOK, map[string]any{
 			"executionId": "reconnect", "events": events, "nextAfter": after + int64(len(events)), "truncated": false,
 		})
@@ -615,7 +615,7 @@ func (s *streamDropServer) handler() http.Handler {
 		s.resultPolls++
 		calls := s.resultPolls
 		s.mu.Unlock()
-		writer.Header().Set("AgentOS-Runtime-Interface", "agentos.runtime.interface/v1")
+		writer.Header().Set("Fenced-Runtime-Interface", "fenced.runtime.interface/v1")
 		if calls == 1 {
 			writeJSONResponse(writer, http.StatusAccepted, map[string]any{"executionId": "reconnect", "status": "RUNNING"})
 			return

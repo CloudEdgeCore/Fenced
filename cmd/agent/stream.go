@@ -121,8 +121,8 @@ func StreamLLM(cfg *AgentYAMLConfig, systemPrompt, userPrompt string) (int, erro
 		req.Header.Set("Authorization", "Bearer "+provider.APIKey)
 	} else {
 		req.Header.Set("Authorization", "Bearer "+provider.APIKey)
-		req.Header.Set("HTTP-Referer", "https://agentos.dev")
-		req.Header.Set("X-Title", "AgentOS-CLI")
+		req.Header.Set("HTTP-Referer", "https://fenced.dev")
+		req.Header.Set("X-Title", "Fenced-CLI")
 	}
 
 	headerTimeout := 45 * time.Second

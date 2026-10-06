@@ -1,7 +1,7 @@
 // Per-attempt identity binding for shared Agent endpoints: a runtime worker
 // opens one execution window per assignment and the brokered MCP tools
 // resolve the fenced identity from the execution id the agent echoes in the
-// X-Agentos-Execution header. Concurrent attempts through one endpoint stay
+// X-Fenced-Execution header. Concurrent attempts through one endpoint stay
 // correctly fenced, and calls outside any open window deny closed.
 package mcp
 

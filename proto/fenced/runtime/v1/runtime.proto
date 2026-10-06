@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package fenced.runtime.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1;runtimev1";
+
+// RuntimeControlService is the stable, fenced worker control boundary.
+// v1 freezes every field number and RPC name; future v1 changes are additive.
+service RuntimeControlService {
+  rpc PollAssignment(PollAssignmentRequest) returns (PollAssignmentResponse);
+  rpc GetAssignment(GetAssignmentRequest) returns (GetAssignmentResponse);
+  rpc TransitionAttempt(TransitionAttemptRequest) returns (TransitionAttemptResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc CommitCheckpoint(CommitCheckpointRequest) returns (CommitCheckpointResponse);
+  rpc CompleteAttempt(CompleteAttemptRequest) returns (CompleteAttemptResponse);
+  rpc AcknowledgeCancellation(AcknowledgeCancellationRequest) returns (AcknowledgeCancellationResponse);
+}
+
+message PollAssignmentRequest { string tenant_id = 1; string runtime_instance_id = 2; }
+message PollAssignmentResponse { Assignment assignment = 1; }
+message AttemptIdentity { string tenant_id = 1; string attempt_id = 2; int64 fencing_token = 3; }
+message ArtifactReference { string uri = 1; string sha256 = 2; int64 size_bytes = 3; string media_type = 4; }
+message CheckpointReference {
+  string checkpoint_id = 1;
+  string agent_version_ref = 2;
+  string runtime_class = 3;
+  string provider = 4;
+  string runtime_abi = 5;
+  string schema_version = 6;
+  ArtifactReference state = 7;
+  repeated string confirmed_receipt_ids = 8;
+  string envelope_sha256 = 9;
+  google.protobuf.Timestamp created_at = 10;
+}
+message GetAssignmentRequest { AttemptIdentity identity = 1; }
+message GetAssignmentResponse { Assignment assignment = 1; }
+message Assignment {
+  AttemptIdentity identity = 1;
+  string run_id = 2;
+  string task_id = 3;
+  string agent_version_ref = 4;
+  string goal = 5;
+  bytes workload_spec_json = 6;
+  string runtime_class = 7;
+  string runtime_pool_id = 8;
+  string runtime_instance_id = 9;
+  int64 attempt_version = 10;
+  int64 lease_version = 11;
+  google.protobuf.Timestamp lease_expires_at = 12;
+  CheckpointReference resume_checkpoint = 13;
+  string phase = 14;
+  string approval_id = 15;
+  bytes agent_version_spec_json = 16;
+  // workflow lineage of a workflow-originated task (v1.3): "workflow_id/
+  // step_name/version", empty for standalone tasks. The adapter injects it
+  // into the fenced MCP identity so fenced.task.spawn can extend the run.
+  string workflow_lineage = 17;
+}
+enum AttemptPhase {
+  ATTEMPT_PHASE_UNSPECIFIED = 0;
+  ATTEMPT_PHASE_STARTING = 1;
+  ATTEMPT_PHASE_RUNNING = 2;
+  ATTEMPT_PHASE_WAITING_TOOL = 3;
+  ATTEMPT_PHASE_WAITING_AGENT = 4;
+  ATTEMPT_PHASE_WAITING_APPROVAL = 5;
+  ATTEMPT_PHASE_CHECKPOINTING = 6;
+  ATTEMPT_PHASE_FAILED = 7;
+  ATTEMPT_PHASE_CANCEL_REQUESTED = 8;
+  ATTEMPT_PHASE_CANCELLED = 9;
+}
+message TransitionAttemptRequest { AttemptIdentity identity = 1; int64 expected_attempt_version = 2; string idempotency_key = 3; AttemptPhase target_phase = 4; string failure_code = 5; string failure_message = 6; }
+message TransitionAttemptResponse { AttemptPhase phase = 1; int64 attempt_version = 2; }
+message HeartbeatRequest { AttemptIdentity identity = 1; int64 expected_lease_version = 2; string idempotency_key = 3; int64 requested_ttl_seconds = 4; }
+message HeartbeatResponse { int64 lease_version = 1; google.protobuf.Timestamp expires_at = 2; bool cancel_requested = 3; int64 attempt_version = 4; }
+message CommitCheckpointRequest { AttemptIdentity identity = 1; int64 expected_attempt_version = 2; string idempotency_key = 3; string checkpoint_id = 4; string agent_version_ref = 5; string provider = 6; string runtime_abi = 7; string schema_version = 8; ArtifactReference state = 9; repeated string confirmed_receipt_ids = 10; }
+message CommitCheckpointResponse { CheckpointReference checkpoint = 1; int64 attempt_version = 2; }
+message CompleteAttemptRequest { AttemptIdentity identity = 1; int64 expected_attempt_version = 2; string idempotency_key = 3; ArtifactReference result = 4; }
+message CompleteAttemptResponse { int64 attempt_version = 1; int64 run_version = 2; int64 task_version = 3; string result_ref = 4; }
+message AcknowledgeCancellationRequest { AttemptIdentity identity = 1; int64 expected_attempt_version = 2; string idempotency_key = 3; }
+message AcknowledgeCancellationResponse { int64 attempt_version = 1; int64 run_version = 2; int64 task_version = 3; }

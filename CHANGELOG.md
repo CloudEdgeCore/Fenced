@@ -1,20 +1,22 @@
 # Changelog
 
 All notable changes use [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
-categories. AgentOS product version `X.Y.Z.0` maps to SemVer tag `vX.Y.Z`;
+categories. Fenced product version `X.Y.Z.0` maps to SemVer tag `vX.Y.Z`;
 public protocol versions evolve independently.
 
 ## Unreleased
 
 ### Changed
-- The public README uses the Fenced brand with a formerly AgentOS transition
-  note. CLI, SDK, module, and protocol identifiers retain their existing names.
-  A minimal Runtime Interface trial is shown first; full setup and validation
-  commands are retained in `docs/development.md` with explicit evidence limits.
+- The public README uses the Fenced brand. The repository, CLI binaries, SDK
+  package names, Go module path, and protocol identifiers were renamed from
+  `AgentOS` / `agentos` to `Fenced` / `fenced`; see `docs/NAMING.md` for the
+  migration map and the compatibility consequences. A minimal Runtime Interface
+  trial is shown first; full setup and validation commands are retained in
+  `docs/development.md` with explicit evidence limits.
 - The developer interface is CLI-only: `agent ui` no longer starts for external access and is limited to the loopback-bound internal preview (`agent ui --preview`); `agent config wizard` is the supported interactive configuration path.
 - AgentService replicas execute through durable Tasks and the existing admission,
   scheduler, and Runtime Protocol. Service creation requires a published version
-  reference and workload specification (`agentos service create -spec ...`).
+  reference and workload specification (`fenced service create -spec ...`).
 - The Helm chart requires production HTTPS/OIDC configuration and existing
   database, TLS, audit-signing, and package-trust Secrets. See its deployment guide
   for migration from the earlier skeleton chart.
@@ -27,7 +29,7 @@ public protocol versions evolve independently.
 - Derive service readiness from a live runtime attempt and lease, wait for Task
   termination before restarting, respect restart limits, and prevent retired
   version backoffs from creating surplus rollout tasks.
-- Service CLI commands send `AGENTOS_TOKEN` for authenticated deployments;
+- Service CLI commands send `FENCED_TOKEN` for authenticated deployments;
   `service stop` requests cancellation and disables autowake through the new
   `POST /v1/services/{id}/stop` endpoint.
 
@@ -49,7 +51,7 @@ public protocol versions evolve independently.
 ## 1.2.1 - 2026-10-01
 
 ### Added
-- **Unified `agent` CLI (`cmd/agent`)**: Introduced developer-first `agent` command replacing `agentos` as the primary CLI entrypoint with backward compatibility fallback.
+- **Unified `agent` CLI (`cmd/agent`)**: Introduced developer-first `agent` command replacing `fenced` as the primary CLI entrypoint with backward compatibility fallback.
 - **Hierarchical YAML Configuration (`agent.yaml`)**: Multi-level cascading configuration system with 5-tier precedence (Builtin Defaults < Global `~/.agent/agent.yaml` < Project `./agent.yaml` < Environment Profiles < Environment Variables).
 - **Multi-Provider LLM Matrix**: Native support for OpenRouter, DeepSeek, Qwen (Aliyun), and local Ollama with instant provider switching (`agent config set llm.default_provider <name>`).
 - **CoT Streaming & Zero-Timeout Engine**: Native dual-channel stream parser separating `delta.reasoning` (thought stream) and `delta.content` (structured result), eliminating `context deadline exceeded` timeouts on multi-minute reasoning models.
@@ -61,7 +63,7 @@ public protocol versions evolve independently.
 ### Added
 
 - Public evidence layer under `docs/evidence/`: 100k/baseline benchmark records, the
-  database consistency contract, two isolation-drill delivery reports, and a
+  database consistency contract, an isolation-drill delivery report, and a
   multi-runtime takeover evidence report (cordon-migration and kill+lease-expiry
   takeover across runtimes, 4/4 scenarios). Internal plans stay untracked under
   `docs/internal/`.
@@ -98,8 +100,8 @@ public protocol versions evolve independently.
 ### Fixed
 
 - TypeScript SDK version aligned with the product version: `sdk/typescript/package.json`
-  and its lockfile now declare `1.1.0`, so `npm pack` produces `agentos-sdk-1.1.0.tgz`
-  instead of `agentos-sdk-1.0.0.tgz`.
+  and its lockfile now declare `1.1.0`, so `npm pack` produces `fenced-sdk-1.1.0.tgz`
+  instead of `fenced-sdk-1.0.0.tgz`.
 - The single-agent acceptance e2e settled-usage invariant credited only succeeded
   tasks' first rounds, but failed tasks' completed first round is settled by design;
   the invariant now requires each SUCCEEDED task to settle exactly the per-task
@@ -111,7 +113,7 @@ public protocol versions evolve independently.
 - Public error-code dispositions: every stable error code in the canonical registry now carries exactly one public class (`retryable`, `terminal`, `user-action-required`, `operator-action-required`) so callers can pick a retry policy without parsing messages.
 - Workflow budget reservations close the spawn-time commitment loop: declaring or dynamically spawning a step reserves its future Task's token/cost ceiling and task slot on the workflow usage ledger in the same transaction, transfers to the task's own budget ledger at admission, and is released on skip, cancellation, rejection, or terminal tasks without a ledger. Concurrent spawns can no longer collectively promise past a workflow budget, retries re-reserve under the same guard, and the ledger reconciles against per-step reservations after crashes.
 - Runtime pool operator grants: cordon/drain/activate now requires a separate `runtime_pool_operator_grants` row for the requesting subject; tenant usage grants no longer imply operator authority on shared pools, and status changes record the deciding operator subject in the audit chain.
-- Runtime bindings decouple deployment endpoints from immutable AgentVersions: `agentos init` writes an environment-independent `agentos-binding://<name>/remote` entrypoint by default, and `agentos-runtime-adapter -runtime-bindings` maps version refs (or `name@*` wildcards) to concrete Runtime Interface endpoints. Unresolved logical entrypoints fail closed.
+- Runtime bindings decouple deployment endpoints from immutable AgentVersions: `fenced init` writes an environment-independent `fenced-binding://<name>/remote` entrypoint by default, and `fenced-runtime-adapter -runtime-bindings` maps version refs (or `name@*` wildcards) to concrete Runtime Interface endpoints. Unresolved logical entrypoints fail closed.
 - Runtime Interface streaming extension: `GET /executions/{id}/events/stream` serves one long-lived SSE connection that pushes events after the `after` cursor and terminates with a result frame. The Go and Python hosts implement it, the Go client consumes it with automatic fallback to v1 polling for runtimes without the route, and the adapter worker uses streaming-first observation with mid-flight fallback.
 - Tokenizer-aware token estimation: provider configs accept a `tokenizer` field (`heuristic` by default, `conservative` for uncharacterized tokenizers). The estimator is script-aware (dense CJK/kana/hangul text no longer under-reserves against bytes/4), never estimates below the legacy floor, and provider-reported usage remains the authoritative settlement.
 - A durable runtime-pool registry with tenant grants.
@@ -160,4 +162,4 @@ public protocol versions evolve independently.
 
 ### Added
 
-- GA AgentOS control plane, task kernel, scheduling, recovery, runtime providers, governed gateways, stable v1 contracts, audit ledger, and signed release pipeline.
+- GA Fenced control plane, task kernel, scheduling, recovery, runtime providers, governed gateways, stable v1 contracts, audit ledger, and signed release pipeline.

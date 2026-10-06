@@ -1,6 +1,6 @@
-# AgentOS User Guide & Developer Manual
+# Fenced User Guide & Developer Manual
 
-The comprehensive **AgentOS User Guide & Developer Manual** is maintained in:
+The comprehensive **Fenced User Guide & Developer Manual** is maintained in:
 
 👉 **[docs/user-guide.md](docs/user-guide.md)**
 
@@ -10,7 +10,7 @@ The comprehensive **AgentOS User Guide & Developer Manual** is maintained in:
 
 - [1. 系统概览与核心概念](docs/user-guide.md#1-系统概览与核心概念)
 - [2. 环境准备与本地快速启动 (Docker Compose, Postgres, NATS)](docs/user-guide.md#2-环境准备与本地快速启动)
-- [3. Agent 开发与生命周期管理 (agentos init, validate, run, logs)](docs/user-guide.md#3-agent-开发与生命周期管理)
+- [3. Agent 开发与生命周期管理 (fenced init, validate, run, logs)](docs/user-guide.md#3-agent-开发与生命周期管理)
 - [4. Agent Package Registry 与 6 阶段安全门禁 (build, sign, push, verify, install)](docs/user-guide.md#4-agent-package-registry-与-6-阶段安全门禁)
 - [5. 第三方 Runtime SDK 与一致性测试 (runtime init, runtime test, conformance)](docs/user-guide.md#5-第三方-runtime-sdk-与一致性测试)
 - [6. Unified Provider SDK 插件生态 (Model, Tool, Memory, Browser, Storage, Runtime)](docs/user-guide.md#6-unified-provider-sdk-插件生态)

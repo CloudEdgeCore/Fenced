@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://agentos.dev/schemas/research/critic.schema.json",
+  "$id": "https://fenced.dev/schemas/research/critic.schema.json",
   "title": "CriticDecision",
   "type": "object",
   "additionalProperties": false,

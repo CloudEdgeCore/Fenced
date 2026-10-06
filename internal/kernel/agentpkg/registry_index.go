@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/version"
+	"github.com/CloudEdgeCore/Fenced/internal/version"
 )
 
 var (
@@ -37,7 +37,7 @@ type RuntimeRequirements struct {
 	Features  []string `json:"features,omitempty"`
 }
 
-// CompatibilityRule defines compatibility with AgentOS versions.
+// CompatibilityRule defines compatibility with Fenced versions.
 type CompatibilityRule struct {
 	MinKernelVersion string   `json:"minKernelVersion"`
 	MaxKernelVersion string   `json:"maxKernelVersion,omitempty"`
@@ -122,7 +122,7 @@ func ExecuteSecurityPipeline(
 	result.VerifiedSBOM = true
 
 	// Stage 4: Check Syscall ABI Compatibility (1.0.0 match)
-	// Syscall ABI for AgentOS v1.2 is frozen at 1.0.0
+	// Syscall ABI for Fenced v1.2 is frozen at 1.0.0
 	expectedABI := "1.0.0"
 	var spec struct {
 		SyscallABI string `json:"syscallAbi"`

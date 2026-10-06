@@ -1,4 +1,4 @@
-name: agentos-dev
+name: fenced-dev
 
 services:
   postgres:
@@ -6,13 +6,13 @@ services:
     # extension alongside FTS/pg_trgm.
     image: pgvector/pgvector:pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
     environment:
-      POSTGRES_DB: agentos
-      POSTGRES_USER: agentos
-      POSTGRES_PASSWORD: agentos-dev-only
+      POSTGRES_DB: fenced
+      POSTGRES_USER: fenced
+      POSTGRES_PASSWORD: fenced-dev-only
     ports:
       - "127.0.0.1:55432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agentos -d agentos"]
+      test: ["CMD-SHELL", "pg_isready -U fenced -d fenced"]
       interval: 2s
       timeout: 3s
       retries: 20
@@ -103,7 +103,7 @@ services:
   # Reference OpenSearch search projection (ADR-013). Opt in with:
   #   docker compose --profile search up -d
   # Security is disabled for dev; the projector connects to
-  # http://127.0.0.1:39200 with index agentos-memory.
+  # http://127.0.0.1:39200 with index fenced-memory.
   opensearch:
     image: opensearchproject/opensearch:2.17.1
     profiles: ["search"]

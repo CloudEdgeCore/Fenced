@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 // recordingSpooler captures spooled output and returns a deterministic
@@ -37,7 +37,7 @@ func TestSpoolOutputBoundedAndTruncated(t *testing.T) {
 
 	// Under the cap: spooled whole, not truncated.
 	small := &recordingSpooler{}
-	ref, truncated, err := spoolOutput(ctx, small, "tenant-a", "attempt-1", "application/vnd.agentos.stdout+octet-stream",
+	ref, truncated, err := spoolOutput(ctx, small, "tenant-a", "attempt-1", "application/vnd.fenced.stdout+octet-stream",
 		strings.NewReader(strings.Repeat("x", 1024)))
 	if err != nil || truncated || ref == nil {
 		t.Fatalf("small spool: ref=%v truncated=%v err=%v", ref, truncated, err)
@@ -48,7 +48,7 @@ func TestSpoolOutputBoundedAndTruncated(t *testing.T) {
 
 	// Over the cap: spooled to the cap and flagged truncated.
 	big := &recordingSpooler{}
-	_, truncated, err = spoolOutput(ctx, big, "tenant-a", "attempt-2", "application/vnd.agentos.stdout+octet-stream",
+	_, truncated, err = spoolOutput(ctx, big, "tenant-a", "attempt-2", "application/vnd.fenced.stdout+octet-stream",
 		strings.NewReader(strings.Repeat("y", SpoolCap+4096)))
 	if err != nil || !truncated {
 		t.Fatalf("big spool: truncated=%v err=%v", truncated, err)
@@ -59,7 +59,7 @@ func TestSpoolOutputBoundedAndTruncated(t *testing.T) {
 
 	// Exactly at the cap is NOT truncated.
 	exact := &recordingSpooler{}
-	_, truncated, err = spoolOutput(ctx, exact, "tenant-a", "attempt-5", "application/vnd.agentos.stdout+octet-stream",
+	_, truncated, err = spoolOutput(ctx, exact, "tenant-a", "attempt-5", "application/vnd.fenced.stdout+octet-stream",
 		strings.NewReader(strings.Repeat("w", SpoolCap)))
 	if err != nil || truncated {
 		t.Fatalf("exact spool: truncated=%v err=%v", truncated, err)
@@ -69,25 +69,25 @@ func TestSpoolOutputBoundedAndTruncated(t *testing.T) {
 	}
 
 	// Without a spooler the output is drained and discarded, bounded.
-	_, truncated, err = spoolOutput(ctx, nil, "tenant-a", "attempt-3", "application/vnd.agentos.stdout+octet-stream",
+	_, truncated, err = spoolOutput(ctx, nil, "tenant-a", "attempt-3", "application/vnd.fenced.stdout+octet-stream",
 		strings.NewReader(strings.Repeat("z", 2*SpoolCap)))
 	if err != nil || !truncated {
 		t.Fatalf("discard spool: truncated=%v err=%v", truncated, err)
 	}
 
 	// A nil reader produces no spool.
-	ref, truncated, err = spoolOutput(ctx, small, "tenant-a", "attempt-4", "application/vnd.agentos.stdout+octet-stream", nil)
+	ref, truncated, err = spoolOutput(ctx, small, "tenant-a", "attempt-4", "application/vnd.fenced.stdout+octet-stream", nil)
 	if err != nil || truncated || ref != nil {
 		t.Fatalf("nil reader: ref=%v truncated=%v err=%v", ref, truncated, err)
 	}
 }
 
 func TestReapTargetsFiltersOwnedContainers(t *testing.T) {
-	listed := []string{"agentos-orphan-1", "other-namespace-container", "agentos-11111111-1111-1111-1111-111111111111", "plain"}
-	active := map[string]struct{}{"agentos-11111111-1111-1111-1111-111111111111": {}}
+	listed := []string{"fenced-orphan-1", "other-namespace-container", "fenced-11111111-1111-1111-1111-111111111111", "plain"}
+	active := map[string]struct{}{"fenced-11111111-1111-1111-1111-111111111111": {}}
 	targets := reapTargets(listed, active)
-	if len(targets) != 1 || targets[0] != "agentos-orphan-1" {
-		t.Fatalf("reap targets = %v, want only the unowned agentos-* container", targets)
+	if len(targets) != 1 || targets[0] != "fenced-orphan-1" {
+		t.Fatalf("reap targets = %v, want only the unowned fenced-* container", targets)
 	}
 	if targets := reapTargets(nil, nil); len(targets) != 0 {
 		t.Fatalf("empty list produced targets: %v", targets)

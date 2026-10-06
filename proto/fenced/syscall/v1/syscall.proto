@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+package fenced.syscall.v1;
+
+option go_package = "github.com/CloudEdgeCore/Fenced/gen/go/fenced/syscall/v1;syscallv1";
+
+// Fenced Kernel System Call ABI Service.
+// v1.0.0 ABI numbers, calling conventions, and POSIX error semantics are FROZEN (v1.2 Contract Freeze).
+service SyscallService {
+  rpc Invoke(InvokeRequest) returns (InvokeResponse);
+  rpc Handshake(HandshakeRequest) returns (HandshakeResponse);
+}
+
+enum SyscallNumber {
+  SYSCALL_NUMBER_UNSPECIFIED = 0;
+
+  // Tool Subsystem (100 - 199)
+  SYSCALL_NUMBER_SYS_TOOL_INVOKE = 101;
+  SYSCALL_NUMBER_SYS_TOOL_LIST   = 102;
+
+  // Model Subsystem (200 - 299)
+  SYSCALL_NUMBER_SYS_MODEL_INVOKE = 201;
+  SYSCALL_NUMBER_SYS_MODEL_BEGIN  = 202;
+  SYSCALL_NUMBER_SYS_MODEL_SETTLE = 203;
+  SYSCALL_NUMBER_SYS_MODEL_FINISH = 204;
+
+  // Memory Subsystem (300 - 399)
+  SYSCALL_NUMBER_SYS_MEMORY_PUT    = 301;
+  SYSCALL_NUMBER_SYS_MEMORY_SEARCH = 302;
+
+  // IPC Subsystem (400 - 499)
+  SYSCALL_NUMBER_SYS_IPC_SEND    = 401;
+  SYSCALL_NUMBER_SYS_IPC_RECEIVE = 402;
+  SYSCALL_NUMBER_SYS_IPC_ACK     = 403;
+
+  // Runtime Subsystem (500 - 599)
+  SYSCALL_NUMBER_SYS_RUNTIME_CHECKPOINT = 501;
+  SYSCALL_NUMBER_SYS_RUNTIME_COMPLETE   = 502;
+  SYSCALL_NUMBER_SYS_RUNTIME_YIELD      = 503;
+
+  // Service / Supervisor Subsystem (600 - 699)
+  SYSCALL_NUMBER_SYS_SERVICE_HEARTBEAT = 601;
+  SYSCALL_NUMBER_SYS_SERVICE_QUERY     = 602;
+
+  // Resource / Namespace Subsystem (700 - 799)
+  SYSCALL_NUMBER_SYS_NAMESPACE_GET      = 701;
+  SYSCALL_NUMBER_SYS_RESOURCE_QUOTA_GET = 702;
+  SYSCALL_NUMBER_SYS_RESOURCE_USAGE_GET = 703;
+
+  // Effect Subsystem (800 - 899)
+  SYSCALL_NUMBER_SYS_EFFECT_EXECUTE = 801;
+  SYSCALL_NUMBER_SYS_EFFECT_GET     = 802;
+}
+
+enum SyscallErrorCode {
+  SYSCALL_ERROR_CODE_UNSPECIFIED = 0;  // Success / OK
+  SYSCALL_ERROR_CODE_EPERM       = 1;  // Operation not permitted (capability denied, tenant mismatch)
+  SYSCALL_ERROR_CODE_ENOENT      = 2;  // No such entity or tool
+  SYSCALL_ERROR_CODE_EINVAL      = 3;  // Invalid argument or malformed payload
+  SYSCALL_ERROR_CODE_EBUSY       = 4;  // Resource or attempt is currently locked or conflicting
+  SYSCALL_ERROR_CODE_ETIMEDOUT   = 5;  // Connection or operation deadline exceeded
+  SYSCALL_ERROR_CODE_ENOMEM      = 6;  // Quota, token limit, or financial budget exceeded
+  SYSCALL_ERROR_CODE_EFENCE      = 7;  // Stale fencing token or expired attempt lease
+  SYSCALL_ERROR_CODE_ENOSYS      = 8;  // Function/syscall not implemented
+  SYSCALL_ERROR_CODE_EINTERNAL   = 9;  // Unexpected internal kernel error
+  SYSCALL_ERROR_CODE_EUNKNOWN    = 10; // Ambiguous external effect outcome (auto-replay forbidden)
+}
+
+message AttemptIdentity {
+  string tenant_id = 1;
+  string attempt_id = 2;
+  int64 fencing_token = 3;
+}
+
+message InvokeRequest {
+  SyscallNumber syscall = 1;
+  AttemptIdentity identity = 2;
+  bytes payload_json = 3;
+  string idempotency_key = 4;
+  map<string, string> metadata = 5;
+}
+
+message InvokeResponse {
+  SyscallNumber syscall = 1;
+  SyscallErrorCode error_code = 2;
+  string error_message = 3;
+  bytes result_json = 4;
+  int64 duration_us = 5;
+  int64 resource_version = 6;
+}
+
+message HandshakeRequest {
+  string client_abi_version = 1;
+  string runtime_framework = 2; // e.g. "langgraph", "autogen", "crewai", "openai-agents", "custom"
+  string runtime_version = 3;
+  repeated SyscallNumber supported_syscalls = 4;
+}
+
+message HandshakeResponse {
+  string kernel_abi_version = 1; // "1.0.0"
+  bool compatible = 2;
+  repeated SyscallNumber enabled_syscalls = 3;
+  string rejection_reason = 4;
+}

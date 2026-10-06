@@ -89,29 +89,29 @@ RUNSC_SYSTEMD_CGROUP="${RUNSC_SYSTEMD_CGROUP:-false}"
 RUNSC_IGNORE_CGROUPS="${RUNSC_IGNORE_CGROUPS:-false}"
 RUNSC_OCI_SECCOMP="${RUNSC_OCI_SECCOMP:-true}"
 CONTAINERD_SOCKET_GID="${CONTAINERD_SOCKET_GID:-${SUDO_GID:-0}}"
-RUNSC_LOG_DIR="/var/log/agentos-runsc"
+RUNSC_LOG_DIR="/var/log/fenced-runsc"
 mkdir -p "$RUNSC_LOG_DIR"
 
 # The gVisor shim captures `runsc create` output with an os/exec pipe. The
 # long-lived gofer and sandbox inherit that pipe, so Cmd.Wait cannot observe
 # EOF after the short-lived create process exits. This adapter redirects only
 # create output; every other command remains an exact runsc exec.
-cat > /usr/local/bin/agentos-runsc <<'EOF'
+cat > /usr/local/bin/fenced-runsc <<'EOF'
 #!/bin/sh
 
-printf 'pid=%s argv=' "$$" >>/var/log/agentos-runsc/launcher.log
-printf ' <%s>' "$@" >>/var/log/agentos-runsc/launcher.log
-printf '\n' >>/var/log/agentos-runsc/launcher.log
+printf 'pid=%s argv=' "$$" >>/var/log/fenced-runsc/launcher.log
+printf ' <%s>' "$@" >>/var/log/fenced-runsc/launcher.log
+printf '\n' >>/var/log/fenced-runsc/launcher.log
 
 case " $* " in
-  *" create "*) exec /usr/local/bin/runsc "$@" >>/var/log/agentos-runsc/runsc.create.log 2>&1 ;;
+  *" create "*) exec /usr/local/bin/runsc "$@" >>/var/log/fenced-runsc/runsc.create.log 2>&1 ;;
   *) exec /usr/local/bin/runsc "$@" ;;
 esac
 EOF
-chmod 0755 /usr/local/bin/agentos-runsc
+chmod 0755 /usr/local/bin/fenced-runsc
 
 cat > "$RUNSC_CONFIG_PATH" <<EOF
-binary_name = "/usr/local/bin/agentos-runsc"
+binary_name = "/usr/local/bin/fenced-runsc"
 log_path = "${RUNSC_LOG_DIR}/shim.log"
 log_level = "debug"
 
@@ -130,9 +130,9 @@ EOF
 # Validate the pinned runtime itself before involving containerd. This keeps a
 # host incompatibility distinct from a shim/OCI integration failure.
 echo ">> running direct runsc probe (bounded 30s)"
-mkdir -p /run/agentos-runsc-direct
+mkdir -p /run/fenced-runsc-direct
 if ! timeout --signal=KILL 30 runsc \
-  --root=/run/agentos-runsc-direct \
+  --root=/run/fenced-runsc-direct \
   --platform="$RUNSC_PLATFORM" \
   --network=none \
   --ignore-cgroups=true \
@@ -164,9 +164,9 @@ EOF
 # --- start containerd and wait for readiness -------------------------------
 # Run an isolated daemon so the host's Docker/system containerd state cannot
 # win a socket race or leak stale shims into this acceptance leg.
-CONTAINERD_ADDRESS="${CONTAINERD_ADDRESS:-/run/agentos-containerd/containerd.sock}"
-CONTAINERD_ROOT="${CONTAINERD_ROOT:-/var/lib/agentos-containerd}"
-CONTAINERD_STATE="${CONTAINERD_STATE:-/run/agentos-containerd}"
+CONTAINERD_ADDRESS="${CONTAINERD_ADDRESS:-/run/fenced-containerd/containerd.sock}"
+CONTAINERD_ROOT="${CONTAINERD_ROOT:-/var/lib/fenced-containerd}"
+CONTAINERD_STATE="${CONTAINERD_STATE:-/run/fenced-containerd}"
 export CONTAINERD_ADDRESS
 mkdir -p "$CONTAINERD_ROOT" "$CONTAINERD_STATE"
 echo ">> starting isolated containerd ${CONTAINERD_VERSION} at ${CONTAINERD_ADDRESS}"
@@ -175,7 +175,7 @@ nohup containerd \
   --root "$CONTAINERD_ROOT" \
   --state "$CONTAINERD_STATE" \
   --config /etc/containerd/config.toml \
-  >/tmp/agentos-containerd.log 2>&1 &
+  >/tmp/fenced-containerd.log 2>&1 &
 CONTAINERD_PID=$!
 for attempt in $(seq 1 30); do
   if timeout 5 ctr version >/dev/null 2>&1; then
@@ -183,13 +183,13 @@ for attempt in $(seq 1 30); do
   fi
   if ! kill -0 "$CONTAINERD_PID" 2>/dev/null; then
     echo "isolated containerd exited during startup; log:" >&2
-    cat /tmp/agentos-containerd.log >&2 || true
+    cat /tmp/fenced-containerd.log >&2 || true
     exit 1
   fi
   sleep 1
   if [ "$attempt" -eq 30 ]; then
     echo "containerd did not become ready; log:" >&2
-    tail -n 50 /tmp/agentos-containerd.log >&2 || true
+    tail -n 50 /tmp/fenced-containerd.log >&2 || true
     exit 1
   fi
 done
@@ -206,19 +206,19 @@ echo ">> containerd on socket is pinned ${CONTAINERD_VERSION}"
 SNAPSHOTTER="${SNAPSHOTTER:-overlayfs}"
 PROBE_IMAGE="${PROBE_IMAGE:-docker.io/library/busybox@sha256:9db7b59979c38555a39def84a31fb98b5296952f9e3afd4f6f11f05b07adfab0}"
 echo ">> pulling digest-pinned probe image (bounded 300s)"
-timeout 300 ctr -n "${AGENTOS_OCI_CONTAINERD_NAMESPACE:-agentos-ci}" images pull \
+timeout 300 ctr -n "${FENCED_OCI_CONTAINERD_NAMESPACE:-fenced-ci}" images pull \
   --snapshotter "$SNAPSHOTTER" "$PROBE_IMAGE" >/dev/null
 echo ">> running fail-closed runsc probe (bounded 120s)"
 # Keep the sandbox alive past shim watcher attachment. An immediate /bin/true
 # can exit successfully before runsc wait connects, losing the zero exit status
 # and producing a false status=128 result on the pinned gVisor shim.
 set +e
-timeout --signal=KILL 120 ctr -n "${AGENTOS_OCI_CONTAINERD_NAMESPACE:-agentos-ci}" run \
+timeout --signal=KILL 120 ctr -n "${FENCED_OCI_CONTAINERD_NAMESPACE:-fenced-ci}" run \
   --rm \
   --runtime io.containerd.runsc.v1 \
   --runtime-config-path "$RUNSC_CONFIG_PATH" \
   --snapshotter "$SNAPSHOTTER" \
-  "$PROBE_IMAGE" agentos-runtime-probe \
+  "$PROBE_IMAGE" fenced-runtime-probe \
   /bin/sleep 1 \
   </dev/null \
   >/tmp/probe-out.log 2>&1
@@ -232,7 +232,7 @@ if [ "$PROBE_STATUS" -ne 0 ]; then
   while read -r shim_pid; do
     [ -n "$shim_pid" ] || continue
     kill -12 "$shim_pid" 2>/dev/null || true
-  done < <(pgrep -f 'containerd-shim-runsc-v1.*agentos-runtime-probe' || true)
+  done < <(pgrep -f 'containerd-shim-runsc-v1.*fenced-runtime-probe' || true)
   sleep 2
   echo ">> runsc/shim processes:" >&2
   # Keep ps here because state and wait-channel are part of the diagnostics.
@@ -260,7 +260,7 @@ if [ "$PROBE_STATUS" -ne 0 ]; then
     tail -n 80 "$RUNSC_LOG_DIR/$runtime_log" >&2 || true
   done
   echo ">> containerd log tail:" >&2
-  tail -n 100 /tmp/agentos-containerd.log >&2 || true
+  tail -n 100 /tmp/fenced-containerd.log >&2 || true
   echo ">> dmesg tail:" >&2
   dmesg 2>/dev/null | tail -n 30 >&2 || true
   exit 1

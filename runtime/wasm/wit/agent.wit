@@ -1,4 +1,4 @@
-package agentos:runtime@0.1.0;
+package fenced:runtime@0.1.0;
 
 world agent {
     /// Execute one logical Agent task. The input and successful output are

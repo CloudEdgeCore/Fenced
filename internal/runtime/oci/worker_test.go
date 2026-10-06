@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/artifact"
-	runtimecontrol "github.com/CloudEdgeCore/AgentOS/internal/runtime/control"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/artifact"
+	runtimecontrol "github.com/CloudEdgeCore/Fenced/internal/runtime/control"
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -222,7 +222,7 @@ func TestWorkerSpoolsStdoutIntoResult(t *testing.T) {
 	executor := &fakeExecutor{result: RunResult{
 		ExitCode: 0, UsageMillis: 5,
 		Stdout: &store.ArtifactReference{
-			URI: "artifact://tenant-a/sha256/ab", SHA256: [32]byte{0xab}, SizeBytes: 3, MediaType: "application/vnd.agentos.stdout+octet-stream",
+			URI: "artifact://tenant-a/sha256/ab", SHA256: [32]byte{0xab}, SizeBytes: 3, MediaType: "application/vnd.fenced.stdout+octet-stream",
 		}, StdoutTruncated: false,
 	}}
 	base, err := artifact.NewFilesystem(t.TempDir(), 1<<20)
@@ -320,7 +320,7 @@ func (f *fakeExecutor) Prepare(_ context.Context, spec ExecutionSpec) (Execution
 	if f.prepareErr != nil {
 		return nil, f.prepareErr
 	}
-	return &fakeExecution{executor: f, id: "agentos-" + spec.AttemptID}, nil
+	return &fakeExecution{executor: f, id: "fenced-" + spec.AttemptID}, nil
 }
 
 func (f *fakeExecutor) Destroy(_ context.Context, execution Execution) error {

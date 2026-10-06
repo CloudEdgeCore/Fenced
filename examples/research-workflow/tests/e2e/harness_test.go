@@ -22,33 +22,33 @@ import (
 	"testing"
 	"time"
 
-	research "github.com/CloudEdgeCore/AgentOS/examples/research-workflow/runtime"
-	webtools "github.com/CloudEdgeCore/AgentOS/examples/research-workflow/tools/webtools"
-	gatewayv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/gateway/v1"
-	modelv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/model/v1"
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/control/api"
-	"github.com/CloudEdgeCore/AgentOS/internal/control/auth"
-	"github.com/CloudEdgeCore/AgentOS/internal/gateway"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/admission"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/capability"
-	kernelmemory "github.com/CloudEdgeCore/AgentOS/internal/kernel/memory"
-	kernelmodel "github.com/CloudEdgeCore/AgentOS/internal/kernel/model"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/model/provider"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/policy"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/recovery"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/scheduler"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	postgresstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store/postgres"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
-	workflowkernel "github.com/CloudEdgeCore/AgentOS/internal/kernel/workflow"
-	"github.com/CloudEdgeCore/AgentOS/internal/mcp"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/artifact"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/migrate"
-	runtimeadapter "github.com/CloudEdgeCore/AgentOS/internal/runtime/adapter"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/control"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/reference"
+	research "github.com/CloudEdgeCore/Fenced/examples/research-workflow/runtime"
+	webtools "github.com/CloudEdgeCore/Fenced/examples/research-workflow/tools/webtools"
+	gatewayv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/gateway/v1"
+	modelv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/model/v1"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/control/api"
+	"github.com/CloudEdgeCore/Fenced/internal/control/auth"
+	"github.com/CloudEdgeCore/Fenced/internal/gateway"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/admission"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/capability"
+	kernelmemory "github.com/CloudEdgeCore/Fenced/internal/kernel/memory"
+	kernelmodel "github.com/CloudEdgeCore/Fenced/internal/kernel/model"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/model/provider"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/policy"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/recovery"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/scheduler"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	postgresstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store/postgres"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
+	workflowkernel "github.com/CloudEdgeCore/Fenced/internal/kernel/workflow"
+	"github.com/CloudEdgeCore/Fenced/internal/mcp"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/artifact"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/migrate"
+	runtimeadapter "github.com/CloudEdgeCore/Fenced/internal/runtime/adapter"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/control"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/reference"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
@@ -165,9 +165,9 @@ func newHarnessWith(t *testing.T, name string, tune func(*scenario), cfg Harness
 	if cfg.Workers <= 0 {
 		cfg.Workers = 4
 	}
-	databaseURL := os.Getenv("AGENTOS_TEST_DATABASE_URL")
+	databaseURL := os.Getenv("FENCED_TEST_DATABASE_URL")
 	if databaseURL == "" {
-		t.Skip("AGENTOS_TEST_DATABASE_URL is not set")
+		t.Skip("FENCED_TEST_DATABASE_URL is not set")
 	}
 	normalizedName := strings.Map(func(character rune) rune {
 		if character >= 'a' && character <= 'z' || character >= 'A' && character <= 'Z' ||
@@ -176,7 +176,7 @@ func newHarnessWith(t *testing.T, name string, tune func(*scenario), cfg Harness
 		}
 		return '_'
 	}, name)
-	schema := "agentos_research_" + normalizedName
+	schema := "fenced_research_" + normalizedName
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	admin, err := pgx.Connect(ctx, databaseURL)
 	if err != nil {
@@ -238,14 +238,14 @@ func newHarnessWith(t *testing.T, name string, tune func(*scenario), cfg Harness
 	t.Cleanup(func() { _ = controlAPIHTTPServer.Close() })
 	h.controlURL = "http://" + controlAPIListener.Addr().String()
 
-	// Live-mode detection (roadmap P0/P1): AGENTOS_RESEARCH_LIVE=1 routes
-	// model calls to a real OpenAI-compatible provider; AGENTOS_RESEARCH_LIVE_WEB=1
+	// Live-mode detection (roadmap P0/P1): FENCED_RESEARCH_LIVE=1 routes
+	// model calls to a real OpenAI-compatible provider; FENCED_RESEARCH_LIVE_WEB=1
 	// swaps the deterministic corpus for real internet search + fetch.
 	h.models = research.Models{Fast: fakeModelRef, Reader: fakeModelRef, Reasoning: fakeModelRef}
-	liveModel := os.Getenv("AGENTOS_RESEARCH_LIVE") == "1"
+	liveModel := os.Getenv("FENCED_RESEARCH_LIVE") == "1"
 	if liveModel {
-		if strings.TrimSpace(os.Getenv("AGENTOS_RESEARCH_MODEL_BASE_URL")) == "" {
-			t.Fatalf("AGENTOS_RESEARCH_LIVE=1 requires AGENTOS_RESEARCH_MODEL_BASE_URL")
+		if strings.TrimSpace(os.Getenv("FENCED_RESEARCH_MODEL_BASE_URL")) == "" {
+			t.Fatalf("FENCED_RESEARCH_LIVE=1 requires FENCED_RESEARCH_MODEL_BASE_URL")
 		}
 		h.liveModel = true
 		h.models = research.Models{
@@ -260,7 +260,7 @@ func newHarnessWith(t *testing.T, name string, tune func(*scenario), cfg Harness
 	// second full-web run. Besides violating the documented test boundary, that
 	// multiplied provider usage and made the three-case acceptance unnecessarily
 	// vulnerable to external fetch failures and model quota exhaustion.
-	h.liveWeb = liveWebForScenario(name, os.Getenv("AGENTOS_RESEARCH_LIVE_WEB") == "1")
+	h.liveWeb = liveWebForScenario(name, os.Getenv("FENCED_RESEARCH_LIVE_WEB") == "1")
 
 	providerListener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -272,9 +272,9 @@ func newHarnessWith(t *testing.T, name string, tune func(*scenario), cfg Harness
 
 	h.webtools = webtools.New(webtools.Corpus())
 	if h.liveWeb {
-		searchKey := os.Getenv("AGENTOS_RESEARCH_SEARCH_KEY")
+		searchKey := os.Getenv("FENCED_RESEARCH_SEARCH_KEY")
 		var search webtools.SearchProvider
-		switch strings.ToLower(envOr("AGENTOS_RESEARCH_SEARCH_PROVIDER", "brave")) {
+		switch strings.ToLower(envOr("FENCED_RESEARCH_SEARCH_PROVIDER", "brave")) {
 		case "doubao", "volcengine":
 			search = &webtools.DoubaoSearch{APIKey: searchKey}
 		case "brave":
@@ -282,8 +282,8 @@ func newHarnessWith(t *testing.T, name string, tune func(*scenario), cfg Harness
 		case "bing":
 			search = &webtools.BingSearch{APIKey: searchKey}
 		default:
-			t.Fatalf("unknown AGENTOS_RESEARCH_SEARCH_PROVIDER %q (want doubao, brave or bing)",
-				os.Getenv("AGENTOS_RESEARCH_SEARCH_PROVIDER"))
+			t.Fatalf("unknown FENCED_RESEARCH_SEARCH_PROVIDER %q (want doubao, brave or bing)",
+				os.Getenv("FENCED_RESEARCH_SEARCH_PROVIDER"))
 		}
 		h.webtools = h.webtools.WithBackend(&webtools.CompositeBackend{
 			SearchProvider: search,
@@ -328,18 +328,18 @@ func newHarnessWith(t *testing.T, name string, tune func(*scenario), cfg Harness
 		t.Fatalf("register provider: %v", err)
 	}
 	if h.liveModel {
-		baseURL := strings.TrimSpace(os.Getenv("AGENTOS_RESEARCH_MODEL_BASE_URL"))
-		providerName := envOr("AGENTOS_RESEARCH_MODEL_PROVIDER", "openai")
+		baseURL := strings.TrimSpace(os.Getenv("FENCED_RESEARCH_MODEL_BASE_URL"))
+		providerName := envOr("FENCED_RESEARCH_MODEL_PROVIDER", "openai")
 		if err := providerRegistry.Register(provider.Config{
-			Name: providerName, BaseURL: baseURL, APIKey: os.Getenv("AGENTOS_RESEARCH_MODEL_KEY"),
+			Name: providerName, BaseURL: baseURL, APIKey: os.Getenv("FENCED_RESEARCH_MODEL_KEY"),
 			TimeoutMs: 180000, MaxAttempts: 2,
 		}); err != nil {
 			t.Fatalf("register live provider: %v", err)
 		}
 		routes := map[string]string{
-			"research/fast":      envOr("AGENTOS_RESEARCH_MODEL_FAST", "gpt-4o-mini"),
-			"research/reader":    envOr("AGENTOS_RESEARCH_MODEL_READER", envOr("AGENTOS_RESEARCH_MODEL_FAST", "gpt-4o-mini")),
-			"research/reasoning": envOr("AGENTOS_RESEARCH_MODEL_REASONING", "gpt-4o"),
+			"research/fast":      envOr("FENCED_RESEARCH_MODEL_FAST", "gpt-4o-mini"),
+			"research/reader":    envOr("FENCED_RESEARCH_MODEL_READER", envOr("FENCED_RESEARCH_MODEL_FAST", "gpt-4o-mini")),
+			"research/reasoning": envOr("FENCED_RESEARCH_MODEL_REASONING", "gpt-4o"),
 		}
 		for route, wireModel := range routes {
 			if err := providerRegistry.RegisterRoute(provider.Route{
@@ -497,7 +497,7 @@ func newHarnessWith(t *testing.T, name string, tune func(*scenario), cfg Harness
 	loopCtx, cancel := context.WithCancel(context.Background())
 	h.cancelCtx = cancel
 	h.loopCtx = loopCtx
-	instances := researchWorkerInstancesWithCount(liveModel, os.Getenv("AGENTOS_RESEARCH_SCALE") == "1" || os.Getenv("AGENTOS_RESEARCH_SCALE_1000") == "1", cfg.Workers)
+	instances := researchWorkerInstancesWithCount(liveModel, os.Getenv("FENCED_RESEARCH_SCALE") == "1" || os.Getenv("FENCED_RESEARCH_SCALE_1000") == "1", cfg.Workers)
 	pools := make(staticPools, 0, len(instances))
 	for index, instance := range instances {
 		pools = append(pools, scheduler.RuntimePool{

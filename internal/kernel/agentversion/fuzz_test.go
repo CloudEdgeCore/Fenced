@@ -3,8 +3,8 @@ package agentversion
 import "testing"
 
 func FuzzDecodeManifest(f *testing.F) {
-	f.Add([]byte(`{"apiVersion":"agentos.dev/v1","kind":"Agent"}`))
-	f.Add([]byte(`{"apiVersion":"agentos.dev/v1","apiVersion":"agentos.dev/v1"}`))
+	f.Add([]byte(`{"apiVersion":"fenced.dev/v1","kind":"Agent"}`))
+	f.Add([]byte(`{"apiVersion":"fenced.dev/v1","apiVersion":"fenced.dev/v1"}`))
 	f.Fuzz(func(t *testing.T, raw []byte) {
 		manifest, canonical, _, err := DecodeManifest(raw)
 		if err != nil {

@@ -1,6 +1,6 @@
 # DevOps Agent Workflow (Reference Workload)
 
-A second reference workload proving the AgentOS kernel is generic (design
+A second reference workload proving the Fenced kernel is generic (design
 plan §5, Phase 4): the same kernel that runs the multi-agent research
 workflow runs a **DevOps incident workflow** with human approval and
 rollback — no kernel changes, only a new application layer.
@@ -45,7 +45,7 @@ tests/e2e/                harness + acceptance suite (build tag integration)
 | `TestThirdPartyAgentOnboarding` | Phase 6: an opaque third-party agent (`hello-agent`) publishes and runs as a plain task with platform-provided scheduling/capability/budget/audit |
 | `TestThirdPartyAgentRejectsUnknownTool` | the capability boundary restricts the third-party agent to its declared tool grant |
 
-Run with PostgreSQL at `AGENTOS_TEST_DATABASE_URL`:
+Run with PostgreSQL at `FENCED_TEST_DATABASE_URL`:
 
 ```bash
 go test -tags=integration -count=1 ./examples/devops-workflow/tests/e2e/

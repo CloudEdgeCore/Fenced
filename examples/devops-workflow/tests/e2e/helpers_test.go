@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	devops "github.com/CloudEdgeCore/AgentOS/examples/devops-workflow/runtime"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentversion"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	workflowkernel "github.com/CloudEdgeCore/AgentOS/internal/kernel/workflow"
+	devops "github.com/CloudEdgeCore/Fenced/examples/devops-workflow/runtime"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	workflowkernel "github.com/CloudEdgeCore/Fenced/internal/kernel/workflow"
 	"github.com/google/uuid"
 )
 

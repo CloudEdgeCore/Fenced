@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
 // workflowClaimer is the store surface ClaimManager needs; the full

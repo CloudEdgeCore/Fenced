@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package fenced.ipc.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/CloudEdgeCore/Fenced/gen/go/fenced/ipc/v1;ipcv1";
+
+// Durable agent-to-agent messaging. v1 field numbers and RPC names are frozen.
+// Delivery is at-least-once; a receiver deduplicates through the mailbox
+// receipt, so a redelivered message is observed once and applied once.
+service IPCGatewayService {
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+  rpc ReceiveMessages(ReceiveMessagesRequest) returns (ReceiveMessagesResponse);
+  rpc AcknowledgeMessage(AcknowledgeMessageRequest) returns (AcknowledgeMessageResponse);
+}
+message AttemptIdentity { string tenant_id = 1; string attempt_id = 2; int64 fencing_token = 3; }
+// AgentVersionRef is an immutable reference in agentversion.FormatRef form
+// ("[namespace/]name@version"), not a mutable agent name. Instance is the
+// receiving run id: a mailbox follows the run, so a message survives the
+// failure of the attempt that was draining it.
+message AgentAddress { string agent_version_ref = 1; string instance = 2; }
+message MessageAttachment { string uri = 1; string sha256 = 2; int64 size_bytes = 3; string media_type = 4; }
+message IpcMessage { string message_id = 1; string from_agent_version_ref = 2; AgentAddress to = 3; string kind = 4; bytes payload_json = 5; string correlation_id = 6; string reply_to_message_id = 7; google.protobuf.Timestamp sent_at = 8; google.protobuf.Timestamp deadline = 9; int64 delivery_attempt = 10; repeated MessageAttachment attachments = 11; string trace_id = 12; }
+message SendMessageRequest { AttemptIdentity identity = 1; string agent_version_ref = 2; string task_id = 3; string run_id = 4; AgentAddress to = 5; string kind = 6; bytes payload_json = 7; string idempotency_key = 8; string correlation_id = 9; string reply_to_message_id = 10; google.protobuf.Timestamp deadline = 11; repeated MessageAttachment attachments = 12; }
+message SendMessageResponse { string message_id = 1; bool replayed = 2; google.protobuf.Timestamp accepted_at = 3; }
+message ReceiveMessagesRequest { AttemptIdentity identity = 1; string agent_version_ref = 2; int32 max_messages = 3; int32 wait_millis = 4; }
+message ReceiveMessagesResponse { repeated IpcMessage messages = 1; }
+message AcknowledgeMessageRequest { AttemptIdentity identity = 1; string agent_version_ref = 2; string consumer_name = 3; repeated string message_ids = 4; }
+message AcknowledgeMessageResponse { repeated string acknowledged_message_ids = 1; repeated string already_acknowledged_message_ids = 2; }

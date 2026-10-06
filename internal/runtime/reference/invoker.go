@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	gatewayv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/gateway/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
-	"github.com/CloudEdgeCore/AgentOS/internal/mcp"
+	gatewayv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/gateway/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
+	"github.com/CloudEdgeCore/Fenced/internal/mcp"
 	"github.com/google/uuid"
 )
 

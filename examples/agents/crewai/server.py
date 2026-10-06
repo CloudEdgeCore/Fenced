@@ -5,12 +5,12 @@ import os
 import sys
 from typing import Any
 
-from agentos_runtime import serve
+from fenced_runtime import apply_legacy_compat, serve
 
 REPOSITORY_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 sys.path.insert(0, os.path.join(REPOSITORY_ROOT, "adapters", "crewai"))
 
-from agentos_crewai import CrewAIRuntime  # noqa: E402
+from fenced_crewai import CrewAIRuntime  # noqa: E402
 
 
 class MinimalCrew:
@@ -33,6 +33,7 @@ class MinimalCrew:
 
 
 if __name__ == "__main__":
+    apply_legacy_compat()
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8091)

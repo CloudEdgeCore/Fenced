@@ -1,11 +1,11 @@
 {
-  "apiVersion": "agentos.dev/v1",
+  "apiVersion": "fenced.dev/v1",
   "kind": "AgentVersion",
   "metadata": { "name": "research-reader", "version": "1.0.0", "namespace": "default" },
   "spec": {
     "runtimeClassPolicy": { "allowed": ["research-sandbox"], "preferred": "research-sandbox" },
     "lifecycle": { "maxAttempts": 3 },
-    "runtimes": [{ "class": "research-sandbox", "interface": "agentos.runtime.interface/v1", "runtimeABI": "agentos.adapter-http/v1", "entrypoint": ["agentos-binding://research"] }],
+    "runtimes": [{ "class": "research-sandbox", "interface": "fenced.runtime.interface/v1", "runtimeABI": "fenced.adapter-http/v1", "entrypoint": ["fenced-binding://research"] }],
     "capabilities": {
       "tools": ["web.fetch@1.0.0"],
       "models": ["__MODEL_READER__"],

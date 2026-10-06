@@ -30,9 +30,9 @@ func (stub *readerMCPStub) CallTool(_ context.Context, _ string, name string, ar
 	switch name {
 	case "web.fetch":
 		return stub.fetchResult, stub.fetchErr
-	case "agentos.model.invoke":
+	case "fenced.model.invoke":
 		return stub.modelResult, stub.modelErr
-	case "agentos.memory.put":
+	case "fenced.memory.put":
 		if values, ok := args.(map[string]any); ok {
 			if key, ok := values["key"].(string); ok {
 				stub.putKeys = append(stub.putKeys, key)
@@ -51,7 +51,7 @@ func (stub *readerMCPStub) CallTool(_ context.Context, _ string, name string, ar
 			}
 		}
 		return json.RawMessage(`{}`), nil
-	case "agentos.memory.search":
+	case "fenced.memory.search":
 		if values, ok := args.(map[string]any); ok {
 			if query, ok := values["query"].(string); ok {
 				stub.searchQueries = append(stub.searchQueries, query)
@@ -246,7 +246,7 @@ func TestClassifyReaderError(t *testing.T) {
 }
 
 func TestParseEnvelopeToleratesTrailingUpstreamBlocks(t *testing.T) {
-	goal := `AGENTOS-RESEARCH/v1 {"role":"reader","goal":"","workflowId":"wf-1","round":2,` +
+	goal := `FENCED-RESEARCH/v1 {"role":"reader","goal":"","workflowId":"wf-1","round":2,` +
 		`"source":{"sourceId":"src-9","title":"T","url":"https://x.example.com/a"}}` +
 		"\n\nUpstream result [critic-r1]:\n{\"status\":\"NEEDS_MORE_RESEARCH\"}"
 	envelope := ParseEnvelope(goal, "research-reader@1.0.0")

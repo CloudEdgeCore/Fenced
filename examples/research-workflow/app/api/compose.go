@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	research "github.com/CloudEdgeCore/AgentOS/examples/research-workflow/runtime"
+	research "github.com/CloudEdgeCore/Fenced/examples/research-workflow/runtime"
 )
 
 // ComposeWorkflowDocument renders the template with the concrete goal,

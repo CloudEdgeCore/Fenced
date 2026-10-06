@@ -56,7 +56,7 @@ func GenerateSBOM(manifest Manifest) ([]byte, error) {
 		SerialNumber: "urn:uuid:" + uuid.NewString(), Version: 1,
 		Metadata: sbomMetadata{
 			Timestamp: time.Now().UTC().Format(time.RFC3339Nano),
-			Tools:     []sbomTool{{Vendor: "agentos", Name: "agentos-pkg", Version: "v0.5"}},
+			Tools:     []sbomTool{{Vendor: "fenced", Name: "fenced-pkg", Version: "v0.5"}},
 			Component: &sbomComponent{Type: "application", Name: manifest.AgentVersionRef},
 		},
 	}

@@ -1,8 +1,8 @@
 // Package devops implements the six agent roles of the DevOps reference
-// workload as one AgentOS-native runtime. Every role executes inside the
+// workload as one Fenced-native runtime. Every role executes inside the
 // fenced attempt context: tools are invoked through the brokered
-// agentos.tool.invoke, models through agentos.model.invoke, and memory
-// through agentos.memory.put/search.
+// fenced.tool.invoke, models through fenced.model.invoke, and memory
+// through fenced.memory.put/search.
 package devops
 
 import (
@@ -36,7 +36,7 @@ type Envelope struct {
 	WorkflowID string `json:"workflowId"`
 }
 
-const envelopePrefix = "AGENTOS-DEVOPS/v1 "
+const envelopePrefix = "FENCED-DEVOPS/v1 "
 
 // EnvelopePrefix exposes the goal envelope marker.
 func EnvelopePrefix() string { return envelopePrefix }
@@ -256,7 +256,7 @@ func putMemory(ctx context.Context, deps Deps, key, contentType string, value an
 	if err != nil {
 		return fmt.Errorf("encode memory: %w", err)
 	}
-	_, err = deps.MCP.CallTool(ctx, deps.ExecutionID, "agentos.memory.put", map[string]any{
+	_, err = deps.MCP.CallTool(ctx, deps.ExecutionID, "fenced.memory.put", map[string]any{
 		"namespace": deps.Workdir(""), "key": key, "contentType": contentType, "content": string(content),
 	})
 	return err

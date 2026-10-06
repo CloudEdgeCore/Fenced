@@ -1,11 +1,11 @@
 {
-  "apiVersion": "agentos.dev/v1",
+  "apiVersion": "fenced.dev/v1",
   "kind": "AgentVersion",
   "metadata": { "name": "devops-planner", "version": "1.0.0", "namespace": "default" },
   "spec": {
     "runtimeClassPolicy": { "allowed": ["research-reasoning"], "preferred": "research-reasoning" },
     "lifecycle": { "maxAttempts": 3 },
-    "runtimes": [{ "class": "research-reasoning", "interface": "agentos.runtime.interface/v1", "runtimeABI": "agentos.adapter-http/v1", "entrypoint": ["agentos-binding://devops"] }],
+    "runtimes": [{ "class": "research-reasoning", "interface": "fenced.runtime.interface/v1", "runtimeABI": "fenced.adapter-http/v1", "entrypoint": ["fenced-binding://devops"] }],
     "capabilities": { "tools": [], "models": ["__MODEL_REASONING__"], "memory": ["devops/*"], "secrets": [] },
     "budget": { "tokens": 12000, "costUsd": 2.00, "toolCalls": 8, "wallSeconds": 300 },
     "checkpoint": { "mode": "logical", "schemaVersion": "devops/v1", "intervalSeconds": 30 }

@@ -20,23 +20,23 @@ import (
 	"testing"
 	"time"
 
-	gatewayv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/gateway/v1"
-	modelv1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/model/v1"
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/gateway"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/admission"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	kernelmodel "github.com/CloudEdgeCore/AgentOS/internal/kernel/model"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/money"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/policy"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/scheduler"
-	kernelstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	postgresstore "github.com/CloudEdgeCore/AgentOS/internal/kernel/store/postgres"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/tool"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/artifact"
-	"github.com/CloudEdgeCore/AgentOS/internal/platform/migrate"
-	runtimecontrol "github.com/CloudEdgeCore/AgentOS/internal/runtime/control"
-	"github.com/CloudEdgeCore/AgentOS/internal/runtime/reference"
+	gatewayv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/gateway/v1"
+	modelv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/model/v1"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/gateway"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/admission"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	kernelmodel "github.com/CloudEdgeCore/Fenced/internal/kernel/model"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/policy"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/scheduler"
+	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	postgresstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store/postgres"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/tool"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/artifact"
+	"github.com/CloudEdgeCore/Fenced/internal/platform/migrate"
+	runtimecontrol "github.com/CloudEdgeCore/Fenced/internal/runtime/control"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/reference"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -48,14 +48,14 @@ const (
 	conformanceTenant   = "tenant-a"
 	conformanceVersion  = "conformance@1"
 	referenceProvider   = "reference-go"
-	referenceABI        = "agentos.reference/v1"
-	referenceSchema     = "agentos.reference-state/v1"
+	referenceABI        = "fenced.reference/v1"
+	referenceSchema     = "fenced.reference-state/v1"
 	wasmtimeProvider    = "wasmtime"
-	wasmtimeABI         = "agentos.wasm-component/v1"
-	wasmtimeSchema      = "agentos.wasm-logical-state/v1"
+	wasmtimeABI         = "fenced.wasm-component/v1"
+	wasmtimeSchema      = "fenced.wasm-logical-state/v1"
 	ociProvider         = "oci-gvisor"
-	ociABI              = "agentos.oci/v1"
-	ociSchema           = "agentos.oci-logical/v1"
+	ociABI              = "fenced.oci/v1"
+	ociSchema           = "fenced.oci-logical/v1"
 	terminalWaitTimeout = 60 * time.Second
 )
 
@@ -126,14 +126,14 @@ func TestSameAgentVersionRunsOnBothProviders(t *testing.T) {
 	})
 
 	// The OCI/gVisor leg runs only on a host with containerd + runsc: point
-	// AGENTOS_OCI_CONTAINERD_NAMESPACE (and optionally AGENTOS_OCI_IMAGE,
-	// AGENTOS_OCI_RUNTIME, and AGENTOS_OCI_RUNTIME_CONFIG) at the sandbox host.
+	// FENCED_OCI_CONTAINERD_NAMESPACE (and optionally FENCED_OCI_IMAGE,
+	// FENCED_OCI_RUNTIME, and FENCED_OCI_RUNTIME_CONFIG) at the sandbox host.
 	// CI hosts without the sandbox skip the leg; the provider binary itself is
 	// built and unit-tested in CI regardless.
 	t.Run("oci", func(t *testing.T) {
-		namespace := os.Getenv("AGENTOS_OCI_CONTAINERD_NAMESPACE")
+		namespace := os.Getenv("FENCED_OCI_CONTAINERD_NAMESPACE")
 		if namespace == "" {
-			t.Skip("AGENTOS_OCI_CONTAINERD_NAMESPACE is not set (requires a containerd + runsc host)")
+			t.Skip("FENCED_OCI_CONTAINERD_NAMESPACE is not set (requires a containerd + runsc host)")
 		}
 		scenario := scenario{
 			key: "conformance-oci", runtimeClass: "oci", instanceID: "worker-oci-1",
@@ -257,10 +257,10 @@ func (env *conformanceEnv) driveReferenceWorker(t *testing.T) {
 // pinned toolchain.
 func (env *conformanceEnv) driveWasmtimeWorker(t *testing.T) {
 	t.Helper()
-	runtimeBinary := os.Getenv("AGENTOS_WASMTIME_RUNTIME")
-	packageRoot := os.Getenv("AGENTOS_WASMTIME_PACKAGE_ROOT")
+	runtimeBinary := os.Getenv("FENCED_WASMTIME_RUNTIME")
+	packageRoot := os.Getenv("FENCED_WASMTIME_PACKAGE_ROOT")
 	if runtimeBinary == "" || packageRoot == "" {
-		t.Skip("AGENTOS_WASMTIME_RUNTIME and AGENTOS_WASMTIME_PACKAGE_ROOT are not set")
+		t.Skip("FENCED_WASMTIME_RUNTIME and FENCED_WASMTIME_PACKAGE_ROOT are not set")
 	}
 	if _, err := os.Stat(filepath.Join(packageRoot, "agent.wasm")); err != nil {
 		t.Skipf("package root has no agent.wasm component: %v", err)
@@ -317,22 +317,22 @@ func (env *conformanceEnv) driveWasmtimeWorker(t *testing.T) {
 // shellable Alpine image used by CI.
 func (env *conformanceEnv) driveOCIWorker(t *testing.T, namespace string) {
 	t.Helper()
-	imageRef := os.Getenv("AGENTOS_OCI_IMAGE")
+	imageRef := os.Getenv("FENCED_OCI_IMAGE")
 	if imageRef == "" {
 		imageRef = "docker.io/library/alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b"
 	}
-	runtimeName := os.Getenv("AGENTOS_OCI_RUNTIME")
+	runtimeName := os.Getenv("FENCED_OCI_RUNTIME")
 	if runtimeName == "" {
 		runtimeName = "io.containerd.runsc.v1"
 	}
-	runtimeConfig := os.Getenv("AGENTOS_OCI_RUNTIME_CONFIG")
+	runtimeConfig := os.Getenv("FENCED_OCI_RUNTIME_CONFIG")
 	// Snapshotter for sandbox rootfs (v0.7): nested environments (containerd
 	// inside a container) cannot mount overlay-on-overlay and must set
-	// AGENTOS_OCI_SNAPSHOTTER=native.
-	snapshotter := os.Getenv("AGENTOS_OCI_SNAPSHOTTER")
-	binaryPath, err := exec.LookPath("agentos-runtime-oci")
+	// FENCED_OCI_SNAPSHOTTER=native.
+	snapshotter := os.Getenv("FENCED_OCI_SNAPSHOTTER")
+	binaryPath, err := exec.LookPath("fenced-runtime-oci")
 	if err != nil {
-		t.Skipf("agentos-runtime-oci binary not found in PATH (build cmd/agentos-runtime-oci first): %v", err)
+		t.Skipf("fenced-runtime-oci binary not found in PATH (build cmd/fenced-runtime-oci first): %v", err)
 	}
 	commandArgs := []string{
 		"--dev-mode=true",
@@ -465,9 +465,9 @@ func (env *conformanceEnv) assertConformance(t *testing.T, scenario scenario) {
 
 func newConformanceEnv(t *testing.T) *conformanceEnv {
 	t.Helper()
-	url := os.Getenv("AGENTOS_TEST_DATABASE_URL")
+	url := os.Getenv("FENCED_TEST_DATABASE_URL")
 	if url == "" {
-		t.Skip("AGENTOS_TEST_DATABASE_URL is not set")
+		t.Skip("FENCED_TEST_DATABASE_URL is not set")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -479,7 +479,7 @@ func newConformanceEnv(t *testing.T) *conformanceEnv {
 	if err != nil {
 		t.Fatalf("open PostgreSQL admin connection: %v", err)
 	}
-	if _, err := admin.Exec(ctx, `CREATE SCHEMA IF NOT EXISTS agentos_conformance`); err != nil {
+	if _, err := admin.Exec(ctx, `CREATE SCHEMA IF NOT EXISTS fenced_conformance`); err != nil {
 		admin.Close(ctx)
 		t.Fatalf("create conformance schema: %v", err)
 	}
@@ -490,7 +490,7 @@ func newConformanceEnv(t *testing.T) *conformanceEnv {
 	if err != nil {
 		t.Fatalf("parse database URL: %v", err)
 	}
-	config.ConnConfig.RuntimeParams["search_path"] = "agentos_conformance"
+	config.ConnConfig.RuntimeParams["search_path"] = "fenced_conformance"
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		t.Fatalf("open PostgreSQL: %v", err)

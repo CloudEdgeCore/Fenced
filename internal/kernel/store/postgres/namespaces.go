@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/namespace"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/namespace"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )

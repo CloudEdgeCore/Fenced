@@ -23,12 +23,14 @@ Start with a dependency-free Python agent and the Runtime Interface conformance
 suite. You need **Go 1.26.x** and **Python 3.11+**. This trial needs no Docker,
 model account, API key, or framework installation.
 
-**Naming transition:** the GitHub repository, CLI binaries, SDK package names,
-and protocol identifiers still use `AgentOS` / `agentos`. The commands and
-expected output below retain those names for compatibility.
+**Naming note:** Fenced was previously named AgentOS. The repository, CLI
+binaries, SDK package names, Go module path, and protocol identifiers have all
+been renamed to `Fenced` / `fenced`. Historical documents and released artifacts
+may still reference the former name; see [docs/NAMING.md](docs/NAMING.md) for the
+complete migration map and compatibility notes.
 
 ```shell
-git clone https://github.com/CloudEdgeCore/AgentOS.git Fenced
+git clone https://github.com/CloudEdgeCore/Fenced.git Fenced
 cd Fenced
 ```
 
@@ -36,13 +38,13 @@ cd Fenced
 
 ```powershell
 $env:PYTHONPATH = "./sdk/python"
-go run ./cmd/agentos-conformance -cmd "python examples/agents/python_remote/server.py --port 0" -timeout 30s
+go run ./cmd/fenced-conformance -cmd "python examples/agents/python_remote/server.py --port 0" -timeout 30s
 ```
 
 **Bash / zsh:**
 
 ```bash
-PYTHONPATH=./sdk/python go run ./cmd/agentos-conformance -cmd "python3 examples/agents/python_remote/server.py --port 0" -timeout 30s
+PYTHONPATH=./sdk/python go run ./cmd/fenced-conformance -cmd "python3 examples/agents/python_remote/server.py --port 0" -timeout 30s
 ```
 
 The command starts a local adapter, discovers its port, checks the protocol,
@@ -52,9 +54,9 @@ Expected output includes:
 
 ```text
 Adapter:  python-remote
-Protocol: agentos.runtime.interface/v1
+Protocol: fenced.runtime.interface/v1
 ...
-AgentOS Compatible = PASS
+Fenced Compatible = PASS
 ```
 
 **What this checks:** startup, idempotency, events, checkpoint/restore, result,
@@ -130,7 +132,7 @@ agents. Start with the [ecosystem guide](docs/ecosystem/README.md); use the
 compatibility.
 
 For services, supply a published `spec.agentVersionRef` and `spec.workloadSpec`
-(`agentos service create -spec task-spec.json`), and apply migration `000037`.
+(`fenced service create -spec task-spec.json`), and apply migration `000037`.
 Each replica consumes a real worker slot and retains Task budgets and timeouts.
 See the [service guide](docs/user-guide.md#71-服务注册与启动).
 
@@ -182,12 +184,13 @@ will not close before **2027-02-17**; see the
 - [User guide / 中文使用指南](docs/user-guide.md): manifests, tasks, workflows, services, and CLI usage.
 - [Development reference](docs/development.md): full local setup, observability, validation commands, and release verification.
 - [Frameworks and runtimes](docs/ecosystem/README.md): adapters, providers, SDKs, and reference applications.
-- [Helm deployment](deploy/helm/agentos/README.md): production HTTPS, OIDC, and Secret configuration.
-- [Changelog](CHANGELOG.md) and [GitHub Releases](https://github.com/CloudEdgeCore/AgentOS/releases): source changes and published assets.
+- [Helm deployment](deploy/helm/fenced/README.md): production HTTPS, OIDC, and Secret configuration.
+- [Naming and migration](docs/NAMING.md) and [compatibility](docs/COMPATIBILITY.md): the AgentOS → Fenced rename map, what a pre-rename deployment can keep doing, and what must be migrated.
+- [Changelog](CHANGELOG.md) and [GitHub Releases](https://github.com/CloudEdgeCore/Fenced/releases): source changes and published assets.
 
 ## Try it and share feedback
 
-Run the local trial and [open an issue](https://github.com/CloudEdgeCore/AgentOS/issues)
+Run the local trial and [open an issue](https://github.com/CloudEdgeCore/Fenced/issues)
 with the first step that blocks you: your OS, the command, and the error output.
 If you already run agent workloads, describe the failure or budget-control
 problem you would want Fenced to handle.

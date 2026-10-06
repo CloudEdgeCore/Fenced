@@ -59,7 +59,7 @@ func New(name string) *Agent {
 	return &Agent{
 		Name:         name,
 		Model:        model,
-		SystemPrompt: "You are a professional AI Agent governed by the AgentOS kernel.",
+		SystemPrompt: "You are a professional AI Agent governed by the Fenced kernel.",
 		Tools:        make(map[string]ToolFunc),
 		MaxTokens:    30000,
 		MaxCostUSD:   1.00,

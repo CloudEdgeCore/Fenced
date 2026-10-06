@@ -67,7 +67,7 @@ type ResourceUsageDelta struct {
 	ConsumedWallSecondsDelta  int64
 }
 
-// Namespace is a first-class isolation and resource management boundary in AgentOS.
+// Namespace is a first-class isolation and resource management boundary in Fenced.
 type Namespace struct {
 	TenantID    string            `json:"tenant_id"`
 	Name        string            `json:"name"`
@@ -115,7 +115,7 @@ func NewDefaultNamespace(tenantID string) *Namespace {
 		Description: "System default workload and resource boundary",
 		Phase:       NamespacePhaseActive,
 		Labels: map[string]string{
-			"agentos.dev/system": "true",
+			"fenced.dev/system": "true",
 		},
 		Quota: ResourceQuota{
 			AllowCrossNamespaceIPC: true,

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/CloudEdgeCore/AgentOS/sdk/provider"
+	"github.com/CloudEdgeCore/Fenced/sdk/provider"
 )
 
 func TestProviderRegistryAndManifests(t *testing.T) {
@@ -38,7 +38,7 @@ func TestProviderRegistryAndManifests(t *testing.T) {
 
 	// 3. Test PostgresMemoryProvider
 	memory, err := provider.NewPostgresMemoryProvider(provider.PostgresMemoryConfig{
-		ConnectionString: "postgres://mock:5432/agentos",
+		ConnectionString: "postgres://mock:5432/fenced",
 		Table:            "agent_memories",
 		VectorDimensions: 3,
 	})
@@ -92,7 +92,7 @@ func TestOpenAIProviderGenerateAndStream(t *testing.T) {
 	res, err := p.Generate(ctx, provider.GenerateRequest{
 		Model: "gpt-4o",
 		Messages: []provider.Message{
-			{Role: "user", Content: "Hello AgentOS!"},
+			{Role: "user", Content: "Hello Fenced!"},
 		},
 	})
 	if err != nil {
@@ -129,7 +129,7 @@ func TestBrowserProviderAutomationAndTools(t *testing.T) {
 	defer p.Close()
 
 	// Test Navigate
-	navRes, err := p.Navigate(ctx, provider.NavigateRequest{URL: "https://agentos.dev"})
+	navRes, err := p.Navigate(ctx, provider.NavigateRequest{URL: "https://fenced.dev"})
 	if err != nil || navRes.StatusCode != 200 {
 		t.Fatalf("navigate failed: %v, %+v", err, navRes)
 	}
@@ -149,7 +149,7 @@ func TestBrowserProviderAutomationAndTools(t *testing.T) {
 	// Invoke tool browser_navigate
 	invRes, err := p.InvokeTool(ctx, provider.ToolInvocationRequest{
 		ToolName:  "browser_navigate",
-		Arguments: json.RawMessage(`{"url":"https://agentos.dev/docs"}`),
+		Arguments: json.RawMessage(`{"url":"https://fenced.dev/docs"}`),
 	})
 	if err != nil || invRes.Error != "" {
 		t.Fatalf("invoke tool failed: %v, %+v", err, invRes)
@@ -159,7 +159,7 @@ func TestBrowserProviderAutomationAndTools(t *testing.T) {
 func TestPostgresMemoryProviderVectorSearch(t *testing.T) {
 	ctx := context.Background()
 	p, err := provider.NewPostgresMemoryProvider(provider.PostgresMemoryConfig{
-		ConnectionString: "postgres://mock:5432/agentos",
+		ConnectionString: "postgres://mock:5432/fenced",
 		Table:            "memories",
 		VectorDimensions: 3,
 	})

@@ -4,7 +4,7 @@ info:
   version: v1alpha1
   description: Public task submission and observation contract. Task status is kernel-owned.
 servers:
-  - url: https://control.agentos.dev
+  - url: https://control.fenced.dev
 paths:
   /v1/tasks:
     post:
@@ -537,7 +537,7 @@ components:
       additionalProperties: false
       required: [apiVersion, kind, metadata, spec]
       properties:
-        apiVersion: { type: string, const: agentos.dev/v1alpha1 }
+        apiVersion: { type: string, const: fenced.dev/v1alpha1 }
         kind: { type: string, const: AgentManifest }
         metadata:
           type: object
@@ -581,7 +581,7 @@ components:
             required: [class, interface, runtimeABI, entrypoint]
             properties:
               class: { type: string, minLength: 1, maxLength: 128 }
-              interface: { type: string, const: agentos.runtime.interface/v1alpha1 }
+              interface: { type: string, const: fenced.runtime.interface/v1alpha1 }
               runtimeABI: { type: string, minLength: 1, maxLength: 256 }
               entrypoint:
                 type: array
@@ -644,16 +644,16 @@ components:
       additionalProperties: false
       required: [manifest, signature]
       description: >-
-        Canonical signed package document (agentos.agentpkg/v1). The signature
+        Canonical signed package document (fenced.agentpkg/v1). The signature
         covers the SHA-256 digest of the manifest encoding; use the output of
-        `agentos-pkg sign` verbatim so the manifest spec bytes round-trip.
+        `fenced-pkg sign` verbatim so the manifest spec bytes round-trip.
       properties:
         manifest:
           type: object
           additionalProperties: false
           required: [schema, agentVersionRef, specDigest, spec, provenance]
           properties:
-            schema: { type: string, const: agentos.agentpkg/v1 }
+            schema: { type: string, const: fenced.agentpkg/v1 }
             agentVersionRef: { type: string, description: Canonical name@version reference this manifest signs. }
             specDigest: { $ref: '#/components/schemas/Digest' }
             spec: { type: object, additionalProperties: true }
@@ -712,7 +712,7 @@ components:
         - createdAt
         - traceId
       properties:
-        apiVersion: { type: string, const: agentos.dev/v1alpha1 }
+        apiVersion: { type: string, const: fenced.dev/v1alpha1 }
         kind: { type: string, const: AgentVersion }
         id: { type: string, format: uuid }
         tenantId: { type: string }
@@ -745,7 +745,7 @@ components:
         - updatedAt
         - traceId
       properties:
-        apiVersion: { type: string, const: agentos.dev/v1alpha1 }
+        apiVersion: { type: string, const: fenced.dev/v1alpha1 }
         kind: { type: string, const: Task }
         id: { type: string, format: uuid }
         tenantId: { type: string }
@@ -824,7 +824,7 @@ components:
       additionalProperties: false
       required: [apiVersion, kind, id, tenantId, namespace, key, contentType, content, embeddingProvider, sensitivity, resourceVersion, createdAt, updatedAt, traceId]
       properties:
-        apiVersion: { type: string, const: agentos.dev/v1alpha1 }
+        apiVersion: { type: string, const: fenced.dev/v1alpha1 }
         kind: { type: string, const: Memory }
         id: { type: string, format: uuid }
         tenantId: { type: string }
@@ -850,7 +850,7 @@ components:
       additionalProperties: false
       required: [apiVersion, kind, memories, traceId]
       properties:
-        apiVersion: { type: string, const: 'agentos.dev/v1alpha1' }
+        apiVersion: { type: string, const: 'fenced.dev/v1alpha1' }
         kind: { type: string, const: MemoryList }
         memories:
           type: array
@@ -885,7 +885,7 @@ components:
       additionalProperties: false
       required: [apiVersion, kind, tools, traceId]
       properties:
-        apiVersion: { type: string, const: 'agentos.dev/v1alpha1' }
+        apiVersion: { type: string, const: 'fenced.dev/v1alpha1' }
         kind: { type: string, const: ToolList }
         tools:
           type: array
@@ -985,7 +985,7 @@ components:
       additionalProperties: false
       required: [schemaVersion, tenantId, generatedAt, signed, events]
       properties:
-        schemaVersion: { type: string, const: 'agentos.audit/v1' }
+        schemaVersion: { type: string, const: 'fenced.audit/v1' }
         tenantId: { type: string }
         generatedAt: { type: string, format: date-time }
         signed: { type: boolean, description: False in dev when no -audit-signing-key is configured. }

@@ -1,21 +1,21 @@
-# AgentOS SDK for TypeScript
+# Fenced SDK for TypeScript
 
 Typed, dependency-free clients for Node.js 20+ and modern browsers. SDK `1.x`
-supports the stable AgentOS Control API and `agentos.runtime.interface/v1`.
+supports the stable Fenced Control API and `fenced.runtime.interface/v1`.
 
 The package includes manifest, budget, capability, task, workflow, dynamic-step,
 runtime event, and result types. Mutating operations expose idempotency keys and
 resource-version ETags instead of hiding the platform's concurrency contract.
 
 ```ts
-import { ControlClient, type WorkflowSpec } from "@agentos/sdk";
+import { ControlClient, type WorkflowSpec } from "@fenced/sdk";
 
 const client = new ControlClient("https://control.example.com", {
   token: () => obtainShortLivedToken(),
 });
 
 const workflow: WorkflowSpec = {
-  apiVersion: "agentos.dev/workflow/v1",
+  apiVersion: "fenced.dev/workflow/v1",
   kind: "Workflow",
   steps: [{
     name: "research",

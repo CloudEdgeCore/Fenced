@@ -1,6 +1,6 @@
 {
-  "$schema": "https://agentos.dev/v1/manifest.json",
-  "apiVersion": "agentos.dev/v1",
+  "$schema": "https://fenced.dev/v1/manifest.json",
+  "apiVersion": "fenced.dev/v1",
   "name": "sre-agent",
   "version": "1.2.0",
   "namespace": "production",

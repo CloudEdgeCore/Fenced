@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 )
 
 // HTTPMCPClient posts JSON-RPC tool calls to the runtime's loopback MCP
@@ -45,7 +45,7 @@ func NewHTTPMCPClient(endpoint string) *HTTPMCPClient {
 	return &HTTPMCPClient{endpoint: strings.TrimRight(endpoint, "/"), http: &http.Client{Timeout: 10 * time.Minute}}
 }
 
-const executionHeader = "X-Agentos-Execution"
+const executionHeader = "X-Fenced-Execution"
 
 // CallTool implements MCPClient.
 func (c *HTTPMCPClient) CallTool(ctx context.Context, executionID, name string, callArgs any) (json.RawMessage, error) {
@@ -115,7 +115,7 @@ func (c *HTTPMCPClient) CallTool(ctx context.Context, executionID, name string, 
 	return json.RawMessage(text), nil
 }
 
-// Runtime hosts the research roles behind the AgentOS Runtime Interface. One
+// Runtime hosts the research roles behind the Fenced Runtime Interface. One
 // process serves every agent version; the version reference selects the role
 // so a single deployment can host the whole workflow fleet.
 type Runtime struct {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	research "github.com/CloudEdgeCore/AgentOS/examples/research-workflow/runtime"
+	research "github.com/CloudEdgeCore/Fenced/examples/research-workflow/runtime"
 )
 
 // Probe: the scripted writer must recover verbatim quotes from a rendered

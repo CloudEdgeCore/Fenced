@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	runtimev1 "github.com/CloudEdgeCore/AgentOS/gen/go/agentos/runtime/v1"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/agentversion"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/domain"
-	"github.com/CloudEdgeCore/AgentOS/internal/kernel/store"
-	"github.com/CloudEdgeCore/AgentOS/sdk/agent"
+	runtimev1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/runtime/v1"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/domain"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
+	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -240,7 +240,7 @@ func TestWorkerExecutesManifestThroughRuntimeInterface(t *testing.T) {
 		RuntimeClassPolicy: agentversion.RuntimeClassPolicy{Allowed: []string{"remote"}, Preferred: "remote"},
 		Runtimes: []agentversion.RuntimeTarget{{
 			Class: "remote", Interface: agentversion.RuntimeInterfaceV1,
-			RuntimeABI: "agentos.remote/v1", Entrypoint: []string{server.URL},
+			RuntimeABI: "fenced.remote/v1", Entrypoint: []string{server.URL},
 		}},
 		Capabilities: &agentversion.Capabilities{
 			Tools: []string{}, Models: []string{}, Memory: []string{}, Secrets: []string{},
@@ -299,7 +299,7 @@ func TestWorkerHonorsCheckpointNone(t *testing.T) {
 		RuntimeClassPolicy: agentversion.RuntimeClassPolicy{Allowed: []string{"remote"}, Preferred: "remote"},
 		Runtimes: []agentversion.RuntimeTarget{{
 			Class: "remote", Interface: agentversion.RuntimeInterfaceV1,
-			RuntimeABI: "agentos.remote/v1", Entrypoint: []string{server.URL},
+			RuntimeABI: "fenced.remote/v1", Entrypoint: []string{server.URL},
 		}},
 		Capabilities: &agentversion.Capabilities{
 			Tools: []string{}, Models: []string{}, Memory: []string{}, Secrets: []string{},

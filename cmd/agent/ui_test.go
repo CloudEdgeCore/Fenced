@@ -21,8 +21,8 @@ func TestUIHandlers(t *testing.T) {
 			t.Fatalf("expected status 200, got %d", w.Code)
 		}
 		body := w.Body.String()
-		if !strings.Contains(body, "AgentOS Kernel") {
-			t.Errorf("expected HTML to contain 'AgentOS Kernel'")
+		if !strings.Contains(body, "Fenced Kernel") {
+			t.Errorf("expected HTML to contain 'Fenced Kernel'")
 		}
 		if !strings.Contains(body, "Cluster Overview") {
 			t.Errorf("expected HTML to contain 'Cluster Overview'")
@@ -42,7 +42,7 @@ func TestUIHandlers(t *testing.T) {
 		if err := json.Unmarshal(w.Body.Bytes(), &status); err != nil {
 			t.Fatalf("failed to parse status JSON: %v", err)
 		}
-		if status["product"] != "AgentOS Control Plane" {
+		if status["product"] != "Fenced Control Plane" {
 			t.Errorf("unexpected product name: %v", status["product"])
 		}
 		if status["status"] != "ONLINE" && status["status"] != "REDLINE_HALTED" {

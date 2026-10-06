@@ -12,14 +12,14 @@ import type {
 
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 
-export class AgentOSError extends Error {
+export class FencedError extends Error {
   readonly status: number;
   readonly code: string | undefined;
   readonly traceId: string | undefined;
 
   constructor(status: number, message: string, details?: { code?: string; traceId?: string }) {
     super(message);
-    this.name = "AgentOSError";
+    this.name = "FencedError";
     this.status = status;
     this.code = details?.code;
     this.traceId = details?.traceId;
@@ -66,18 +66,18 @@ abstract class JSONClient {
     if (this.signal !== undefined) init.signal = this.signal;
     const response = await this.fetcher(this.baseURL + path, init);
     const bytes = new Uint8Array(await response.arrayBuffer());
-    if (bytes.byteLength > MAX_RESPONSE_BYTES) throw new Error("AgentOS response exceeds 2 MiB");
+    if (bytes.byteLength > MAX_RESPONSE_BYTES) throw new Error("Fenced response exceeds 2 MiB");
     let document: unknown = {};
     if (bytes.byteLength > 0) {
       try {
         document = JSON.parse(new TextDecoder().decode(bytes));
       } catch {
-        throw new Error("AgentOS returned invalid JSON");
+        throw new Error("Fenced returned invalid JSON");
       }
     }
     if (!accepted.includes(response.status)) {
       const problem = document as { detail?: string; title?: string; code?: string; traceId?: string };
-      throw new AgentOSError(response.status, problem.detail ?? problem.title ?? `HTTP ${response.status}`, problem);
+      throw new FencedError(response.status, problem.detail ?? problem.title ?? `HTTP ${response.status}`, problem);
     }
     const etag = response.headers.get("ETag") ?? undefined;
     return {
@@ -123,10 +123,10 @@ export class ControlClient extends JSONClient {
 }
 
 export class RuntimeClient extends JSONClient {
-  readonly protocol = "agentos.runtime.interface/v1";
+  readonly protocol = "fenced.runtime.interface/v1";
 
   private async runtimeRequest<T>(method: string, path: string, body?: unknown, accepted = [200]): Promise<ResourceResponse<T>> {
-    return this.request<T>(method, `/v1${path}`, body, { "AgentOS-Runtime-Interface": this.protocol }, accepted);
+    return this.request<T>(method, `/v1${path}`, body, { "Fenced-Runtime-Interface": this.protocol }, accepted);
   }
 
   async health(): Promise<ResourceResponse<{ status: string; adapter: string; protocolVersions: readonly string[] }>> {
