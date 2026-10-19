@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -37,7 +36,7 @@ func main() {
 	endpoint := flag.String("adapter-endpoint", "", "explicit Agent Runtime Interface endpoint (overrides runtime bindings and manifest entrypoints; plaintext HTTP must be loopback, remote endpoints must be HTTPS)")
 	runtimeBindings := flag.String("runtime-bindings", "", "JSON runtime binding file mapping agent version refs to Runtime Interface endpoints (empty disables)")
 	dedicatedEndpoint := flag.Bool("dedicated-endpoint", false, "acknowledge that -adapter-endpoint intentionally overrides runtime bindings (single-agent-version workers only)")
-	allowPlaintextRemote := flag.Bool("allow-plaintext-remote-runtime", false, "development escape hatch: permit plaintext HTTP Runtime Interface endpoints on non-loopback hosts (never enable in production)")
+	allowPlaintextRemote := flag.Bool("allow-plaintext-remote-runtime", false, "development escape hatch: permit plaintext HTTP endpoints in the runtime binding table on non-loopback hosts (never enable in production; the explicit -adapter-endpoint always requires HTTPS or loopback)")
 	tenantID := flag.String("tenant", "", "tenant assigned to this worker")
 	runtimeInstanceID := flag.String("runtime-instance-id", "", "assigned runtime instance ID")
 	artifactRoot := flag.String("artifact-root", "", "content-addressed artifact directory")
@@ -64,24 +63,12 @@ func main() {
 		slog.Error("either -adapter-endpoint or -runtime-bindings is required")
 		os.Exit(2)
 	}
-	if strings.TrimSpace(*endpoint) != "" {
-		parsed, err := url.Parse(*endpoint)
-		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Hostname() == "" {
-			slog.Error("adapter endpoint must be an absolute HTTP(S) URL")
-			os.Exit(2)
-		}
-		// Transport security boundary (P0-02): plaintext HTTP is tolerated
-		// only for a co-located loopback runtime; a remote Runtime Interface
-		// must be HTTPS with server verification (optionally pinned by the
-		// binding's TLS material).
-		if parsed.Scheme == "http" {
-			ip := net.ParseIP(parsed.Hostname())
-			if parsed.Hostname() != "localhost" && (ip == nil || !ip.IsLoopback()) {
-				slog.Error("plaintext adapter endpoint must be co-located on loopback; remote runtimes require HTTPS", "endpoint", *endpoint)
-				os.Exit(2)
-			}
-		}
-	}
+	// The explicit endpoint is validated by the adapter package when the
+	// worker is constructed, against the production transport policy: a
+	// plaintext endpoint must be co-located on loopback and a remote
+	// Runtime Interface must be HTTPS with server verification. The
+	// development escape hatch applies to the runtime binding table, not
+	// to this single endpoint that routes every assignment.
 	if err := validateSandboxMCPListen(*mcpListen); err != nil {
 		slog.Error("invalid -mcp-listen", "error", err)
 		os.Exit(2)
@@ -238,16 +225,15 @@ func main() {
 	}
 }
 
+// loopbackRPCAddress reports whether a host:port address is a loopback
+// address. The loopback rule itself lives in the adapter package, so the
+// worker and this command line share one definition of it.
 func loopbackRPCAddress(address string) bool {
 	host, _, err := net.SplitHostPort(address)
 	if err != nil {
 		return false
 	}
-	if strings.EqualFold(host, "localhost") {
-		return true
-	}
-	ip := net.ParseIP(host)
-	return ip != nil && ip.IsLoopback()
+	return runtimeadapter.IsLoopbackHost(host)
 }
 
 // validateSandboxMCPListen enforces the loopback-only boundary for the
