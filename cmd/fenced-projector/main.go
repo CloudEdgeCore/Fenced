@@ -158,7 +158,7 @@ func main() {
 			os.Exit(1)
 		}
 		consumers = append(consumers, consumer)
-		slog.Info("Agent OS projection listening", "projection", config.name, "index", config.index, "filter", config.filter, "consumer", config.consumerID)
+		slog.Info("Fenced projection listening", "projection", config.name, "index", config.index, "filter", config.filter, "consumer", config.consumerID)
 	}
 	<-ctx.Done()
 }

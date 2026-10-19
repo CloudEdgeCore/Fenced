@@ -37,6 +37,8 @@ __pycache__/
 !/docs/development.md
 !/docs/NAMING.md
 !/docs/COMPATIBILITY.md
+!/docs/assets/
+!/docs/assets/**
 
 # Local-only model endpoints and tenant policy overrides (private infra)
 deploy/dev/*.local.json

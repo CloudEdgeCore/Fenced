@@ -1,4 +1,4 @@
-"""CrewAI adapter for the Agent OS Runtime Interface.
+"""CrewAI adapter for the Fenced Runtime Interface.
 
 The adapter encapsulates CrewAI role-playing multi-agent crew execution (Crew, Agent, Task).
 Importing CrewAI itself remains the application's responsibility, preserving

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# v0.7: Agent OS runtime environment fingerprint.
+# v0.7: Fenced runtime environment fingerprint.
 # Prints a stable key=value document (one pair per line) capturing the host
 # and pinned runtime toolchain. CI logs it and saves it as an artifact so
 # every runtime test run is reproducible against an equal Linux host.

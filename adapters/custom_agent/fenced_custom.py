@@ -1,4 +1,4 @@
-"""Custom in-house agent adapter for the Agent OS Runtime Interface.
+"""Custom in-house agent adapter for the Fenced Runtime Interface.
 
 This adapter represents proprietary in-house enterprise agents natively integrated
 with the Fenced Kernel, leveraging Syscall ABI conventions, durable IPC messaging,

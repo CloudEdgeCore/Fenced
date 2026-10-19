@@ -1,4 +1,4 @@
-# Agent OS v1alpha1 admission and tool policy (Rego v1).
+# Fenced v1alpha1 admission and tool policy (Rego v1).
 #
 # The kernel evaluates this module with default-deny semantics: `allow` is
 # false unless a rule grants it, and `deny_reasons` explains every failed

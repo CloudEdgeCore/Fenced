@@ -1,4 +1,4 @@
-"""A2A client adapter for the Agent OS Runtime Interface.
+"""A2A client adapter for the Fenced Runtime Interface.
 
 The Kernel depends only on the Runtime Interface. This adapter translates that
 stable lifecycle into the small A2A client surface (send/get/cancel), keeping

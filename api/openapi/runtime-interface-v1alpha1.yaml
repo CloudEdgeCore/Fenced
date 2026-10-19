@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Agent OS Runtime Interface
+  title: Fenced Runtime Interface
   version: v1alpha1
   description: Provider-neutral lifecycle boundary implemented by Agent adapters.
 paths:

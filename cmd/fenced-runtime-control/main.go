@@ -143,7 +143,7 @@ func main() {
 			server.Stop()
 		}
 	}()
-	slog.Info("Agent OS Runtime Protocol listening", "address", *listenAddress, "devMode", *devMode, "tenant", allowedTenant)
+	slog.Info("Fenced Runtime Protocol listening", "address", *listenAddress, "devMode", *devMode, "tenant", allowedTenant)
 	if err := server.Serve(listener); err != nil && ctx.Err() == nil {
 		slog.Error("serve Runtime Protocol", "error", err)
 		os.Exit(1)

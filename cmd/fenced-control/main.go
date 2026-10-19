@@ -164,7 +164,7 @@ func main() {
 		defer cancel()
 		_ = server.Shutdown(shutdownCtx)
 	}()
-	slog.Info("Agent OS control API listening", "address", *listen, "devMode", devMode, "tenant", *devTenant)
+	slog.Info("Fenced control API listening", "address", *listen, "devMode", devMode, "tenant", *devTenant)
 	var serveErr error
 	if devMode {
 		serveErr = server.ListenAndServe()

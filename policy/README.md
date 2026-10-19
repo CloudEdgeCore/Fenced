@@ -1,6 +1,6 @@
 # Policy
 
-Shared, versioned Rego policy sources for the Agent OS kernel.
+Shared, versioned Rego policy sources for the Fenced kernel.
 
 Status:
 

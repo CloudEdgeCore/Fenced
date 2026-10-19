@@ -1,4 +1,4 @@
-"""LangGraph adapter for the Agent OS Runtime Interface.
+"""LangGraph adapter for the Fenced Runtime Interface.
 
 The adapter depends only on LangGraph's stable ``invoke`` shape. Importing
 LangGraph itself remains the Agent application's responsibility, preserving

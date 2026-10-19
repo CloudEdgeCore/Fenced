@@ -1,4 +1,4 @@
-// Package postgres implements the Agent OS kernel persistence contract on
+// Package postgres implements the Fenced kernel persistence contract on
 // PostgreSQL. Every lifecycle mutation and its outbox event share a transaction.
 package postgres
 

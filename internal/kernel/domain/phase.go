@@ -1,5 +1,5 @@
 // Package domain defines the stable lifecycle vocabulary enforced by the
-// Agent OS kernel. It has no infrastructure dependencies.
+// Fenced kernel. It has no infrastructure dependencies.
 package domain
 
 import "fmt"

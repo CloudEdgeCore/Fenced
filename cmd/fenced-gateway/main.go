@@ -360,7 +360,7 @@ func main() {
 			server.Stop()
 		}
 	}()
-	slog.Info("Agent OS Tool Gateway listening", "address", *listen, "devMode", *devMode, "tenant", allowedTenant)
+	slog.Info("Fenced Tool Gateway listening", "address", *listen, "devMode", *devMode, "tenant", allowedTenant)
 	if err := server.Serve(listener); err != nil {
 		slog.Error("Tool Gateway server", "error", err)
 		os.Exit(1)

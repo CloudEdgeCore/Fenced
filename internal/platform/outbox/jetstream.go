@@ -32,7 +32,7 @@ func EnsureStream(ctx context.Context, js jetstream.JetStream, replicas int) err
 		return fmt.Errorf("JetStream replicas must be between 1 and 5")
 	}
 	_, err := js.CreateOrUpdateStream(ctx, jetstream.StreamConfig{
-		Name: StreamName, Description: "Agent OS durable domain event projection",
+		Name: StreamName, Description: "Fenced durable domain event projection",
 		Subjects: []string{SubjectPrefix + ".>"}, Retention: jetstream.LimitsPolicy,
 		// The cap must stay modest: JetStream file stores refuse to create a
 		// stream whose MaxBytes exceeds the currently available disk.
@@ -40,7 +40,7 @@ func EnsureStream(ctx context.Context, js jetstream.JetStream, replicas int) err
 		Storage: jetstream.FileStorage, Replicas: replicas, Duplicates: 10 * time.Minute,
 	})
 	if err != nil {
-		return fmt.Errorf("ensure Agent OS event stream: %w", err)
+		return fmt.Errorf("ensure Fenced event stream: %w", err)
 	}
 	return nil
 }

@@ -1,4 +1,4 @@
-"""AutoGen adapter for the Agent OS Runtime Interface.
+"""AutoGen adapter for the Fenced Runtime Interface.
 
 The adapter encapsulates Microsoft AutoGen multi-agent conversational patterns
 (ConversableAgent, AssistantAgent, UserProxyAgent, GroupChat).

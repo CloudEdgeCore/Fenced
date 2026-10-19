@@ -33,11 +33,23 @@ The rename is case-preserving across three forms: `AgentOS` → `Fenced` (brand)
 | OPA policy | `internal/kernel/policy/agentos.rego` | `internal/kernel/policy/fenced.rego` |
 | TLA+ model | `modelcheck/tla/AgentOS.{tla,cfg}` | `modelcheck/tla/Fenced.{tla,cfg}` |
 | Helm chart | `deploy/helm/agentos` | `deploy/helm/fenced` |
+| NATS JetStream stream | `AGENTOS_EVENTS` | `FENCED_EVENTS` |
+| NATS event subject prefix | `agentos.events` | `fenced.events` |
+| Runtime log messages | `Agent OS … listening` | `Fenced … listening` |
+| OpenAPI document title | `Agent OS Control API`, `Agent OS Runtime Interface` | `Fenced Control API`, `Fenced Runtime Interface` |
 
 The replacement was applied uniformly to 512 source, config, documentation, CI, and
 evidence files. Generated protobuf code was **regenerated** with `buf generate`
 rather than text-edited, because the embedded file descriptors are length-prefixed
 and cannot be safely string-replaced.
+
+A second pass completed the rename: the mechanical replacement covered the
+connected forms `AgentOS`, `agentos` and `AGENTOS`, so the two-word form
+`Agent OS` survived in runtime log messages, package documentation, the Rego and
+TLA+ headers, the OpenAPI document titles and the JetStream stream description.
+Those texts now read `Fenced`. No identifier, field number, protocol name or
+persisted value was affected: the JetStream stream name, the event subject
+prefix and the database contents were already renamed by the first pass.
 
 ## 2. What was intentionally NOT renamed
 
@@ -53,6 +65,16 @@ and cannot be safely string-replaced.
   manifest. Their bytes — including the former `agentos` identifiers inside them —
   are preserved unchanged so the manifest stays verifiable. The surrounding Markdown
   reports were renamed.
+- **Durable external identifiers** — the NATS JetStream stream name
+  (`FENCED_EVENTS`) and the event subject prefix (`fenced.events`) exist in a
+  live broker. They are already renamed; renaming them again would orphan the
+  existing stream and its retained events, so they are frozen from here on.
+  The OpenAPI `info.title` is descriptive metadata rather than a wire
+  identifier, which is why it could be corrected.
+- **The compatibility shims** — the `agentos` command, the `AGENTOS_*`
+  environment variables, the `X-Agentos-Execution` header and the `agentos.*`
+  protocol identifiers exist to accept pre-rename input. They are removed
+  with the `v1alpha1` compatibility window, not before **2027-02-17**.
 
 ## 3. Compatibility consequences (breaking)
 

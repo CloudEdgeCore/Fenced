@@ -1,4 +1,4 @@
-// Package model implements the Model Gateway decision chain of the Agent OS
+// Package model implements the Model Gateway decision chain of the Fenced
 // kernel: versioned model descriptors with price tables, policy checks,
 // incremental token/cost settlement against the task budget ledger, and the
 // hard stop when a reservation is exhausted (tech baseline §12.1; invariant

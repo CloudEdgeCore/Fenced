@@ -1,4 +1,4 @@
-// Package tool implements the Tool Gateway decision chain of the Agent OS
+// Package tool implements the Tool Gateway decision chain of the Fenced
 // kernel: versioned descriptors, canonical argument normalization, policy
 // evaluation, human approval binding, budget hard-stop and durable
 // side-effect receipts (architecture §9.2, §12.2; invariants 6 and 9).

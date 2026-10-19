@@ -1,6 +1,6 @@
 ----------------------------- MODULE Fenced -----------------------------
 (*
-  Agent OS v0.1 — core kernel invariants, model-checked with TLC.
+  Fenced v0.1 — core kernel invariants, model-checked with TLC.
 
   Faithful to:
     - internal/kernel/domain/phase.go   (phase vocabularies and transition

@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Agent OS Control API
+  title: Fenced Control API
   version: v1
   description: Public task submission and observation contract. Task status is kernel-owned.
 servers:

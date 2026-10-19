@@ -1,4 +1,4 @@
-"""OpenAI Agents SDK adapter for the Agent OS Runtime Interface.
+"""OpenAI Agents SDK adapter for the Fenced Runtime Interface.
 
 The adapter encapsulates OpenAI Agents SDK execution patterns (Agent, Runner, Handoffs, Tools).
 Importing the OpenAI SDK itself remains the application's responsibility, preserving

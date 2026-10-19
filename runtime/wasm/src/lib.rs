@@ -1,4 +1,4 @@
-//! The Wasmtime Agent OS runtime provider.
+//! The Wasmtime Fenced runtime provider.
 //!
 //! This crate hosts untrusted agent components in a capability-free
 //! Wasmtime component-model sandbox and drives the fenced Runtime Protocol as
