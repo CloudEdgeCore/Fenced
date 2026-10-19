@@ -44,7 +44,7 @@ control plane run without a model account or an API key.
 | `runtime/wasm/` | The Rust Wasmtime provider |
 | `sdk/agent` | The canonical Runtime Interface contract (Go, standard library only) |
 | `sdk/python`, `sdk/typescript` | The other SDKs; they mirror `sdk/agent` |
-| `sdk/conformance/` | The black-box certification suite |
+| `sdk/conformance/` | The black-box certification suite and the shared wire vectors (`fixtures/runtime-interface-v1.json`) |
 | `api/`, `proto/` | The machine-checked contracts (OpenAPI 3.1, protobuf) |
 | `gen/go/` | **Generated** protobuf bindings — never edit by hand |
 | `db/migrations/` | Forward-only SQL migrations (`000001` …) |
@@ -168,6 +168,11 @@ introduced.
   `cmd/agent/stream.go`. The CLI reports the provider-reported token usage
   when the provider reports it, and falls back to a character estimate
   otherwise.
+- The Runtime Interface has one written contract:
+  `sdk/conformance/fixtures/runtime-interface-v1.json`. The Go SDK, the Python
+  SDK and the OpenAPI specification are all checked against it, so a renamed
+  field or a changed status code on one side fails the others. Add a vector
+  there instead of asserting the shape in one implementation.
 - The transport policy has one implementation, in
   `internal/runtime/bindings` (`EndpointPolicy.Validate`, `IsLoopbackHost`).
   The adapter command line delegates to it; do not re-implement the loopback

@@ -31,6 +31,19 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Callable, Protocol
 from urllib.parse import parse_qs, urlparse
 
+# The execution status vocabulary of the Runtime Interface. It matches the
+# Go SDK and the shared wire vectors: a status outside this set is a contract
+# change, not an implementation detail.
+STATUS_ACCEPTED = "ACCEPTED"
+STATUS_RUNNING = "RUNNING"
+STATUS_SUCCEEDED = "SUCCEEDED"
+STATUS_FAILED = "FAILED"
+STATUS_CANCELLED = "CANCELLED"
+STATUS_SERVING = "SERVING"
+
+# The execution statuses that are not terminal.
+STATUS_ACTIVE = (STATUS_ACCEPTED, STATUS_RUNNING)
+
 PROTOCOL_VERSION = "fenced.runtime.interface/v1"
 LEGACY_PROTOCOL_VERSION = "fenced.runtime.interface/v1alpha1"
 MAX_BODY = 2 << 20
@@ -61,7 +74,7 @@ class _Execution:
     digest: bytes
     created_at: float = field(default_factory=time.monotonic)
     stop_event: threading.Event = field(default_factory=threading.Event)
-    status: str = "ACCEPTED"
+    status: str = STATUS_ACCEPTED
     events: list[dict[str, Any]] = field(default_factory=list)
     next_sequence: int = 1
     result: dict[str, Any] | None = None
@@ -157,7 +170,7 @@ class RuntimeHost:
                 handler,
                 200,
                 {
-                    "status": "SERVING",
+                    "status": STATUS_SERVING,
                     "protocolVersions": [protocol],
                     "adapter": self.adapter,
                     "maxConcurrent": self.max_concurrent,
@@ -222,7 +235,7 @@ class RuntimeHost:
                 terminal = [
                     (key, value)
                     for key, value in self.executions.items()
-                    if value.status not in {"ACCEPTED", "RUNNING"} and value.capacity_released
+                    if value.status not in STATUS_ACTIVE and value.capacity_released
                 ]
                 if not terminal:
                     self._problem(handler, 429, "RETENTION_EXHAUSTED", "execution retention capacity exhausted")
@@ -233,12 +246,12 @@ class RuntimeHost:
             self.executions[execution_id] = execution
             self.active += 1
         self.executor.submit(self._run, body, execution)
-        self._write(handler, 202, {"executionId": execution_id, "status": "ACCEPTED", "replayed": False})
+        self._write(handler, 202, {"executionId": execution_id, "status": STATUS_ACCEPTED, "replayed": False})
 
     def _run(self, request: dict[str, Any], execution: _Execution) -> None:
         execution_id = request["executionId"]
         with self.lock:
-            execution.status = "RUNNING"
+            execution.status = STATUS_RUNNING
 
         def emit(event_type: str, payload: Any) -> None:
             if not isinstance(event_type, str) or not event_type.strip() or len(event_type) > 128:
@@ -247,7 +260,7 @@ class RuntimeHost:
             if len(encoded.encode()) > MAX_EVENT_PAYLOAD:
                 raise ValueError("event payload exceeds 256 KiB")
             with self.lock:
-                if execution.status != "RUNNING":
+                if execution.status != STATUS_RUNNING:
                     raise RuntimeError("events cannot be emitted after execution termination")
                 if len(execution.events) >= self.event_limit:
                     raise RuntimeError("event history limit exceeded")
@@ -271,20 +284,20 @@ class RuntimeHost:
         try:
             output = self.runtime.run(request, emit, execution.stop_event)
             if execution.stop_event.is_set():
-                self._finish(execution_id, "CANCELLED", error_code="EXECUTION_CANCELLED", error="execution cancelled")
+                self._finish(execution_id, STATUS_CANCELLED, error_code="EXECUTION_CANCELLED", error="execution cancelled")
             else:
                 encoded = json.dumps(output, separators=(",", ":")).encode()
                 if len(encoded) > MAX_RESULT:
-                    self._finish(execution_id, "FAILED", error_code="INVALID_RESULT", error="adapter result exceeds 2 MiB")
+                    self._finish(execution_id, STATUS_FAILED, error_code="INVALID_RESULT", error="adapter result exceeds 2 MiB")
                 else:
-                    self._finish(execution_id, "SUCCEEDED", output=output)
+                    self._finish(execution_id, STATUS_SUCCEEDED, output=output)
         except Exception as exc:  # fail closed without disclosing adapter internals
             # Preserve an operational signal without logging the exception
             # message, request, result, credentials, or user-controlled data.
             print(f"agent runtime execution failed: {type(exc).__name__}", file=sys.stderr, flush=True)
-            status = "CANCELLED" if execution.stop_event.is_set() else "FAILED"
-            code = "EXECUTION_CANCELLED" if status == "CANCELLED" else "ADAPTER_FAILED"
-            detail = "execution cancelled" if status == "CANCELLED" else "adapter execution failed"
+            status = STATUS_CANCELLED if execution.stop_event.is_set() else STATUS_FAILED
+            code = "EXECUTION_CANCELLED" if status == STATUS_CANCELLED else "ADAPTER_FAILED"
+            detail = "execution cancelled" if status == STATUS_CANCELLED else "adapter execution failed"
             self._finish(execution_id, status, error_code=code, error=detail)
         finally:
             watchdog.cancel()
@@ -298,7 +311,7 @@ class RuntimeHost:
             execution.stop_event.set()
         self._finish(
             execution_id,
-            "FAILED",
+            STATUS_FAILED,
             error_code="EXECUTION_TIMEOUT",
             error="adapter execution timed out",
             release_capacity=False,
@@ -484,7 +497,7 @@ class RuntimeHost:
                 if execution is None:
                     return
                 pending = [event for event in execution.events if event["sequence"] > cursor]
-                terminal = execution.status not in {"ACCEPTED", "RUNNING"}
+                terminal = execution.status not in STATUS_ACTIVE
                 result = execution.result
             try:
                 for event in pending[:MAX_EVENTS_PER_PAGE]:

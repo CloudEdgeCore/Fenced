@@ -1,0 +1,181 @@
+{
+  "schema": "fenced.runtime-interface.vectors/v1",
+  "protocol": "fenced.runtime.interface/v1",
+  "description": "Golden wire vectors of the Agent Runtime Interface. The Go SDK, the Python SDK and the OpenAPI contract are all checked against this document, so a renamed field, a changed status code or a new status value on one side fails the others. A response must carry every required field, must not carry a field outside the known set, and must carry the stated values.",
+  "executionId": "vector-execution-1",
+  "enums": {
+    "executionStatus": ["ACCEPTED", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"],
+    "healthStatus": ["SERVING"],
+    "problemCode": [
+      "ROUTE_NOT_FOUND",
+      "INVALID_JSON",
+      "INVALID_START",
+      "INVALID_EXECUTION_ID",
+      "METHOD_NOT_ALLOWED",
+      "EXECUTION_CONFLICT",
+      "EXECUTION_NOT_FOUND",
+      "CAPACITY_EXHAUSTED",
+      "RETENTION_EXHAUSTED",
+      "CHECKPOINT_FAILED",
+      "CHECKPOINT_TIMEOUT",
+      "INVALID_CHECKPOINT",
+      "RESTORE_ID_MISMATCH",
+      "RESTORE_FAILED",
+      "RESTORE_TIMEOUT"
+    ]
+  },
+  "shapes": {
+    "startRequest": ["executionId", "agentVersionRef", "goal", "input", "capabilities"],
+    "capabilities": ["tools", "models", "memory", "secrets"],
+    "problem": ["code", "detail", "status"],
+    "checkpoint": ["schemaVersion", "state", "createdAt"]
+  },
+  "endpoints": [
+    {
+      "name": "health",
+      "method": "GET",
+      "path": "/v1/health",
+      "status": 200,
+      "requiredFields": ["status", "protocolVersions", "adapter", "maxConcurrent", "activeExecutions"],
+      "optionalFields": [],
+      "values": {"status": "SERVING"}
+    },
+    {
+      "name": "start-accepted",
+      "method": "POST",
+      "path": "/v1/executions:start",
+      "request": {
+        "executionId": "vector-execution-1",
+        "agentVersionRef": "vector-agent@1.0.0",
+        "goal": "verify the wire contract",
+        "input": {"probe": "vector"},
+        "capabilities": {"tools": [], "models": [], "memory": [], "secrets": []}
+      },
+      "status": 202,
+      "requiredFields": ["executionId", "status", "replayed"],
+      "optionalFields": [],
+      "values": {"status": "ACCEPTED", "replayed": false}
+    },
+    {
+      "name": "start-replayed",
+      "method": "POST",
+      "path": "/v1/executions:start",
+      "request": {
+        "executionId": "vector-execution-1",
+        "agentVersionRef": "vector-agent@1.0.0",
+        "goal": "verify the wire contract",
+        "input": {"probe": "vector"},
+        "capabilities": {"tools": [], "models": [], "memory": [], "secrets": []}
+      },
+      "status": 200,
+      "requiredFields": ["executionId", "status", "replayed"],
+      "optionalFields": [],
+      "values": {"replayed": true}
+    },
+    {
+      "name": "start-conflict",
+      "method": "POST",
+      "path": "/v1/executions:start",
+      "request": {
+        "executionId": "vector-execution-1",
+        "agentVersionRef": "vector-agent@1.0.0",
+        "goal": "a different goal conflicts with the first one",
+        "input": {"probe": "vector"},
+        "capabilities": {"tools": [], "models": [], "memory": [], "secrets": []}
+      },
+      "status": 409,
+      "requiredFields": ["code", "detail", "status"],
+      "optionalFields": [],
+      "values": {"code": "EXECUTION_CONFLICT"}
+    },
+    {
+      "name": "events",
+      "method": "GET",
+      "path": "/v1/executions/{executionId}/events",
+      "status": 200,
+      "requiredFields": ["executionId", "events", "nextAfter"],
+      "optionalFields": ["truncated"],
+      "values": {}
+    },
+    {
+      "name": "result-running",
+      "method": "GET",
+      "path": "/v1/executions/{executionId}/result",
+      "status": 202,
+      "requiredFields": ["executionId", "status"],
+      "optionalFields": ["output", "errorCode", "error", "completedAt"],
+      "values": {"status": "RUNNING"}
+    },
+    {
+      "name": "checkpoint",
+      "method": "POST",
+      "path": "/v1/executions/{executionId}:checkpoint",
+      "status": 200,
+      "requiredFields": ["executionId", "checkpoint"],
+      "optionalFields": [],
+      "values": {}
+    },
+    {
+      "name": "restore",
+      "method": "POST",
+      "path": "/v1/executions/{executionId}:restore",
+      "request": {
+        "executionId": "vector-execution-1",
+        "checkpoint": {
+          "schemaVersion": "vector/v1",
+          "state": {"step": "vector"},
+          "createdAt": "2026-01-01T00:00:00Z"
+        }
+      },
+      "status": 200,
+      "requiredFields": ["executionId", "restored"],
+      "optionalFields": [],
+      "values": {"restored": true}
+    },
+    {
+      "name": "restore-id-mismatch",
+      "method": "POST",
+      "path": "/v1/executions/{executionId}:restore",
+      "request": {
+        "executionId": "vector-other-execution",
+        "checkpoint": {
+          "schemaVersion": "vector/v1",
+          "state": {"step": "vector"},
+          "createdAt": "2026-01-01T00:00:00Z"
+        }
+      },
+      "status": 422,
+      "requiredFields": ["code", "detail", "status"],
+      "optionalFields": [],
+      "values": {"code": "RESTORE_ID_MISMATCH"}
+    },
+    {
+      "name": "stop",
+      "method": "POST",
+      "path": "/v1/executions/{executionId}:stop",
+      "status": 202,
+      "requiredFields": ["executionId", "status"],
+      "optionalFields": [],
+      "values": {}
+    },
+    {
+      "name": "unknown-execution",
+      "method": "GET",
+      "path": "/v1/executions/vector-unknown-execution/result",
+      "status": 404,
+      "requiredFields": ["code", "detail", "status"],
+      "optionalFields": [],
+      "values": {"code": "EXECUTION_NOT_FOUND"}
+    },
+    {
+      "name": "unknown-route",
+      "method": "GET",
+      "path": "/v1/nonexistent",
+      "inContract": false,
+      "status": 404,
+      "requiredFields": ["code", "detail", "status"],
+      "optionalFields": [],
+      "values": {"code": "ROUTE_NOT_FOUND"}
+    }
+  ]
+}

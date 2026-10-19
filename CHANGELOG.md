@@ -83,6 +83,14 @@ public protocol versions evolve independently.
   `POST /v1/services/{id}/stop` endpoint.
 
 ### Added
+- The Agent Runtime Interface now has one written wire contract:
+  `sdk/conformance/fixtures/runtime-interface-v1.json` holds the golden
+  vectors of every endpoint - the request, the status code, the fields the
+  response must carry and the values it must hold. The Go SDK, the Python SDK
+  and the OpenAPI specification are all checked against it, so a renamed
+  field, a changed status code or a new status value on one side fails the
+  others instead of drifting unnoticed. The Python host now declares the
+  execution status vocabulary explicitly, like the Go SDK does.
 - Service-to-reference-worker PostgreSQL integration tests for actual completion
   and cancellation, and Helm rendering checks for production configuration.
 - The kernel Model Gateway speaks the Anthropic Messages protocol
