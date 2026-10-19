@@ -12,10 +12,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -47,14 +52,11 @@ import (
 	"github.com/CloudEdgeCore/Fenced/internal/platform/artifact"
 	"github.com/CloudEdgeCore/Fenced/internal/platform/migrate"
 	runtimeadapter "github.com/CloudEdgeCore/Fenced/internal/runtime/adapter"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/bindings"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/broker"
 	"github.com/CloudEdgeCore/Fenced/internal/runtime/control"
 	"github.com/CloudEdgeCore/Fenced/internal/runtime/reference"
 	"github.com/CloudEdgeCore/Fenced/sdk/agent"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"slices"
 )
 
 const (
@@ -176,7 +178,7 @@ type harness struct {
 	pools      staticPools
 	schema     string
 	artifacts  *artifact.Filesystem
-	bindings   *runtimeadapter.RuntimeBindings
+	bindings   *bindings.RuntimeBindings
 	registry   *mcp.ExecutionRegistry
 }
 
@@ -342,8 +344,8 @@ func newHarness(t *testing.T, name string, stubborn bool) *harness {
 	h.registry = registry
 	toolsAdapter := mcp.NewToolAdapter(reference.NewGrpcToolInvoker(gatewayv1.NewToolGatewayServiceClient(gatewayConn)), registry)
 	broker := mcp.NewBroker(toolsAdapter,
-		runtimeadapter.NewGrpcModelBroker(modelv1.NewModelInvocationServiceClient(gatewayConn)),
-		runtimeadapter.NewGrpcMemoryBroker(gatewayv1.NewMemoryGatewayServiceClient(gatewayConn)),
+		broker.NewGrpcModelBroker(modelv1.NewModelInvocationServiceClient(gatewayConn)),
+		broker.NewGrpcMemoryBroker(gatewayv1.NewMemoryGatewayServiceClient(gatewayConn)),
 		nil, nil, registry)
 	mcpListener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -378,26 +380,26 @@ func newHarness(t *testing.T, name string, stubborn bool) *harness {
 	t.Cleanup(func() { _ = helloListener.Close() })
 	helloAgentURL := "http://" + helloListener.Addr().String()
 
-	bindingEntries := make([]runtimeadapter.RuntimeBinding, 0, len(agentRefs())+4)
+	bindingEntries := make([]bindings.RuntimeBinding, 0, len(agentRefs())+4)
 	for _, ref := range agentRefs() {
 		endpoint := agentURL
 		if slices.Contains(thirdPartyRefs(), ref) {
 			endpoint = helloAgentURL
 		}
-		bindingEntries = append(bindingEntries, runtimeadapter.RuntimeBinding{AgentVersionRef: ref, Endpoint: endpoint})
+		bindingEntries = append(bindingEntries, bindings.RuntimeBinding{AgentVersionRef: ref, Endpoint: endpoint})
 	}
 	// Isolation-drill agents (Wasmtime/OCI) are dual-class: when their
 	// sandbox pool is cordoned, cross-class placement lands them on an
 	// adapter pool, which resolves their entrypoint through this table.
 	for _, ref := range []string{"wasm-agent@1.0.0", "wasm-dual-agent@1.0.0", "oci-agent@1.0.0", "oci-dual-agent@1.0.0"} {
-		bindingEntries = append(bindingEntries, runtimeadapter.RuntimeBinding{AgentVersionRef: ref, Endpoint: helloAgentURL})
+		bindingEntries = append(bindingEntries, bindings.RuntimeBinding{AgentVersionRef: ref, Endpoint: helloAgentURL})
 	}
 	bindingsFile := filepath.Join(t.TempDir(), "bindings.json")
 	encodedBindings, _ := json.Marshal(map[string]any{"bindings": bindingEntries})
 	if err := os.WriteFile(bindingsFile, encodedBindings, 0o644); err != nil {
 		t.Fatalf("write bindings: %v", err)
 	}
-	bindings, err := runtimeadapter.LoadRuntimeBindings(bindingsFile)
+	bindings, err := bindings.LoadRuntimeBindings(bindingsFile)
 	if err != nil {
 		t.Fatalf("load bindings: %v", err)
 	}

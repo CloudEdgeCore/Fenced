@@ -11,6 +11,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"io"
 	"net"
 	"net/http"
@@ -45,15 +52,9 @@ import (
 	"github.com/CloudEdgeCore/Fenced/internal/platform/artifact"
 	"github.com/CloudEdgeCore/Fenced/internal/platform/migrate"
 	runtimeadapter "github.com/CloudEdgeCore/Fenced/internal/runtime/adapter"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/broker"
 	"github.com/CloudEdgeCore/Fenced/internal/runtime/control"
 	"github.com/CloudEdgeCore/Fenced/internal/runtime/reference"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -471,8 +472,8 @@ func startStack(t *testing.T, env *e2eEnv) *e2eStack {
 	tools := mcp.NewToolAdapter(reference.NewGrpcToolInvoker(
 		gatewayv1.NewToolGatewayServiceClient(gatewayConnection)), registry)
 	broker := mcp.NewBroker(tools,
-		runtimeadapter.NewGrpcModelBroker(modelv1.NewModelInvocationServiceClient(gatewayConnection)),
-		runtimeadapter.NewGrpcMemoryBroker(gatewayv1.NewMemoryGatewayServiceClient(gatewayConnection)),
+		broker.NewGrpcModelBroker(modelv1.NewModelInvocationServiceClient(gatewayConnection)),
+		broker.NewGrpcMemoryBroker(gatewayv1.NewMemoryGatewayServiceClient(gatewayConnection)),
 		nil, nil, registry)
 	mcpListener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {

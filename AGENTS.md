@@ -33,6 +33,8 @@ control plane run without a model account or an API key.
 | `internal/gateway/` | Agent-facing gRPC: tool, model, memory, IPC, secret broker |
 | `internal/runtime/` | Runtime providers: `reference/`, `adapter/`, `oci/`, `control/`, `leasekeeper/` |
 | `internal/runtime/adapter/` | The adapter worker: `worker.go` (assignment loop), `worker_transport.go` (endpoint and TLS), `worker_execution.go` (waiting for the agent), `worker_checkpoint.go`, `worker_protocol.go` |
+| `internal/runtime/bindings/` | The runtime binding table and the transport policy that guards it (`EndpointPolicy`, `IsLoopbackHost`) |
+| `internal/runtime/broker/` | The sandboxed agent MCP brokers: model, memory, mailbox and workflow spawn |
 | `internal/mcp/` | The brokered MCP surface a sandboxed agent talks to |
 | `internal/platform/` | SPIFFE, outbox, projectors, artifact store, migrate, OTel, redaction |
 | `internal/security/` | The negative test suite (no production code): secret leak, approval binding, tenant escape, fencing replay |
@@ -135,7 +137,7 @@ Invariants worth knowing before you touch the kernel:
    configured environment variable per request, and secret handles are injected
    into the executor, never returned to the agent.
 7. **A security policy has one implementation.** The transport policy of the
-   Runtime Interface lives in `internal/runtime/adapter` (`EndpointPolicy`,
+   Runtime Interface lives in `internal/runtime/bindings` (`EndpointPolicy`,
    `IsLoopbackHost`). A command line, a provider or a tool that needs the
    same rule calls it; a second copy of the rule is a second boundary that
    can drift.
@@ -166,7 +168,7 @@ introduced.
   when the provider reports it, and falls back to a character estimate
   otherwise.
 - The transport policy has one implementation, in
-  `internal/runtime/adapter` (`EndpointPolicy.Validate`, `IsLoopbackHost`).
+  `internal/runtime/bindings` (`EndpointPolicy.Validate`, `IsLoopbackHost`).
   The adapter command line delegates to it; do not re-implement the loopback
   or plaintext rules there. The development escape hatch
   (`-allow-plaintext-remote-runtime`) applies to the runtime binding table

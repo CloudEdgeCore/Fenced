@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	agentversion "github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/bindings"
 	agent "github.com/CloudEdgeCore/Fenced/sdk/agent"
 )
 
@@ -19,11 +20,11 @@ func (w *Worker) resolveRuntime(agentVersionRef string, target agentversion.Runt
 		return w.runtime, nil
 	}
 	if binding, ok := w.bindings.ResolveBinding(agentVersionRef); ok {
-		tlsConfig, identity := w.bindings.transportFor(agentVersionRef)
+		tlsConfig, identity := w.bindings.TransportFor(agentVersionRef)
 		return w.clientFor(binding, tlsConfig, identity)
 	}
 	entrypoint := target.Entrypoint[0]
-	if IsLogicalEntrypoint(entrypoint) {
+	if bindings.IsLogicalEntrypoint(entrypoint) {
 		return nil, fmt.Errorf("agent version %s declares logical entrypoint %q but no runtime binding resolves it",
 			agentVersionRef, entrypoint)
 	}
@@ -32,7 +33,7 @@ func (w *Worker) resolveRuntime(agentVersionRef string, target agentversion.Runt
 			agentVersionRef, entrypoint, err)
 	}
 	if parsed, err := url.Parse(entrypoint); err == nil && (parsed.Scheme == "http" || parsed.Scheme == "https") && parsed.Hostname() != "" {
-		return w.clientFor(RuntimeBinding{Endpoint: strings.TrimRight(entrypoint, "/")}, nil, "")
+		return w.clientFor(bindings.RuntimeBinding{Endpoint: strings.TrimRight(entrypoint, "/")}, nil, "")
 	}
 	return nil, fmt.Errorf("agent version %s entrypoint %q is neither bindable nor an absolute http(s) URL",
 		agentVersionRef, entrypoint)
@@ -40,11 +41,11 @@ func (w *Worker) resolveRuntime(agentVersionRef string, target agentversion.Runt
 
 // endpointPolicy is the policy manifest entrypoints are validated against:
 // the binding table's policy when one is loaded, otherwise production.
-func (w *Worker) endpointPolicy() EndpointPolicy {
+func (w *Worker) endpointPolicy() bindings.EndpointPolicy {
 	if w.bindings != nil {
-		return w.bindings.policy
+		return w.bindings.Policy
 	}
-	return EndpointPolicy{}
+	return bindings.EndpointPolicy{}
 }
 
 // clientFor builds (and caches) the Runtime Interface client of one
@@ -53,7 +54,7 @@ func (w *Worker) endpointPolicy() EndpointPolicy {
 // cache key carries the TLS material fingerprint (P1-03): two bindings that
 // share an endpoint and SNI but present different certificates are
 // different identities and never reuse one cached client.
-func (w *Worker) clientFor(binding RuntimeBinding, tlsConfig *tls.Config, identity string) (*agent.Client, error) {
+func (w *Worker) clientFor(binding bindings.RuntimeBinding, tlsConfig *tls.Config, identity string) (*agent.Client, error) {
 	endpoint := strings.TrimRight(binding.Endpoint, "/")
 	key := endpoint
 	if binding.TLSServerName != "" {

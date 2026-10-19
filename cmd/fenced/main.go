@@ -11,6 +11,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"net/url"
@@ -23,11 +24,10 @@ import (
 	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
 	"github.com/CloudEdgeCore/Fenced/internal/kernel/money"
 	"github.com/CloudEdgeCore/Fenced/internal/platform/compat"
-	runtimeadapter "github.com/CloudEdgeCore/Fenced/internal/runtime/adapter"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/bindings"
 	"github.com/CloudEdgeCore/Fenced/internal/version"
 	"github.com/CloudEdgeCore/Fenced/sdk/agent"
 	"github.com/CloudEdgeCore/Fenced/sdk/conformance"
-	"github.com/google/uuid"
 )
 
 const maxResponseBytes = 2 << 20
@@ -316,7 +316,7 @@ func runInit(args []string, stdout, stderr io.Writer) error {
 	// file (see fenced-runtime-adapter -runtime-bindings), so one
 	// AgentVersion digest deploys unchanged across dev/staging/prod and
 	// regions. -endpoint preserves the legacy single-environment flow.
-	entrypoint := runtimeadapter.BindingScheme + agentName + "/remote"
+	entrypoint := bindings.BindingScheme + agentName + "/remote"
 	if strings.TrimSpace(*endpoint) != "" {
 		entrypoint = strings.TrimRight(*endpoint, "/")
 	}

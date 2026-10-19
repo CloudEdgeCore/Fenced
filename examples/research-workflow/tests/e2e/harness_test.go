@@ -12,6 +12,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"net"
 	"net/http"
 	"os"
@@ -47,12 +51,10 @@ import (
 	"github.com/CloudEdgeCore/Fenced/internal/platform/artifact"
 	"github.com/CloudEdgeCore/Fenced/internal/platform/migrate"
 	runtimeadapter "github.com/CloudEdgeCore/Fenced/internal/runtime/adapter"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/bindings"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/broker"
 	"github.com/CloudEdgeCore/Fenced/internal/runtime/control"
 	"github.com/CloudEdgeCore/Fenced/internal/runtime/reference"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -124,7 +126,7 @@ type harness struct {
 	mcpURL     string
 	agentURL   string
 	controlURL string // mounted Control API v1 HTTP endpoint (dev identity)
-	bindings   *runtimeadapter.RuntimeBindings
+	bindings   *bindings.RuntimeBindings
 	registry   *mcp.ExecutionRegistry
 	artifacts  *artifact.Filesystem
 	listener   net.Listener // control-plane listener, kept for extra workers
@@ -439,9 +441,9 @@ func newHarnessWith(t *testing.T, name string, tune func(*scenario), cfg Harness
 	h.registry = registry
 	toolsAdapter := mcp.NewToolAdapter(reference.NewGrpcToolInvoker(gatewayv1.NewToolGatewayServiceClient(gatewayConn)), registry)
 	broker := mcp.NewBroker(toolsAdapter,
-		runtimeadapter.NewGrpcModelBroker(modelv1.NewModelInvocationServiceClient(gatewayConn)),
-		runtimeadapter.NewGrpcMemoryBroker(gatewayv1.NewMemoryGatewayServiceClient(gatewayConn)),
-		runtimeadapter.NewGrpcWorkflowSpawner(runtimev1.NewWorkflowSpawnServiceClient(gatewayConn)),
+		broker.NewGrpcModelBroker(modelv1.NewModelInvocationServiceClient(gatewayConn)),
+		broker.NewGrpcMemoryBroker(gatewayv1.NewMemoryGatewayServiceClient(gatewayConn)),
+		broker.NewGrpcWorkflowSpawner(runtimev1.NewWorkflowSpawnServiceClient(gatewayConn)),
 		nil, registry)
 	mcpListener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -475,9 +477,9 @@ func newHarnessWith(t *testing.T, name string, tune func(*scenario), cfg Harness
 	t.Cleanup(func() { _ = agentListener.Close() })
 	h.agentURL = "http://" + agentListener.Addr().String()
 
-	bindingEntries := make([]runtimeadapter.RuntimeBinding, 0, len(agentRefs()))
+	bindingEntries := make([]bindings.RuntimeBinding, 0, len(agentRefs()))
 	for _, ref := range agentRefs() {
-		bindingEntries = append(bindingEntries, runtimeadapter.RuntimeBinding{
+		bindingEntries = append(bindingEntries, bindings.RuntimeBinding{
 			AgentVersionRef: ref, Endpoint: h.agentURL,
 		})
 	}
@@ -486,7 +488,7 @@ func newHarnessWith(t *testing.T, name string, tune func(*scenario), cfg Harness
 	if err := os.WriteFile(bindingsFile, encodedBindings, 0o644); err != nil {
 		t.Fatalf("write bindings: %v", err)
 	}
-	bindings, err := runtimeadapter.LoadRuntimeBindings(bindingsFile)
+	bindings, err := bindings.LoadRuntimeBindings(bindingsFile)
 	if err != nil {
 		t.Fatalf("load bindings: %v", err)
 	}

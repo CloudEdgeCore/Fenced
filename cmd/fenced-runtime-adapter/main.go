@@ -5,6 +5,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"log/slog"
 	"net"
 	"net/http"
@@ -25,9 +27,9 @@ import (
 	"github.com/CloudEdgeCore/Fenced/internal/platform/grpcx"
 	"github.com/CloudEdgeCore/Fenced/internal/platform/otel"
 	runtimeadapter "github.com/CloudEdgeCore/Fenced/internal/runtime/adapter"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/bindings"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/broker"
 	"github.com/CloudEdgeCore/Fenced/internal/runtime/reference"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -73,7 +75,7 @@ func main() {
 		slog.Error("invalid -mcp-listen", "error", err)
 		os.Exit(2)
 	}
-	bindings, err := runtimeadapter.LoadRuntimeBindingsFor(*runtimeBindings, runtimeadapter.EndpointPolicy{
+	bindingTable, err := bindings.LoadRuntimeBindingsFor(*runtimeBindings, bindings.EndpointPolicy{
 		AllowPlaintextRemote: *allowPlaintextRemote,
 	})
 	if err != nil {
@@ -83,7 +85,7 @@ func main() {
 	// A worker with runtime bindings serves multiple agent versions; an
 	// explicit endpoint would silently route every assignment to one
 	// endpoint. Only an acknowledged dedicated worker may combine them.
-	if err := runtimeadapter.ValidateEndpointOverride(strings.TrimSpace(*endpoint), bindings, *dedicatedEndpoint); err != nil {
+	if err := bindings.ValidateEndpointOverride(strings.TrimSpace(*endpoint), bindingTable, *dedicatedEndpoint); err != nil {
 		slog.Error("invalid endpoint configuration", "error", err)
 		os.Exit(2)
 	}
@@ -136,8 +138,8 @@ func main() {
 		slog.Error("create adapter worker", "error", err)
 		os.Exit(1)
 	}
-	if bindings != nil {
-		worker.WithRuntimeBindings(bindings)
+	if bindingTable != nil {
+		worker.WithRuntimeBindings(bindingTable)
 		slog.Info("runtime bindings loaded", "file", *runtimeBindings)
 	}
 	if strings.TrimSpace(*mcpListen) != "" {
@@ -163,13 +165,13 @@ func main() {
 				os.Exit(1)
 			}
 			defer spawnConnection.Close()
-			spawner = runtimeadapter.NewGrpcWorkflowSpawner(runtimev1.NewWorkflowSpawnServiceClient(spawnConnection))
+			spawner = broker.NewGrpcWorkflowSpawner(runtimev1.NewWorkflowSpawnServiceClient(spawnConnection))
 		}
 		broker := mcp.NewBroker(tools,
-			runtimeadapter.NewGrpcModelBroker(modelv1.NewModelInvocationServiceClient(gatewayConnection)),
-			runtimeadapter.NewGrpcMemoryBroker(gatewayv1.NewMemoryGatewayServiceClient(gatewayConnection)),
+			broker.NewGrpcModelBroker(modelv1.NewModelInvocationServiceClient(gatewayConnection)),
+			broker.NewGrpcMemoryBroker(gatewayv1.NewMemoryGatewayServiceClient(gatewayConnection)),
 			spawner,
-			runtimeadapter.NewGrpcMailboxBroker(ipcv1.NewIPCGatewayServiceClient(gatewayConnection)), slot)
+			broker.NewGrpcMailboxBroker(ipcv1.NewIPCGatewayServiceClient(gatewayConnection)), slot)
 		worker.WithExecutionWindow(slot)
 		mcpServer := mcp.NewServer("fenced-adapter", "v1.1.0", broker)
 		listener, listenErr := net.Listen("tcp", *mcpListen)
@@ -233,7 +235,7 @@ func loopbackRPCAddress(address string) bool {
 	if err != nil {
 		return false
 	}
-	return runtimeadapter.IsLoopbackHost(host)
+	return bindings.IsLoopbackHost(host)
 }
 
 // validateSandboxMCPListen enforces the loopback-only boundary for the

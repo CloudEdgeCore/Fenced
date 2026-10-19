@@ -1,7 +1,7 @@
 // gRPC broker clients: the adapter worker's loopback MCP endpoint reaches
 // the Model execution layer and the Memory store through the same fenced
 // gateway services every other runtime uses.
-package adapter
+package broker
 
 import (
 	"context"

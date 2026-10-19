@@ -1,3 +1,5 @@
+// Package bindings resolves Runtime Interface endpoints and the transport
+// policy that guards them.
 // Runtime bindings decouple mutable deployment endpoints from immutable
 // AgentVersions. A manifest's remote-class entrypoint is a logical
 // reference (fenced-binding://agent-name/remote); operators map version
@@ -12,7 +14,7 @@
 // optionally pinned to a private CA and a client certificate (mTLS) declared
 // on the binding. Binding files are mutable deployment state, so rotating a
 // certificate never republishes the AgentVersion.
-package adapter
+package bindings
 
 import (
 	"crypto/sha256"
@@ -124,7 +126,10 @@ type bindingFile struct {
 type RuntimeBindings struct {
 	exact    map[string]resolvedBinding
 	wildcard map[string]resolvedBinding
-	policy   EndpointPolicy
+	// Policy is the endpoint policy the table was loaded under. A worker
+	// that resolves an endpoint from this table validates it against the
+	// same policy, so one table has one rule.
+	Policy EndpointPolicy
 }
 
 // LoadRuntimeBindings reads a binding file with the production endpoint
@@ -155,7 +160,7 @@ func LoadRuntimeBindingsFor(path string, policy EndpointPolicy) (*RuntimeBinding
 	if err := decoder.Decode(&file); err != nil {
 		return nil, fmt.Errorf("decode runtime bindings file: %w", err)
 	}
-	bindings := &RuntimeBindings{exact: map[string]resolvedBinding{}, wildcard: map[string]resolvedBinding{}, policy: policy}
+	bindings := &RuntimeBindings{exact: map[string]resolvedBinding{}, wildcard: map[string]resolvedBinding{}, Policy: policy}
 	seenExact := map[string]string{}
 	seenWildcard := map[string]string{}
 	for _, binding := range file.Bindings {
@@ -169,7 +174,7 @@ func LoadRuntimeBindingsFor(path string, policy EndpointPolicy) (*RuntimeBinding
 		if err := binding.validateMetadata(); err != nil {
 			return nil, fmt.Errorf("runtime binding %q: %w", binding.AgentVersionRef, err)
 		}
-		tlsConfig, identity, err := binding.TLS.load()
+		tlsConfig, identity, err := binding.TLS.Load()
 		if err != nil {
 			return nil, fmt.Errorf("runtime binding %q: %w", binding.AgentVersionRef, err)
 		}
@@ -255,7 +260,9 @@ func (p EndpointPolicy) validateTransportIdentity(binding RuntimeBinding) error 
 // bundle bytes plus every client-certificate DER, hashed. Rotating either
 // side changes the fingerprint, which is what keeps the worker's HTTP
 // client cache from reusing one identity's transport for another.
-func (t *BindingTLS) load() (*tls.Config, string, error) {
+// Load reads the TLS material of the binding and returns the client
+// configuration and the fingerprint of the material.
+func (t *BindingTLS) Load() (*tls.Config, string, error) {
 	if t == nil {
 		return nil, "", nil
 	}
@@ -320,17 +327,17 @@ func (b *RuntimeBindings) ResolveBinding(agentVersionRef string) (RuntimeBinding
 // tlsConfigFor returns the load-time TLS configuration of the binding that
 // covers the reference (nil when the endpoint uses ambient TLS).
 func (b *RuntimeBindings) tlsConfigFor(agentVersionRef string) *tls.Config {
-	config, _ := b.transportFor(agentVersionRef)
+	config, _ := b.TransportFor(agentVersionRef)
 	return config
 }
 
-// transportFor returns the TLS configuration and its material fingerprint
+// TransportFor returns the TLS configuration and its material fingerprint
 // for the binding that covers the reference. The fingerprint joins the
 // worker's HTTP client cache key so bindings that share an endpoint and SNI
 // but carry different certificates (or one certificate at different
 // rotation states) resolve to distinct clients instead of silently reusing
 // the wrong identity (P1-03).
-func (b *RuntimeBindings) transportFor(agentVersionRef string) (*tls.Config, string) {
+func (b *RuntimeBindings) TransportFor(agentVersionRef string) (*tls.Config, string) {
 	if b == nil {
 		return nil, ""
 	}

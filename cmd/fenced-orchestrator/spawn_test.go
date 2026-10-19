@@ -4,6 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"github.com/google/uuid"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/test/bufconn"
 	"net"
 	"testing"
 	"time"
@@ -13,15 +21,7 @@ import (
 	kernelstore "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/CloudEdgeCore/Fenced/internal/mcp"
 	"github.com/CloudEdgeCore/Fenced/internal/platform/spiffe"
-	runtimeadapter "github.com/CloudEdgeCore/Fenced/internal/runtime/adapter"
-	"github.com/google/uuid"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/peer"
-	"google.golang.org/grpc/status"
-	"google.golang.org/grpc/test/bufconn"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/broker"
 )
 
 type fakeSpawnWorkflowStore struct {
@@ -180,7 +180,7 @@ func TestSpawnVerticalSliceBrokerGrpcAndAuthoritativeService(t *testing.T) {
 		AgentVersionRef: "planner@1", CanSpawnTasks: true, AllowedChildAgents: []string{"worker@1"},
 	}
 	broker := mcp.NewBroker(nil, nil, nil,
-		runtimeadapter.NewGrpcWorkflowSpawner(runtimev1.NewWorkflowSpawnServiceClient(connection)),
+		broker.NewGrpcWorkflowSpawner(runtimev1.NewWorkflowSpawnServiceClient(connection)),
 		nil, fakeSpawnIdentityResolver{identity: identity})
 	result, rpcErr := broker.CallTool(context.Background(), []byte(`{
 		"name":"fenced.task.spawn",

@@ -12,6 +12,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	uuid "github.com/google/uuid"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	"io"
 	"net/http"
 	"strconv"
@@ -24,11 +27,9 @@ import (
 	store "github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	mcp "github.com/CloudEdgeCore/Fenced/internal/mcp"
 	redact "github.com/CloudEdgeCore/Fenced/internal/platform/redact"
+	"github.com/CloudEdgeCore/Fenced/internal/runtime/bindings"
 	leasekeeper "github.com/CloudEdgeCore/Fenced/internal/runtime/leasekeeper"
 	agent "github.com/CloudEdgeCore/Fenced/sdk/agent"
-	uuid "github.com/google/uuid"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 )
 
 const (
@@ -73,7 +74,7 @@ type Worker struct {
 	// of immutable AgentVersions. The resolved client is assignment-local:
 	// resolveRuntime never mutates shared worker state, so a future
 	// concurrent RunOnce cannot misroute another assignment's client.
-	bindings   *RuntimeBindings
+	bindings   *bindings.RuntimeBindings
 	httpClient *http.Client
 	clients    map[string]*agent.Client
 }
@@ -90,8 +91,8 @@ func (w *Worker) WithExecutionWindow(window ExecutionWindow) *Worker {
 // set, assignments whose manifest entrypoint is a logical binding reference
 // (or whose version ref has an explicit binding) resolve through it; the
 // worker's constructor endpoint remains the highest-priority override - a
-// dedicated-worker configuration ValidateEndpointOverride guards.
-func (w *Worker) WithRuntimeBindings(bindings *RuntimeBindings) *Worker {
+// dedicated-worker configuration bindings.ValidateEndpointOverride guards.
+func (w *Worker) WithRuntimeBindings(bindings *bindings.RuntimeBindings) *Worker {
 	w.bindings = bindings
 	return w
 }
@@ -116,7 +117,7 @@ func NewWorker(
 	// remote endpoint must be HTTPS.
 	var client *agent.Client
 	if strings.TrimSpace(endpoint) != "" {
-		if err := (EndpointPolicy{}).Validate(endpoint); err != nil {
+		if err := (bindings.EndpointPolicy{}).Validate(endpoint); err != nil {
 			return nil, err
 		}
 		if err := refuseInsecureTransport(httpClient, strings.TrimRight(endpoint, "/")); err != nil {

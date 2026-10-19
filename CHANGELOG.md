@@ -7,6 +7,14 @@ public protocol versions evolve independently.
 ## Unreleased
 
 ### Changed
+- The runtime binding table and the transport policy that guards it moved to
+  `internal/runtime/bindings`, and the sandboxed agent brokers to
+  `internal/runtime/broker`. The adapter package keeps the worker: the
+  assignment loop, the transport, the execution wait, the checkpoints and the
+  fenced protocol calls. The worker no longer depends on the four generated
+  protocol packages, the model and memory gateways or the MCP contract; those
+  live with the brokers that need them. The behaviour, the test suite and the
+  twenty-four test cases are unchanged.
 - The public README uses the Fenced brand. The repository, CLI binaries, SDK
   package names, Go module path, and protocol identifiers were renamed from
   `AgentOS` / `agentos` to `Fenced` / `fenced`; see `docs/NAMING.md` for the
