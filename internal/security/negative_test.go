@@ -1,17 +1,3 @@
-// Package security is the v0.3 negative test suite: it proves that the four
-// security boundaries hold under attack, not just under happy paths:
-//
-//  1. Secret leak — a scoped credential handle must never reach the Agent,
-//     the result, or the receipt, even when the executing tool echoes it.
-//  2. Approval binding — a human approval for one invocation must not
-//     authorize a different tool, resource, argument set, or attempt.
-//  3. Tenant escape — a request claiming another tenant must be rejected
-//     before any store access on every fenced boundary.
-//  4. Fencing replay — a replayed stale fencing token must be rejected after
-//     the attempt's ownership moved on.
-//
-// The integration leg (real PostgreSQL, real takeover sequence) lives in
-// negative_integration_test.go.
 package security
 
 import (

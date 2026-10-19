@@ -122,6 +122,7 @@ See the [architecture](docs/architecture/ARCHITECTURE.md) and
 | Task kernel | Durable Task / Run / Attempt state machines, immutable agent versions, retries, checkpoints, and audited transitions |
 | Scheduling and recovery | Capacity reservations, ranked placement, worker leases, monotonic fencing, and recovery after lease expiry |
 | Execution governance | Token, cost, and tool-call budgets, deadlines, and runtime-specific resource limits |
+| Model gateway | OpenAI-compatible and Anthropic Messages protocols, with exact provider-reported usage settlement, streaming sessions, and per-provider circuit breaking |
 | Durable IPC | At-least-once mailbox delivery, receiver deduplication receipts, and tenant-scoped access |
 | Task-backed services | Supervised replicas, restart policies, rolling version convergence, and cooperative drain |
 | Runtime integration | Reference and HTTP adapter workers, Wasmtime and OCI/gVisor providers, and Go/Python/TypeScript SDKs |
@@ -181,6 +182,8 @@ will not close before **2027-02-17**; see the
 
 ## Documentation
 
+- [AGENTS.md](AGENTS.md) and the `Makefile`: the repository map, the
+  verification ladder, and the day-to-day task runner (`make help`).
 - [User guide / 中文使用指南](docs/user-guide.md): manifests, tasks, workflows, services, and CLI usage.
 - [Development reference](docs/development.md): full local setup, observability, validation commands, and release verification.
 - [Frameworks and runtimes](docs/ecosystem/README.md): adapters, providers, SDKs, and reference applications.

@@ -5,6 +5,9 @@ the full local control-plane setup, developer commands, and validation steps.
 Run all commands from the repository root. PowerShell examples set environment
 variables in the current terminal; set them again in each new terminal.
 
+The same steps are available as `make` targets; see [AGENTS.md](../AGENTS.md)
+for the verification ladder and `make help` for the full list.
+
 - [Requirements and source build](#requirements-and-source-build)
 - [Reproduce a takeover](#reproduce-a-takeover)
 - [Start the local control plane](#start-the-local-control-plane)
@@ -194,6 +197,14 @@ tenant-visible `modelRef` to an independently selected provider and wire model.
 This keeps workflow and Agent manifests stable while operations change model
 hosts or aliases. See `deploy/dev/model-providers.example.json` for the strict
 configuration shape; keep private endpoint files in `deploy/dev/*.local.json`.
+
+A provider speaks the OpenAI-compatible `/chat/completions` dialect unless it
+declares `"protocol": "anthropic"`, which selects the Anthropic Messages
+dialect (`/v1/messages`, `x-api-key` plus `anthropic-version`, tool_use and
+tool_result content blocks). The dialect is chosen per provider, so one
+gateway can serve OpenAI-compatible and Anthropic endpoints side by side; the
+budget reservation, exact usage settlement and receipts are identical for
+both.
 
 ### Safety limits reference
 
