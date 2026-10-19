@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
 	"github.com/CloudEdgeCore/Fenced/internal/version"
 )
 
@@ -136,17 +137,22 @@ func ExecuteSecurityPipeline(
 	// Stage 5: Check Capability Grants against Tenant Admission Policy
 	var capabilities struct {
 		Capabilities struct {
-			Tools   []string `json:"tools"`
-			Models  []string `json:"models"`
-			Memory  []string `json:"memory"`
-			Secrets []string `json:"secrets"`
+			Tools        []string `json:"tools"`
+			ToolVersions []string `json:"toolVersions"`
+			Models       []string `json:"models"`
+			Memory       []string `json:"memory"`
+			Secrets      []string `json:"secrets"`
 		} `json:"capabilities"`
 	}
 	_ = json.Unmarshal(pkg.Manifest.Spec, &capabilities)
 
 	// Strict default-deny: check each requested tool/model/secret if policy restriction map provided
 	if len(req.AllowedCapabilities) > 0 {
-		for _, tool := range capabilities.Capabilities.Tools {
+		// The tenant capability map is keyed by bare tool name, so the
+		// capability vocabulary is the one that applies.
+		capabilityTools := agentversion.PublicationToolGrants(
+			capabilities.Capabilities.Tools, capabilities.Capabilities.ToolVersions).Capability
+		for _, tool := range capabilityTools {
 			if !req.AllowedCapabilities["tool:"+tool] && !req.AllowedCapabilities["*"] {
 				return nil, fmt.Errorf("%w: tool %q is not authorized in tenant %q", ErrCapabilityDenied, tool, req.TenantID)
 			}
@@ -181,13 +187,18 @@ func BuildMetadataIndex(pkg *Package, publisher PublisherInfo, ociDigest Digest)
 
 	var spec struct {
 		Capabilities struct {
-			Tools  []string `json:"tools"`
-			Models []string `json:"models"`
+			Tools        []string `json:"tools"`
+			ToolVersions []string `json:"toolVersions"`
+			Models       []string `json:"models"`
 		} `json:"capabilities"`
 	}
 	_ = json.Unmarshal(pkg.Manifest.Spec, &spec)
 
-	caps := append(spec.Capabilities.Tools, spec.Capabilities.Models...)
+	// The index lists what a package claims, in the vocabulary a consumer
+	// matches against: bare tool names plus the model references.
+	capabilityTools := agentversion.PublicationToolGrants(
+		spec.Capabilities.Tools, spec.Capabilities.ToolVersions).Capability
+	caps := append(capabilityTools, spec.Capabilities.Models...)
 
 	return &MetadataIndex{
 		Manifest:          pkg.Manifest,

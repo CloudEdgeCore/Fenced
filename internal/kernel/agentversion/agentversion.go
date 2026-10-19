@@ -168,11 +168,62 @@ func CanonicalizeSpec(raw json.RawMessage) (json.RawMessage, [sha256.Size]byte, 
 	if _, ok := document.(map[string]any); !ok {
 		return nil, zero, fmt.Errorf("agent version spec must be a JSON object")
 	}
+	normalizeToolGrants(document.(map[string]any))
 	canonical, err := json.Marshal(document)
 	if err != nil {
 		return nil, zero, fmt.Errorf("normalize agent version spec: %w", err)
 	}
 	return canonical, sha256.Sum256(canonical), nil
+}
+
+// normalizeToolGrants rewrites the capability section of a publication into
+// the two vocabularies the kernel uses: capabilities.tools holds the
+// capability vocabulary (bare tool names and wildcards) and
+// capabilities.toolVersions the version vocabulary (pinned and floating
+// grants). The document is rewritten in place, so the digest identifies the
+// normalized publication rather than the spelling the author happened to
+// use. The rewrite is idempotent: canonicalizing an already normalized
+// document reproduces it, so a pinned version survives a second pass.
+func normalizeToolGrants(document map[string]any) {
+	capabilities, ok := document["capabilities"].(map[string]any)
+	if !ok {
+		return
+	}
+	rawTools, ok := capabilities["tools"].([]any)
+	if !ok {
+		return
+	}
+	grants := make([]string, 0, len(rawTools))
+	for _, entry := range rawTools {
+		if text, ok := entry.(string); ok {
+			grants = append(grants, text)
+		}
+	}
+	versionGrants := make([]string, 0)
+	if rawVersions, ok := capabilities["toolVersions"].([]any); ok {
+		for _, entry := range rawVersions {
+			if text, ok := entry.(string); ok {
+				versionGrants = append(versionGrants, text)
+			}
+		}
+	}
+	split := PublicationToolGrants(grants, versionGrants)
+	capabilities["tools"] = toAnySlice(split.Capability)
+	if len(split.Versioned) > 0 {
+		capabilities["toolVersions"] = toAnySlice(split.Versioned)
+	} else {
+		delete(capabilities, "toolVersions")
+	}
+}
+
+// toAnySlice converts a string slice into the generic slice shape a decoded
+// JSON document uses, so the canonical marshal keeps the array form.
+func toAnySlice(values []string) []any {
+	converted := make([]any, 0, len(values))
+	for _, value := range values {
+		converted = append(converted, value)
+	}
+	return converted
 }
 
 // ValidateSpec checks the bounded fields that kernel stages consume.

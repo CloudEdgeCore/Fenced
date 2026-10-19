@@ -60,7 +60,13 @@ type RuntimeTarget struct {
 // Capabilities contains symbolic permission identifiers. Empty arrays are an
 // explicit default-deny declaration and are different from an omitted block.
 type Capabilities struct {
-	Tools               []string `json:"tools"`
+	Tools []string `json:"tools"`
+	// ToolVersions is the derived version vocabulary of the tool grants:
+	// pinned ("echo.dev@1.0.0") and floating ("echo.dev@*") grants. The
+	// kernel derives it from the published tool grants, so a runtime
+	// capability check compares bare tool names while the publish-time
+	// tool freeze still sees the pinned version. It is not author input.
+	ToolVersions        []string `json:"toolVersions,omitempty"`
 	Models              []string `json:"models"`
 	Memory              []string `json:"memory"`
 	MemorySensitivities []string `json:"memorySensitivities,omitempty"`
@@ -261,6 +267,13 @@ func validatePlatformSpecForInterface(spec Spec, runtimeInterface string) error 
 		for _, tool := range spec.Capabilities.Tools {
 			if strings.HasPrefix(strings.ToLower(tool), "fenced.") {
 				return fmt.Errorf("capabilities.tools cannot claim reserved fenced.* system tools")
+			}
+		}
+		if len(spec.Capabilities.ToolVersions) > 0 {
+			// The derived version vocabulary must still be a valid grant set;
+			// it is written by the kernel, but a document may carry it.
+			if err := validateCapabilitySet(spec.Capabilities.ToolVersions); err != nil {
+				return fmt.Errorf("capabilities.toolVersions: %w", err)
 			}
 		}
 		if spec.Capabilities.ChildAgents != nil {

@@ -457,8 +457,12 @@ func (w *Worker) target(assignment *runtimev1.Assignment) (agentversion.RuntimeT
 		if spec.Checkpoint == nil {
 			return agentversion.RuntimeTarget{}, agent.CapabilityGrant{}, agentversion.CheckpointPolicy{}, fmt.Errorf("checkpoint policy is required")
 		}
+		// The agent-facing grant list is compared against bare tool names,
+		// so a grant that pins a version contributes its tool name here.
+		capabilityTools := agentversion.PublicationToolGrants(
+			spec.Capabilities.Tools, spec.Capabilities.ToolVersions).Capability
 		return target, agent.CapabilityGrant{
-			Tools: cloneExplicit(spec.Capabilities.Tools), Models: cloneExplicit(spec.Capabilities.Models),
+			Tools: cloneExplicit(capabilityTools), Models: cloneExplicit(spec.Capabilities.Models),
 			Memory: cloneExplicit(spec.Capabilities.Memory), Secrets: cloneExplicit(spec.Capabilities.Secrets),
 			MemorySensitivities: memorySensitivities(spec.Capabilities.MemorySensitivities),
 			SpawnTasks:          spec.Capabilities.SpawnTasks, ChildAgents: cloneExplicit(spec.Capabilities.ChildAgents),

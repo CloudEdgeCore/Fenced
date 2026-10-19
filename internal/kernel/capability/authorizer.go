@@ -73,7 +73,12 @@ func (a *Authorizer) Authorize(
 	var grants []string
 	switch kind {
 	case Tool:
-		grants = spec.Capabilities.Tools
+		// The runtime capability check compares bare tool names, so the
+		// capability vocabulary is the one that applies. A grant that pins
+		// a version grants the tool as well, and the pinned version stays
+		// in the freeze (see ToolFreeze).
+		grants = agentversion.PublicationToolGrants(
+			spec.Capabilities.Tools, spec.Capabilities.ToolVersions).Capability
 	case Model:
 		grants = spec.Capabilities.Models
 	case Memory:
@@ -126,10 +131,15 @@ func MatchGrant(pattern, value string) bool {
 // deliberately accepts version drift). Legacy publications (no runtimes
 // declaration) keep tenant-policy behavior during the compatibility window and
 // are not frozen.
+//
+// The two grant vocabularies are kept apart: grants holds the capability
+// vocabulary (bare names and wildcards), versionGrants the pinned and
+// floating forms that decide the version.
 type ToolFreeze struct {
-	grants      []string
-	publishedAt time.Time
-	enforce     bool
+	grants        []string
+	versionGrants []string
+	publishedAt   time.Time
+	enforce       bool
 }
 
 // ToolFreeze loads the immutable AgentVersion once and captures the state
@@ -156,7 +166,12 @@ func (a *Authorizer) ToolFreeze(ctx context.Context, tenantID, agentVersionRef s
 	if spec.Capabilities == nil {
 		return ToolFreeze{}, fmt.Errorf("%w: portable publication has no capability declaration", ErrDenied)
 	}
-	return ToolFreeze{grants: spec.Capabilities.Tools, publishedAt: version.CreatedAt, enforce: true}, nil
+	grants := agentversion.PublicationToolGrants(
+		spec.Capabilities.Tools, spec.Capabilities.ToolVersions)
+	return ToolFreeze{
+		grants: grants.NameLevel, versionGrants: grants.Versioned,
+		publishedAt: version.CreatedAt, enforce: true,
+	}, nil
 }
 
 // Enforced reports whether the freeze applies. It is false for legacy
@@ -175,20 +190,22 @@ func (f ToolFreeze) Allow(name, version string, registeredAt time.Time) bool {
 		return true
 	}
 	withinFreeze := !registeredAt.After(f.publishedAt)
-	for _, grant := range f.grants {
-		gname, gversion, versioned := strings.Cut(grant, "@")
-		if versioned {
-			if gversion == "*" {
-				if gname == name {
-					return true
-				}
-				continue
-			}
-			if gname == name && gversion == version {
+	// The version vocabulary decides first: a pinned grant names one
+	// immutable version and a floating grant accepts any version of that
+	// tool, so neither is bound by the publish-time freeze.
+	for _, grant := range f.versionGrants {
+		gname, gversion, _ := strings.Cut(grant, "@")
+		if gversion == "*" {
+			if gname == name {
 				return true
 			}
 			continue
 		}
+		if gname == name && gversion == version {
+			return true
+		}
+	}
+	for _, grant := range f.grants {
 		// A name-level grant (exact, global "*", or "prefix.*"/"prefix/*") is
 		// frozen to the publish-time version set.
 		if withinFreeze && MatchGrant(grant, name) {
