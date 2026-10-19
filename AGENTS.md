@@ -30,6 +30,7 @@ control plane run without a model account or an API key.
 | `internal/kernel/model/provider/` | The model wire dialects (OpenAI-compatible, Anthropic Messages) shared by the gateway and the developer CLI |
 | `internal/kernel/store/postgres/` | The persistence contract; **fencing predicates live here** |
 | `internal/control/` | Operator REST API (`api/`) and identity (`auth/`) |
+| `internal/control/api/` | One file per resource: `handler.go` (assembly, routes, shared helpers), `tasks.go`, `agent_versions.go`, `tools.go`, `memories.go`, `audit.go`, `quota.go`, `health.go`, `namespaces.go`, `services.go`, `workflow.go`, `runtime_pool.go` |
 | `internal/gateway/` | Agent-facing gRPC: tool, model, memory, IPC, secret broker |
 | `internal/runtime/` | Runtime providers: `reference/`, `adapter/`, `oci/`, `control/`, `leasekeeper/` |
 | `internal/runtime/adapter/` | The adapter worker: `worker.go` (assignment loop), `worker_transport.go` (endpoint and TLS), `worker_execution.go` (waiting for the agent), `worker_checkpoint.go`, `worker_protocol.go` |

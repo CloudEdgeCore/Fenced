@@ -7,6 +7,12 @@ public protocol versions evolve independently.
 ## Unreleased
 
 ### Changed
+- The Control API is split by resource. The 1997-line handler file now holds
+  the assembly - the store interfaces, the options, the route table and the
+  helpers every resource shares - and each resource has its own file:
+  tasks, agent versions, tools and approvals, memories, audit, quotas and the
+  health endpoints. The responses are unchanged; the endpoints were compared
+  before and after the split.
 - The runtime binding table and the transport policy that guards it moved to
   `internal/runtime/bindings`, and the sandboxed agent brokers to
   `internal/runtime/broker`. The adapter package keeps the worker: the
