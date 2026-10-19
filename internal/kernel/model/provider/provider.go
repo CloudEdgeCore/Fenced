@@ -1,13 +1,17 @@
 // Package provider implements the real model execution layer behind the Model
-// Gateway decision chain: an OpenAI-compatible HTTP executor
-// covering vLLM, Qwen, DeepSeek, GLM and any endpoint that speaks the
-// /chat/completions dialect, with streaming, bounded retries, a per-provider
-// circuit breaker, exact usage extraction and provider request-id capture.
+// Gateway decision chain: an HTTP executor covering two wire dialects.
+//
+// The default dialect is the OpenAI-compatible /chat/completions spoken by
+// vLLM, Qwen, DeepSeek, GLM and any compatible endpoint. The Anthropic
+// Messages dialect (/v1/messages) is selected per provider with
+// Config.Protocol. Both dialects share the same guarantees: streaming,
+// bounded retries, a per-provider circuit breaker, exact usage extraction
+// and provider request-id capture.
 //
 // Credentials never cross this boundary in either direction: the API key is
 // resolved from the configured environment variable per request, is attached
-// only to the outbound Authorization header, and is stripped from every error
-// message and telemetry surface.
+// only to the outbound authentication header of the selected dialect, and is
+// stripped from every error message and telemetry surface.
 package provider
 
 import (
@@ -153,6 +157,11 @@ type Config struct {
 	// (uncharacterized tokenizers). Provider-reported usage remains the
 	// authoritative settlement.
 	Tokenizer string `json:"tokenizer,omitempty"`
+	// Protocol selects the wire dialect: "openai" (the default,
+	// /chat/completions) or "anthropic" (/v1/messages). An empty value
+	// keeps the OpenAI-compatible behaviour, so existing configurations do
+	// not change meaning.
+	Protocol string `json:"protocol,omitempty"`
 }
 
 // CapabilityProfile makes OpenAI-compatible dialect differences explicit.
@@ -207,19 +216,20 @@ func (c Config) resolved() Config {
 	if c.IdempotencyHeader == "" {
 		c.IdempotencyHeader = "Idempotency-Key"
 	}
-	if c.HealthPath == "" {
-		c.HealthPath = "/models"
-	}
 	if c.HealthMethod == "" {
 		c.HealthMethod = http.MethodGet
 	}
 	return c
 }
 
-// Executor executes invocations against one OpenAI-compatible endpoint.
+// Executor executes invocations against one provider endpoint.
 type Executor struct {
 	config Config
 	client *http.Client
+	// dialect is the wire protocol of this provider. It is resolved once,
+	// at construction, so every request of this executor speaks the same
+	// protocol.
+	dialect dialect
 
 	breakerMu       sync.Mutex
 	consecutiveBad  int
@@ -245,7 +255,7 @@ func NewExecutor(config Config, client *http.Client) *Executor {
 	}
 	resolved := config.resolved()
 	return &Executor{
-		config: resolved, client: client,
+		config: resolved, client: client, dialect: newDialect(resolved),
 		jitter: func(d time.Duration) time.Duration { return d/2 + time.Duration(rand.Int64N(int64(d)+1)) },
 		now:    time.Now, bulkhead: make(chan struct{}, resolved.MaxConcurrent),
 	}
@@ -258,12 +268,17 @@ func (e *Executor) Name() string { return e.config.Name }
 // reservations on this provider.
 func (e *Executor) Tokenizer() string { return e.config.Tokenizer }
 
-// Health probes the endpoint with a short-lived /models request. It is the
-// half-open probe of the circuit breaker as well as the readiness signal.
+// Health probes the endpoint with a short-lived request against the
+// provider's model list. It is the half-open probe of the circuit breaker as
+// well as the readiness signal.
 func (e *Executor) Health(ctx context.Context) error {
 	probeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	request, err := e.newRequest(probeCtx, e.config.HealthMethod, e.config.HealthPath, nil)
+	healthPath := e.config.HealthPath
+	if healthPath == "" {
+		healthPath = e.dialect.defaultHealthPath()
+	}
+	request, err := e.newRequest(probeCtx, e.config.HealthMethod, healthPath, nil)
 	if err != nil {
 		return err
 	}
@@ -306,7 +321,7 @@ func (e *Executor) Complete(ctx context.Context, invocation Invocation) (Result,
 		if response.StatusCode/100 != 2 {
 			return statusError(response, body, e)
 		}
-		parsed, err := decodeCompletion(body)
+		parsed, err := e.dialect.decodeCompletion(body)
 		if err != nil {
 			return &classifiedError{err: fmt.Errorf("%w: decode completion: %s", ErrProviderUnavailable, sanitize(err.Error(), e)), retryable: true, ambiguous: true}
 		}
@@ -328,9 +343,16 @@ func (e *Executor) Stream(ctx context.Context, invocation Invocation, onDelta fu
 // StreamObserver separates user-visible content from all provider-generated
 // bytes. Budget meters observe content, tool names and tool arguments while
 // callers only receive textual content.
+//
+// OnThinking receives the provider's reasoning channel separately: the
+// Anthropic thinking blocks and the reasoning fields of OpenAI-compatible
+// endpoints. Reasoning is provider-generated text that is not part of the
+// answer, so it is metered like any other generated byte but never delivered
+// as content.
 type StreamObserver struct {
 	OnContent   func(string)
 	OnGenerated func(string)
+	OnThinking  func(string)
 }
 
 // StreamObserved performs one streaming invocation with complete generation
@@ -353,7 +375,7 @@ func (e *Executor) StreamObserved(ctx context.Context, invocation Invocation, ob
 			return statusError(response, body, e)
 		}
 		providerRequestID := response.Header.Get("x-request-id")
-		parsed, delivered, err := consumeStream(response.Body, observer)
+		parsed, delivered, err := e.dialect.consumeStream(response.Body, observer)
 		parsed.ProviderRequestID = requestID(response, parsed.rawID)
 		if providerRequestID != "" {
 			parsed.ProviderRequestID = providerRequestID
@@ -439,12 +461,12 @@ func (e *Executor) withRetries(ctx context.Context, invocation Invocation, attem
 		// Each attempt gets a fresh deadline; a slow provider consumes its
 		// own budget, not the whole retry window.
 		attemptCtx, cancel := context.WithTimeout(ctx, e.config.Timeout)
-		body, err := encodeInvocation(invocation, e.config.Capabilities)
+		body, err := e.dialect.encode(invocation, e.config.Capabilities)
 		if err != nil {
 			cancel()
 			return err
 		}
-		request, err := e.newRequest(attemptCtx, http.MethodPost, "/chat/completions", body)
+		request, err := e.newRequest(attemptCtx, http.MethodPost, e.dialect.path(e.config.BaseURL), body)
 		if err != nil {
 			cancel()
 			return err
@@ -518,9 +540,7 @@ func (e *Executor) newRequest(ctx context.Context, method, path string, body []b
 	if body != nil {
 		request.Header.Set("Content-Type", "application/json")
 	}
-	if key := e.apiKey(); key != "" {
-		request.Header.Set("Authorization", "Bearer "+key)
-	}
+	e.dialect.headers(e, request)
 	request.Header.Set("Accept", invocationAccept(body))
 	return request, nil
 }

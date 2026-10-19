@@ -54,6 +54,12 @@ func (r *Registry) Register(config Config) error {
 	if _, err := tokens.ForName(config.Tokenizer); err != nil {
 		return fmt.Errorf("provider %q: %w", config.Name, err)
 	}
+	switch normalizeProtocol(config.Protocol) {
+	case ProtocolOpenAI, ProtocolAnthropic:
+	default:
+		return fmt.Errorf("provider %q: unsupported protocol %q (supported: %s, %s)",
+			config.Name, config.Protocol, ProtocolOpenAI, ProtocolAnthropic)
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if _, duplicate := r.executors[config.Name]; duplicate {
@@ -147,16 +153,19 @@ func (r *Registry) Names() []string {
 //	     "apiKeyEnv": "DEEPSEEK_API_KEY", "timeoutMs": 120000,
 //	     "maxAttempts": 3, "breakerOpens": 5, "breakerCooldownMs": 30000},
 //	    {"name": "qwen", "baseUrl": "https://dashscope.example/v1",
-//	     "apiKeyEnv": "QWEN_API_KEY"}
+//	     "apiKeyEnv": "QWEN_API_KEY"},
+//	    {"name": "anthropic", "baseUrl": "https://api.anthropic.com",
+//	     "apiKeyEnv": "ANTHROPIC_API_KEY", "protocol": "anthropic"}
 //	  ],
 //	  "routes": [
 //	    {"modelRef":"logical/fast", "provider":"deepseek", "model":"DeepSeek-V4-Flash"}
 //	  ]
 //	}
 //
-// Every provider speaks the OpenAI-compatible /chat/completions dialect.
-// API keys are referenced by environment variable name only and are never
-// persisted.
+// A provider speaks the OpenAI-compatible /chat/completions dialect unless it
+// declares "protocol":"anthropic", which selects the Anthropic Messages
+// dialect (/v1/messages). API keys are referenced by environment variable
+// name only and are never persisted.
 type registryFile struct {
 	Providers []Config `json:"providers"`
 	Routes    []Route  `json:"routes,omitempty"`

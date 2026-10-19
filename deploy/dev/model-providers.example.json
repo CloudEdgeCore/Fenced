@@ -20,6 +20,14 @@
       "baseUrl": "http://127.0.0.1:8000/v1",
       "apiKeyEnv": "VLLM_API_KEY",
       "tokenizer": "conservative"
+    },
+    {
+      "name": "anthropic",
+      "baseUrl": "https://api.anthropic.com",
+      "apiKeyEnv": "ANTHROPIC_API_KEY",
+      "protocol": "anthropic",
+      "timeoutMs": 120000,
+      "maxAttempts": 3
     }
   ],
   "routes": [
@@ -27,6 +35,11 @@
       "modelRef": "logical/fast",
       "provider": "deepseek",
       "model": "deepseek-chat"
+    },
+    {
+      "modelRef": "logical/claude",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5"
     }
   ]
 }
