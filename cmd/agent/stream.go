@@ -1,228 +1,139 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/model/provider"
 )
 
-// OpenAI streaming delta structs
-type StreamDelta struct {
-	Content   string `json:"content"`
-	Reasoning string `json:"reasoning"`
-}
+// cliStreamDeadline bounds one developer-CLI model call. The kernel executor
+// gives every attempt its own deadline; the CLI keeps a generous one so a
+// long reasoning stream is not cut off, and the header timeout still comes
+// from the provider configuration.
+const cliStreamDeadline = 30 * time.Minute
 
-type StreamChoice struct {
-	Delta StreamDelta `json:"delta"`
-}
-
-type StreamChunk struct {
-	Choices []StreamChoice `json:"choices"`
-}
-
-// Anthropic streaming chunk structs
-type AnthropicStreamDelta struct {
-	Type     string `json:"type"`
-	Text     string `json:"text"`
-	Thinking string `json:"thinking"`
-}
-
-type AnthropicStreamChunk struct {
-	Type  string               `json:"type"`
-	Delta AnthropicStreamDelta `json:"delta"`
-	Error *struct {
-		Type    string `json:"type"`
-		Message string `json:"message"`
-	} `json:"error,omitempty"`
-}
-
-func buildOpenAIEndpoint(baseURL string) string {
-	u := strings.TrimRight(baseURL, "/")
-	if strings.HasSuffix(u, "/chat/completions") {
-		return u
-	}
-	return u + "/chat/completions"
-}
-
-func buildAnthropicEndpoint(baseURL string) string {
-	u := strings.TrimRight(baseURL, "/")
-	if strings.HasSuffix(u, "/messages") {
-		return u
-	}
-	if strings.HasSuffix(u, "/v1") {
-		return u + "/messages"
-	}
-	return u + "/v1/messages"
-}
-
+// StreamLLM streams one completion through the kernel model layer and prints
+// it, keeping the provider's reasoning channel separate from the answer.
+//
+// The wire protocol is the kernel's: one implementation of the OpenAI
+// compatible and Anthropic Messages dialects serves both the gateway and
+// this CLI, so a protocol change lands in one place.
 func StreamLLM(cfg *AgentYAMLConfig, systemPrompt, userPrompt string) (int, error) {
-	provider := cfg.CurrentProvider()
-	if provider.APIKey == "" {
+	providerConfig := cfg.CurrentProvider()
+	if providerConfig.APIKey == "" {
 		return 0, fmt.Errorf("provider %q has no API key configured", cfg.LLM.DefaultProvider)
 	}
 
-	protocol := strings.ToLower(strings.TrimSpace(provider.Protocol))
-	if protocol == "" {
-		if strings.EqualFold(cfg.LLM.DefaultProvider, "anthropic") || strings.Contains(strings.ToLower(provider.BaseURL), "anthropic") {
-			protocol = "anthropic"
-		} else {
-			protocol = "openai"
-		}
-	}
-
-	var endpoint string
-	var reqBody map[string]any
-
-	if protocol == "anthropic" {
-		endpoint = buildAnthropicEndpoint(provider.BaseURL)
-		reqBody = map[string]any{
-			"model": provider.Model,
-			"messages": []map[string]string{
-				{"role": "user", "content": userPrompt},
-			},
-			"max_tokens": 4096,
-			"stream":     true,
-		}
-		if systemPrompt != "" {
-			reqBody["system"] = systemPrompt
-		}
-	} else {
-		endpoint = buildOpenAIEndpoint(provider.BaseURL)
-		reqBody = map[string]any{
-			"model": provider.Model,
-			"messages": []map[string]string{
-				{"role": "system", "content": systemPrompt},
-				{"role": "user", "content": userPrompt},
-			},
-			"stream": true,
-		}
-	}
-
-	bodyBytes, err := json.Marshal(reqBody)
-	if err != nil {
-		return 0, fmt.Errorf("marshal request: %w", err)
-	}
-
-	req, err := http.NewRequest("POST", endpoint, bytes.NewReader(bodyBytes))
+	executor, err := newCLIExecutor(cfg)
 	if err != nil {
 		return 0, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	if protocol == "anthropic" {
-		req.Header.Set("x-api-key", provider.APIKey)
-		req.Header.Set("anthropic-version", "2023-06-01")
-		req.Header.Set("Authorization", "Bearer "+provider.APIKey)
-	} else {
-		req.Header.Set("Authorization", "Bearer "+provider.APIKey)
-		req.Header.Set("HTTP-Referer", "https://fenced.dev")
-		req.Header.Set("X-Title", "Fenced-CLI")
+	messages := make([]provider.Message, 0, 2)
+	if strings.TrimSpace(systemPrompt) != "" {
+		messages = append(messages, provider.Message{Role: "system", Content: systemPrompt})
 	}
+	messages = append(messages, provider.Message{Role: "user", Content: userPrompt})
 
-	headerTimeout := 45 * time.Second
-	if provider.TimeoutSec > 0 {
-		headerTimeout = time.Duration(provider.TimeoutSec) * time.Second
-	}
-
-	tr := &http.Transport{
-		ResponseHeaderTimeout: headerTimeout,
-	}
-	client := &http.Client{
-		Transport: tr,
-		Timeout:   0, // long-lived streaming to prevent timeout during reasoning
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(resp.Body)
-		return 0, fmt.Errorf("upstream API error (status %d): %s", resp.StatusCode, string(b))
-	}
-
-	scanner := bufio.NewScanner(resp.Body)
 	totalChars := 0
 	inReasoning := false
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		if !strings.HasPrefix(line, "data: ") {
-			continue
-		}
-		data := strings.TrimPrefix(line, "data: ")
-		if data == "[DONE]" {
-			break
-		}
-
-		if protocol == "anthropic" {
-			var aChunk AnthropicStreamChunk
-			if err := json.Unmarshal([]byte(data), &aChunk); err != nil {
-				continue
+	observer := provider.StreamObserver{
+		OnContent: func(delta string) {
+			if inReasoning {
+				fmt.Print("\n\n\033[32m[content] \033[0m\n")
+				inReasoning = false
 			}
-			if aChunk.Error != nil {
-				return totalChars / 3, fmt.Errorf("anthropic stream error: %s", aChunk.Error.Message)
+			fmt.Print(delta)
+			_ = os.Stdout.Sync()
+			totalChars += len(delta)
+		},
+		OnThinking: func(delta string) {
+			if !inReasoning {
+				fmt.Print("\n\033[36m[reasoning] \033[0m")
+				inReasoning = true
 			}
-			if aChunk.Delta.Thinking != "" {
-				if !inReasoning {
-					fmt.Print("\n\033[36m[reasoning] \033[0m")
-					inReasoning = true
-				}
-				fmt.Print(aChunk.Delta.Thinking)
-				_ = os.Stdout.Sync()
-				totalChars += len(aChunk.Delta.Thinking)
-			}
-			if aChunk.Delta.Text != "" {
-				if inReasoning {
-					fmt.Print("\n\n\033[32m[content] \033[0m\n")
-					inReasoning = false
-				}
-				fmt.Print(aChunk.Delta.Text)
-				_ = os.Stdout.Sync()
-				totalChars += len(aChunk.Delta.Text)
-			}
-		} else {
-			var chunk StreamChunk
-			if err := json.Unmarshal([]byte(data), &chunk); err != nil {
-				continue
-			}
-
-			if len(chunk.Choices) > 0 {
-				c := chunk.Choices[0]
-				if c.Delta.Reasoning != "" {
-					if !inReasoning {
-						fmt.Print("\n\033[36m[reasoning] \033[0m")
-						inReasoning = true
-					}
-					fmt.Print(c.Delta.Reasoning)
-					_ = os.Stdout.Sync()
-					totalChars += len(c.Delta.Reasoning)
-				}
-				if c.Delta.Content != "" {
-					if inReasoning {
-						fmt.Print("\n\n\033[32m[content] \033[0m\n")
-						inReasoning = false
-					}
-					fmt.Print(c.Delta.Content)
-					_ = os.Stdout.Sync()
-					totalChars += len(c.Delta.Content)
-				}
-			}
-		}
+			fmt.Print(delta)
+			_ = os.Stdout.Sync()
+			totalChars += len(delta)
+		},
 	}
 
+	result, err := executor.StreamObserved(context.Background(), provider.Invocation{
+		ModelName: providerConfig.Model,
+		Messages:  messages,
+		Stream:    true,
+	}, observer)
+	if err != nil {
+		fmt.Println()
+		return 0, err
+	}
 	fmt.Println()
+
+	// The provider-reported usage is authoritative; the character estimate is
+	// only a fallback for endpoints that do not report it.
+	if result.UsageReported {
+		return int(result.InputTokens + result.OutputTokens), nil
+	}
 	approxTokens := totalChars / 3
 	if approxTokens < 100 {
 		approxTokens = 150
 	}
 	return approxTokens, nil
+}
+
+// newCLIExecutor builds the kernel model executor for the configured
+// provider. The CLI resolves the same protocol the kernel does: an explicit
+// protocol wins, otherwise an Anthropic endpoint is detected by name.
+func newCLIExecutor(cfg *AgentYAMLConfig) (*provider.Executor, error) {
+	providerConfig := cfg.CurrentProvider()
+	if strings.TrimSpace(providerConfig.BaseURL) == "" {
+		return nil, fmt.Errorf("provider %q has no base URL configured", cfg.LLM.DefaultProvider)
+	}
+	if strings.TrimSpace(providerConfig.Model) == "" {
+		return nil, fmt.Errorf("provider %q has no model configured", cfg.LLM.DefaultProvider)
+	}
+
+	// CurrentProvider already resolves the protocol, including the
+	// Anthropic detection by provider name or base URL.
+	protocol := provider.ProtocolOpenAI
+	switch strings.ToLower(strings.TrimSpace(providerConfig.Protocol)) {
+	case provider.ProtocolAnthropic:
+		protocol = provider.ProtocolAnthropic
+	case provider.ProtocolOpenAI:
+		protocol = provider.ProtocolOpenAI
+	default:
+		return nil, fmt.Errorf("provider %q declares an unsupported protocol %q", cfg.LLM.DefaultProvider, providerConfig.Protocol)
+	}
+
+	headerTimeout := 45 * time.Second
+	if providerConfig.TimeoutSec > 0 {
+		headerTimeout = time.Duration(providerConfig.TimeoutSec) * time.Second
+	}
+	client := &http.Client{
+		Transport: &http.Transport{ResponseHeaderTimeout: headerTimeout},
+		// The stream itself is long-lived: the deadline is the executor's.
+		Timeout: 0,
+	}
+
+	config := provider.Config{
+		Name:        cfg.LLM.DefaultProvider,
+		BaseURL:     providerConfig.BaseURL,
+		APIKey:      providerConfig.APIKey,
+		Protocol:    protocol,
+		Timeout:     cliStreamDeadline,
+		MaxAttempts: 2,
+	}
+	if protocol == provider.ProtocolOpenAI {
+		// Provider attribution hints; they are never credentials.
+		config.ExtraHeaders = map[string]string{
+			"HTTP-Referer": "https://fenced.dev",
+			"X-Title":      "Fenced-CLI",
+		}
+	}
+	return provider.NewExecutor(config, client), nil
 }
