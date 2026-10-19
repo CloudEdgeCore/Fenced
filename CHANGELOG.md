@@ -49,6 +49,14 @@ public protocol versions evolve independently.
   for every runtime provider that reaches the gateway.
 
 ### Fixed
+- The adapter command line carried a second copy of the Runtime Interface
+  transport policy. The command now delegates to the adapter package: the
+  explicit endpoint is validated when the worker is constructed, against the
+  production policy, and the loopback rule has one definition. The
+  development escape hatch keeps its scope — the runtime binding table — and
+  its help text now says so. The validation is the library's, which is also
+  the stricter one: an explicit endpoint with a query, a fragment, userinfo
+  or a path is rejected.
 - Persist service execution and drain state in migration `000037`, serialize API
   mutations and controller reconciliation per service, and enumerate all tenants
   in the internal controller. Legacy state-only readiness is reset during upgrade;
