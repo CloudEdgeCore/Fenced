@@ -106,3 +106,19 @@ func TestConsoleHandlerServesTheDocument(t *testing.T) {
 		t.Error("the served document is not the operator console")
 	}
 }
+
+// The event stream must be read with fetch, not with EventSource: an
+// EventSource cannot carry an Authorization header, and the operator's token
+// must not travel in the query string, where it would end up in access logs.
+func TestConsoleStreamsWithAnAuthorizationHeader(t *testing.T) {
+	document := console.Document()
+	if strings.Contains(document, "new EventSource(") {
+		t.Error("the console must not use EventSource: it cannot authenticate the stream")
+	}
+	if !strings.Contains(document, "'Authorization': 'Bearer ' + token()") {
+		t.Error("the event stream request must carry the operator's bearer token")
+	}
+	if strings.Contains(document, "/events?token=") || strings.Contains(document, "/events?access_token=") {
+		t.Error("the operator's token must not travel in the event stream query string")
+	}
+}

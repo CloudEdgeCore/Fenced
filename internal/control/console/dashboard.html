@@ -975,24 +975,67 @@
         }).catch(function (error) { result.textContent = error.message; });
       }
 
+      /* The event stream is read with fetch, not with EventSource: an
+       * EventSource cannot carry an Authorization header, and the operator's
+       * token must not travel in the query string, where it would end up in
+       * access logs. The server closes the stream with task.terminal. */
       function followTask(taskID) {
         selectedTask = taskID;
         document.getElementById('streamTaskLabel').textContent = taskID;
         var output = document.getElementById('eventOutput');
         output.textContent = '';
-        var source = new EventSource('/v1/tasks/' + taskID + '/events');
-        source.onmessage = function (message) {
-          var line = document.createElement('div');
-          line.textContent = message.data;
-          output.appendChild(line);
-          output.scrollTop = output.scrollHeight;
-        };
-        source.onerror = function () {
-          var line = document.createElement('div');
-          line.style.color = 'var(--danger, #f66)';
-          line.textContent = 'event stream closed';
-          output.appendChild(line);
-        };
+        if (window.__eventAbort) { window.__eventAbort.abort(); }
+        var controller = new AbortController();
+        window.__eventAbort = controller;
+        fetch('/v1/tasks/' + taskID + '/events', {
+          headers: { 'Accept': 'text/event-stream', 'Authorization': 'Bearer ' + token() },
+          signal: controller.signal
+        }).then(function (response) {
+          if (!response.ok || !response.body) { throw new Error('HTTP ' + response.status); }
+          return readEventStream(response.body, output);
+        }).catch(function (error) {
+          appendLine(output, 'event stream failed: ' + error.message, true);
+        });
+      }
+
+      function readEventStream(body, output) {
+        var reader = body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = '';
+        function pump() {
+          return reader.read().then(function (chunk) {
+            if (chunk.done) {
+              appendLine(output, '--- event stream closed ---');
+              return null;
+            }
+            buffer += decoder.decode(chunk.value, { stream: true });
+            var frames = buffer.split('\n\n');
+            buffer = frames.pop();
+            frames.forEach(function (frame) { renderFrame(frame, output); });
+            return pump();
+          });
+        }
+        return pump();
+      }
+
+      function renderFrame(frame, output) {
+        if (!frame || frame.charAt(0) === ':') { return; }
+        var name = '';
+        var data = '';
+        frame.split('\n').forEach(function (line) {
+          if (line.indexOf('event:') === 0) { name = line.slice(6).trim(); }
+          else if (line.indexOf('data:') === 0) { data = line.slice(5).trim(); }
+        });
+        if (!data) { return; }
+        appendLine(output, (name ? '[' + name + '] ' : '') + data, false);
+      }
+
+      function appendLine(output, text, failed) {
+        var line = document.createElement('div');
+        if (failed) { line.style.color = 'var(--danger, #f66)'; }
+        line.textContent = text;
+        output.appendChild(line);
+        output.scrollTop = output.scrollHeight;
       }
 
       /* ---------------------------------------------------------- */
@@ -1045,12 +1088,29 @@
       /* ---------------------------------------------------------- */
       /* Boot                                                        */
       /* ---------------------------------------------------------- */
+      function bindTaskTable() {
+        var body = document.getElementById('taskTableBody');
+        if (!body) { return; }
+        body.addEventListener('click', function (event) {
+          var cell = event.target.closest('td');
+          if (!cell) { return; }
+          var id = (cell.textContent || '').trim();
+          // The first column carries the task id; following a task is what
+          // the operator does with it.
+          if (id && id.indexOf('-') > 0) {
+            switchView('tasks');
+            followTask(id);
+          }
+        });
+      }
+
       function boot() {
         var field = document.getElementById('operatorToken');
         if (field) { field.value = ''; }
         api('GET', '/versionz').then(function (info) {
           document.getElementById('consoleVersion').textContent = info.product + ' ' + info.productVersion;
         }).catch(function () { document.getElementById('consoleVersion').textContent = '—'; });
+        bindTaskTable();
         if (token()) {
           loadOverview();
           loadGovernance();

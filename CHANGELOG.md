@@ -19,6 +19,10 @@ public protocol versions evolve independently.
   the authenticated tenant, bounded, and ordered newest first.
 
 ### Changed
+- The operator console reads the task event stream with `fetch` instead of
+  `EventSource`. An `EventSource` cannot carry an `Authorization` header, and
+  the operator's token must not travel in the query string, where it would
+  end up in access logs. A test keeps the stream authenticated.
 - The developer console of the CLI is retired. It showed fabricated agents,
   tools and configuration; the console that ships now shows the state the
   kernel holds. The developer configuration surface stays on the command
