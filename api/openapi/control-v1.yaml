@@ -55,6 +55,28 @@ paths:
                   controlApi: { const: v1 }
                   legacyRemovalBefore: { type: string, format: date }
   /v1/workflows:
+    get:
+      operationId: listWorkflows
+      summary: List the workflows of the authenticated tenant
+      parameters:
+        - $ref: '#/components/parameters/RequestID'
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+      responses:
+        '200':
+          description: The tenant's records, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [workflows]
+                properties:
+                  workflows:
+                    type: array
+                    items: { $ref: '#/components/schemas/Workflow' }
+        '401': { $ref: '#/components/responses/Problem' }
     post:
       operationId: createWorkflow
       summary: Publish a durable multi-agent workflow run (v1.2)
@@ -158,6 +180,33 @@ paths:
                 $ref: '#/components/schemas/Workflow'
         '404': { description: The workflow or step was not found. }
   /v1/tasks:
+    get:
+      operationId: listTasks
+      summary: List the tasks of the authenticated tenant
+      parameters:
+        - $ref: '#/components/parameters/RequestID'
+        - name: namespace
+          in: query
+          required: false
+          schema: { type: string }
+          description: Restrict the list to one namespace.
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+      responses:
+        '200':
+          description: The tenant's records, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [tasks]
+                properties:
+                  tasks:
+                    type: array
+                    items: { $ref: '#/components/schemas/Task' }
+        '401': { $ref: '#/components/responses/Problem' }
     post:
       operationId: createTask
       summary: Submit a durable task
@@ -413,6 +462,28 @@ paths:
         '409': { $ref: '#/components/responses/Problem' }
         '428': { $ref: '#/components/responses/Problem' }
   /v1/agent-versions:
+    get:
+      operationId: listAgentVersions
+      summary: List the immutable publications of the authenticated tenant
+      parameters:
+        - $ref: '#/components/parameters/RequestID'
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+      responses:
+        '200':
+          description: The tenant's records, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [agentVersions]
+                properties:
+                  agentVersions:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgentVersion' }
+        '401': { $ref: '#/components/responses/Problem' }
     post:
       operationId: createAgentVersion
       summary: Publish an immutable agent version
@@ -633,6 +704,49 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/Problem' }
         '428': { $ref: '#/components/responses/Problem' }
+  /v1/approvals:
+    get:
+      operationId: listApprovals
+      summary: List the tool calls still waiting for a human decision
+      parameters:
+        - $ref: '#/components/parameters/RequestID'
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+      responses:
+        '200':
+          description: The pending approvals, oldest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [approvals]
+                properties:
+                  approvals:
+                    type: array
+                    items: { $ref: '#/components/schemas/ToolApproval' }
+        '401': { $ref: '#/components/responses/Problem' }
+  /v1/runtime-pools:
+    get:
+      operationId: listRuntimePools
+      summary: List the runtime pools the authenticated tenant may place work on
+      parameters:
+        - $ref: '#/components/parameters/RequestID'
+      responses:
+        '200':
+          description: The tenant's runtime pools.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [runtimePools]
+                properties:
+                  runtimePools:
+                    type: array
+                    items: { $ref: '#/components/schemas/RuntimePool' }
+        '401': { $ref: '#/components/responses/Problem' }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -670,6 +784,23 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
   schemas:
+    RuntimePool:
+      type: object
+      additionalProperties: false
+      required: [id, runtimeClass, runtimeInstanceId, region, ready]
+      properties:
+        id: { type: string }
+        runtimeClass: { type: string }
+        runtimeInstanceId: { type: string }
+        region: { type: string }
+        dataResidency: { type: string }
+        ready: { type: boolean }
+        availableCpuMillis: { type: integer, format: int64 }
+        availableMemoryMiB: { type: integer, format: int64 }
+        availableLlmSlots: { type: integer }
+        tenantIds:
+          type: array
+          items: { type: string }
     CreateWorkflowRequest:
       type: object
       additionalProperties: false

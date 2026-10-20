@@ -703,6 +703,20 @@ func (m *memoryStore) CreateTask(_ context.Context, in store.CreateTaskInput) (s
 	return store.CreateTaskResult{Task: task}, nil
 }
 
+func (m *memoryStore) ListTasks(_ context.Context, tenantID string, namespace string, limit int) ([]store.Task, error) {
+	tasks := []store.Task{}
+	for _, task := range m.byID {
+		if task.TenantID != tenantID {
+			continue
+		}
+		if namespace != "" && task.Namespace != namespace {
+			continue
+		}
+		tasks = append(tasks, task)
+	}
+	return tasks, nil
+}
+
 func (m *memoryStore) GetTask(_ context.Context, tenantID string, id uuid.UUID) (store.Task, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -757,6 +771,16 @@ func (m *memoryStore) CreateAgentVersion(_ context.Context, in store.CreateAgent
 	return store.CreateAgentVersionResult{AgentVersion: version}, nil
 }
 
+func (m *memoryStore) ListAgentVersions(_ context.Context, tenantID string, limit int) ([]store.AgentVersion, error) {
+	versions := []store.AgentVersion{}
+	for _, version := range m.versions {
+		if version.TenantID == tenantID {
+			versions = append(versions, version)
+		}
+	}
+	return versions, nil
+}
+
 func (m *memoryStore) GetAgentVersion(_ context.Context, tenantID string, id uuid.UUID) (store.AgentVersion, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -796,6 +820,16 @@ func (m *memoryStore) GetTaskBudget(_ context.Context, tenantID string, id uuid.
 		return store.TaskBudgetStatus{}, store.ErrBudgetNotReserved
 	}
 	return status, nil
+}
+
+func (m *memoryStore) ListToolApprovals(_ context.Context, tenantID string, limit int) ([]store.ToolApproval, error) {
+	approvals := []store.ToolApproval{}
+	for _, approval := range m.approvals {
+		if approval.TenantID == tenantID {
+			approvals = append(approvals, approval)
+		}
+	}
+	return approvals, nil
 }
 
 func (m *memoryStore) ListToolDescriptors(context.Context, string) ([]store.ToolDescriptor, error) {

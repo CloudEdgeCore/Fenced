@@ -6,6 +6,28 @@ public protocol versions evolve independently.
 
 ## Unreleased
 
+### Added
+- The operator console is served by the control plane at `GET /console`. It
+  is a static document that reads the control plane's own endpoints with the
+  operator's bearer token: the task ledger, the approval queue, the audit
+  chain, the runtime pools, the publications, the workflows and the
+  registered tools. It holds no state, loads no external asset, and a test
+  checks that every path it calls is described by the published contract.
+- The control plane gained the operator read surface the console needs:
+  `GET /v1/tasks`, `GET /v1/agent-versions`, `GET /v1/approvals`,
+  `GET /v1/workflows` and `GET /v1/runtime-pools`. Every list is scoped to
+  the authenticated tenant, bounded, and ordered newest first.
+
+### Changed
+- The developer console of the CLI is retired. It showed fabricated agents,
+  tools and configuration; the console that ships now shows the state the
+  kernel holds. The developer configuration surface stays on the command
+  line (`agent config`, `agent config wizard`, `agent test-llm`), and
+  `agent ui` now points at the console of the configured control plane.
+- The console document no longer loads Google Fonts: a control plane that
+  phones a font host on every page view is not self-contained, and the
+  operator workstation may be offline.
+
 ## 1.4.0 - 2026-10-20
 
 ### Added

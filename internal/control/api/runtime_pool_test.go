@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/CloudEdgeCore/Fenced/internal/control/auth"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/scheduler"
 	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 )
 
@@ -18,6 +19,10 @@ type fakeRuntimePoolOperator struct {
 func (f *fakeRuntimePoolOperator) UpdateRuntimePoolStatus(_ context.Context, in store.UpdateRuntimePoolStatusInput) (store.RuntimePoolState, error) {
 	f.input = in
 	return store.RuntimePoolState{ID: in.PoolID, Status: in.Status, ResourceVersion: in.ExpectedVersion + 1}, nil
+}
+
+func (f *fakeRuntimePoolOperator) ListRuntimePools(_ context.Context, tenantID string) ([]scheduler.RuntimePool, error) {
+	return []scheduler.RuntimePool{{ID: "pool-a", TenantIDs: []string{tenantID}, RuntimeClass: "reference", Ready: true}}, nil
 }
 
 func TestRuntimePoolCordonIsTenantScopedAndCASGuarded(t *testing.T) {

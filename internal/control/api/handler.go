@@ -26,6 +26,7 @@ import (
 	"github.com/CloudEdgeCore/Fenced/internal/kernel/memory"
 	"github.com/CloudEdgeCore/Fenced/internal/kernel/namespace"
 	"github.com/CloudEdgeCore/Fenced/internal/kernel/observability"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/scheduler"
 	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/CloudEdgeCore/Fenced/internal/kernel/supervisor"
 	"github.com/google/uuid"
@@ -52,17 +53,20 @@ type TaskStore interface {
 	GetTask(context.Context, string, uuid.UUID) (store.Task, error)
 	RequestTaskCancellation(context.Context, string, uuid.UUID, int64) (store.Task, error)
 	GetTaskBudget(context.Context, string, uuid.UUID) (store.TaskBudgetStatus, error)
+	ListTasks(context.Context, string, string, int) ([]store.Task, error)
 }
 
 type AgentVersionStore interface {
 	CreateAgentVersion(context.Context, store.CreateAgentVersionInput) (store.CreateAgentVersionResult, error)
 	GetAgentVersion(context.Context, string, uuid.UUID) (store.AgentVersion, error)
+	ListAgentVersions(context.Context, string, int) ([]store.AgentVersion, error)
 }
 
 // ApprovalStore is the human decision surface for high-risk tool calls:
 // capability discovery and bound approval decisions.
 type ApprovalStore interface {
 	ListToolDescriptors(context.Context, string) ([]store.ToolDescriptor, error)
+	ListToolApprovals(context.Context, string, int) ([]store.ToolApproval, error)
 	GetToolApproval(context.Context, string, uuid.UUID) (store.ToolApproval, error)
 	DecideToolApproval(context.Context, store.DecideToolApprovalInput) (store.ToolApproval, error)
 }
@@ -101,6 +105,7 @@ type TenantQuotaStore interface {
 
 type RuntimePoolOperatorStore interface {
 	UpdateRuntimePoolStatus(context.Context, store.UpdateRuntimePoolStatusInput) (store.RuntimePoolState, error)
+	ListRuntimePools(context.Context, string) ([]scheduler.RuntimePool, error)
 }
 
 type Handler struct {
@@ -266,6 +271,11 @@ func NewHandler(taskStore TaskStore, agentVersions AgentVersionStore, approvals 
 	mux.HandleFunc("DELETE /v1/quota", handler.deleteTenantQuota)
 	mux.HandleFunc("POST /v1/workflows", handler.createWorkflow)
 	mux.HandleFunc("GET /v1/metrics", handler.getMetrics)
+	mux.HandleFunc("GET /v1/tasks", handler.listTasks)
+	mux.HandleFunc("GET /v1/agent-versions", handler.listAgentVersions)
+	mux.HandleFunc("GET /v1/approvals", handler.listApprovals)
+	mux.HandleFunc("GET /v1/workflows", handler.listWorkflows)
+	mux.HandleFunc("GET /v1/runtime-pools", handler.listRuntimePools)
 	mux.HandleFunc("GET /v1/workflows/{workflowID}", handler.getWorkflow)
 	mux.HandleFunc("POST /v1/workflows/{workflowID}/cancel", handler.cancelWorkflow)
 	mux.HandleFunc("POST /v1/workflows/{workflowID}/steps/{stepName}/approval", handler.decideWorkflowStepApproval)
@@ -286,6 +296,8 @@ func NewHandler(taskStore TaskStore, agentVersions AgentVersionStore, approvals 
 	mux.HandleFunc("PUT /v1/namespaces/{name}", handler.updateNamespace)
 	mux.HandleFunc("DELETE /v1/namespaces/{name}", handler.deleteNamespace)
 	mux.HandleFunc("GET /v1/namespaces/{name}/usage", handler.getNamespaceUsage)
+	mux.HandleFunc("GET /console", handler.console)
+	mux.HandleFunc("GET /console/", handler.console)
 	mux.HandleFunc("GET /healthz", handler.health)
 	mux.HandleFunc("GET /readyz", handler.ready)
 	mux.HandleFunc("GET /versionz", handler.version)

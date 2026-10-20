@@ -160,6 +160,12 @@ func (h *Handler) getAgentVersion(writer http.ResponseWriter, request *http.Requ
 // listTools exposes the tenant's registered tool descriptors for capability
 // discovery.
 func (h *Handler) writeAgentVersion(writer http.ResponseWriter, status int, version store.AgentVersion, traceID string) {
+	writer.Header().Set("ETag", fmt.Sprintf(`W/"%d"`, version.ResourceVersion))
+	writeJSON(writer, status, agentVersionResponseOf(version, traceID))
+}
+
+// agentVersionResponseOf builds the wire shape of one publication.
+func agentVersionResponseOf(version store.AgentVersion, traceID string) agentVersionResponse {
 	response := agentVersionResponse{
 		APIVersion: agentversion.APIVersion, Kind: agentversion.Kind, ID: version.ID.String(),
 		TenantID: version.TenantID, Namespace: version.Namespace, Name: version.Name,
@@ -171,8 +177,7 @@ func (h *Handler) writeAgentVersion(writer http.ResponseWriter, status int, vers
 		response.PackageKeyID = version.PackageSignature.KeyID
 		response.PackageManifestDigest = version.PackageSignature.ManifestDigest
 	}
-	writer.Header().Set("ETag", fmt.Sprintf(`W/"%d"`, version.ResourceVersion))
-	writeJSON(writer, status, response)
+	return response
 }
 
 // admitPackage is the ADR-010 publish gate. Verification is fail-closed

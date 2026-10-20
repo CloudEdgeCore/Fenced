@@ -1,12 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	"testing"
 )
@@ -141,33 +139,32 @@ func TestStreamLLMProtocolsMock(t *testing.T) {
 	}
 }
 
-func TestUIConfigProtocolEndpoints(t *testing.T) {
-	// Test POST /api/config with protocol
-	fullCfgReq := UIFullConfigRequest{
-		Environment:     "staging",
-		DefaultProvider: "custom-anthropic",
-		Model:           "claude-3-5-haiku",
-		BaseURL:         "https://api.anthropic.com/v1",
-		Protocol:        "anthropic",
-		APIKey:          "sk-ant-test-key",
-		TimeoutSec:      60,
-		BudgetUSD:       3.00,
+func TestConfigRoundTripKeepsTheProviderProtocol(t *testing.T) {
+	// The developer configuration surface keeps the protocol of a provider:
+	// the console and the kernel both need to know which dialect an
+	// endpoint speaks.
+	config := DefaultConfig()
+	config.LLM.DefaultProvider = "custom-anthropic"
+	config.LLM.Providers["custom-anthropic"] = ProviderConfig{
+		Model:      "claude-3-5-haiku",
+		APIKey:     "sk-ant-test-key",
+		BaseURL:    "https://api.anthropic.com/v1",
+		Protocol:   "anthropic",
+		TimeoutSec: 60,
 	}
-	b, _ := json.Marshal(fullCfgReq)
-	req := httptest.NewRequest(http.MethodPost, "/api/config", bytes.NewReader(b))
-	w := httptest.NewRecorder()
-	handleUIConfig(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("handleUIConfig failed: status %d, body: %s", w.Code, w.Body.String())
+	path := filepath.Join(t.TempDir(), "agent.yaml")
+	if err := SaveConfig(config, path); err != nil {
+		t.Fatalf("save config: %v", err)
 	}
-
-	var resp map[string]any
-	json.Unmarshal(w.Body.Bytes(), &resp)
-	if resp["success"] != true {
-		t.Errorf("expected success true, got %v", resp["success"])
+	loaded := DefaultConfig()
+	if err := mergeYAMLFile(loaded, path); err != nil {
+		t.Fatalf("load config: %v", err)
 	}
-
-	// Clean up generated agent.yaml if created in working dir
-	_ = os.Remove("agent.yaml")
+	provider := loaded.LLM.Providers["custom-anthropic"]
+	if provider.Protocol != "anthropic" {
+		t.Fatalf("protocol = %q, want anthropic", provider.Protocol)
+	}
+	if provider.BaseURL != "https://api.anthropic.com/v1" || provider.Model != "claude-3-5-haiku" {
+		t.Fatalf("provider did not survive the round trip: %+v", provider)
+	}
 }

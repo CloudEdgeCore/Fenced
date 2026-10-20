@@ -24,6 +24,7 @@ import (
 type WorkflowStore interface {
 	CreateWorkflow(context.Context, store.CreateWorkflowInput) (store.CreateWorkflowResult, error)
 	GetWorkflow(context.Context, string, uuid.UUID) (store.Workflow, error)
+	ListWorkflows(context.Context, string, int) ([]store.Workflow, error)
 	ListWorkflowSteps(context.Context, string, uuid.UUID) ([]store.WorkflowStep, error)
 	RequestWorkflowCancellation(context.Context, string, uuid.UUID, int64) (store.Workflow, error)
 	DecideWorkflowStepApproval(context.Context, store.DecideWorkflowStepApprovalInput) (store.WorkflowStep, error)

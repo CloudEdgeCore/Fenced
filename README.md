@@ -139,8 +139,12 @@ See the [service guide](docs/user-guide.md#71-服务注册与启动).
 
 ## Current limits
 
-- **CLI-first operation.** The web workbench is an internal, loopback-only
-  preview; a production administration console and managed hosting are pending.
+- **The operator console is served by the control plane.** It is a static
+  document that reads the control plane's own endpoints with the operator's
+  bearer token, so every number it shows is the number the kernel holds. The
+  developer configuration surface stays on the CLI (`agent config`,
+  `agent config wizard`, `agent test-llm`); a full multi-tenant management
+  product and managed hosting are still pending.
 - **Infrastructure you operate.** The full platform uses PostgreSQL and NATS.
   Production paths require configured HTTPS/OIDC and SPIFFE mTLS identities;
   model, tool, embedding, and secret services need their own configuration.

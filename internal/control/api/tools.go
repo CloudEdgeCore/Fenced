@@ -151,7 +151,12 @@ func (h *Handler) decideApproval(writer http.ResponseWriter, request *http.Reque
 }
 
 func (h *Handler) writeApproval(writer http.ResponseWriter, status int, approval store.ToolApproval, traceID string) {
-	response := toolApprovalResponse{
+	writeJSON(writer, status, toolApprovalResponseOf(approval, traceID))
+}
+
+// toolApprovalResponseOf builds the wire shape of one approval request.
+func toolApprovalResponseOf(approval store.ToolApproval, traceID string) toolApprovalResponse {
+	return toolApprovalResponse{
 		ID: approval.ID.String(), TenantID: approval.TenantID, CallID: approval.CallID.String(),
 		TaskID: approval.TaskID.String(), RunID: approval.RunID.String(), AttemptID: approval.AttemptID.String(),
 		ToolName: approval.ToolName, ToolVersion: approval.ToolVersion, Action: approval.Action,
@@ -160,7 +165,6 @@ func (h *Handler) writeApproval(writer http.ResponseWriter, status int, approval
 		DecidedAt: approval.DecidedAt, DecidedBy: approval.DecidedBy,
 		ResourceVersion: approval.ResourceVersion, TraceID: traceID,
 	}
-	writeJSON(writer, status, response)
 }
 
 func (h *Handler) writeApprovalProblem(writer http.ResponseWriter, request *http.Request, err error, traceID string) {

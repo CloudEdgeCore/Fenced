@@ -166,6 +166,18 @@ outside execution windows). A real model-backed Python agent lives at
 
 These commands use a fixed development tenant, loopback plaintext connections, and development executors. They are only safe for local development. Production mode rejects these downgraded settings.
 
+### The operator console
+
+The control plane serves the operator console at `/console`:
+
+```bash
+curl -s http://127.0.0.1:8080/console/ | head -5
+```
+
+It is a static document that reads the control plane's own endpoints, so it
+needs the operator's bearer token: open it, paste a token, and press Connect.
+The token stays in the browser session and is only ever sent as a header.
+
 ### CLI workflows
 
 The developer-facing entrypoint is the unified `agent` CLI introduced in
