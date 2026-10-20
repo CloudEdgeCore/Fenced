@@ -1,6 +1,6 @@
 # Fenced Feature Status & Capability Matrix
 
-This matrix provides the verified implementation status for all subsystems, protocols, and APIs in Fenced as of **v1.3 (Developer Core & Dynamic Orchestration)**.
+This matrix provides the verified implementation status for all subsystems, protocols, and APIs in Fenced as of **v1.4 (Anthropic dialect, written wire contract, structural consolidation)**.
 
 ---
 
@@ -94,3 +94,16 @@ This matrix provides the verified implementation status for all subsystems, prot
 | **Dual-Protocol Model Layer** | **GA** | v1.3 | `cmd/agent/stream.go`, `internal/kernel/model/provider` | OpenAI-compatible (`/chat/completions`) and Anthropic Messages (`/v1/messages`) streaming. One dialect implementation serves both the developer CLI and the kernel Model Gateway, which selects the dialect per provider (`"protocol": "anthropic"`) and settles budget, usage and receipts identically for both. The reasoning channel of a provider is delivered separately from the answer. |
 | **Dynamic Task Spawn** | **GA** | v1.3 | `fenced.task.spawn` | Fenced child-task spawning with recursion, fan-out, and total-step guards. |
 | **Workflow Budgets & Fair Sharding** | **GA** | v1.3 | Kernel Store / Orchestrator | Workflow-wide budgets and deadlines, dynamic group joins (`spawn:<parent>`), and lease-based fair sharding across orchestrator instances. |
+
+---
+
+## 8. v1.4 (Anthropic dialect, written wire contract, consolidation)
+
+| Feature / Capability | Status | Since | Protocol / Contract | Description |
+| :--- | :---: | :---: | :--- | :--- |
+| **Anthropic Messages in the Model Gateway** | **GA** | v1.4 | `internal/kernel/model/provider` | The gateway speaks `/v1/messages` beside `/chat/completions`; a provider selects the dialect with `"protocol": "anthropic"`. The system prompt, `max_tokens`, `tool_use`/`tool_result` blocks, the typed stream events and the stop reasons are translated at the wire boundary; budget, usage settlement, request-id capture, retries and the circuit breaker are shared. |
+| **Written Runtime Interface contract** | **GA** | v1.4 | `sdk/conformance/fixtures/runtime-interface-v1.json` | Golden vectors of every endpoint, executed against the Go host, the Python host and the published OpenAPI schema. A renamed field, a changed status code or a new status value fails on every side. |
+| **Single transport policy** | **GA** | v1.4 | `internal/runtime/bindings` | Plaintext only on loopback, HTTPS with server verification elsewhere; one implementation, used by the adapter command line and the binding table. The development escape hatch applies to the binding table only. |
+| **Pinned tool grants** | **GA** | v1.4 | `capabilities.tools`, `capabilities.toolVersions` | A grant of `name@version` or `name@*` grants the tool to the runtime check and pins the version for the freeze. The two vocabularies are separated at publication time; publications written before the split keep working. |
+| **Task-backed AgentService execution** | **Implemented (runtime-dependent)** | v1.4 | `proto/fenced/service/v1` | Each replica runs as a durable Task with the normal admission, budget, placement, lease and Runtime execution; the execution and drain state persist in migration `000037`. |
+| **Developer CLI over the kernel model layer** | **GA** | v1.4 | `cmd/agent/stream.go` | The CLI streams through the kernel dialect, keeps its reasoning and answer channels apart, and reports the provider-reported token usage when the provider reports it. |

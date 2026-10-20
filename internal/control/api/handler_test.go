@@ -55,7 +55,7 @@ func TestOperationalProbesSeparateLivenessReadinessAndVersion(t *testing.T) {
 	for path, want := range map[string]string{
 		"/healthz":  `"status":"ok"`,
 		"/readyz":   `"status":"ready"`,
-		"/versionz": `"productVersion":"1.3.0.0"`,
+		"/versionz": `"productVersion":"1.4.0.0"`,
 	} {
 		response := httptest.NewRecorder()
 		ready.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))

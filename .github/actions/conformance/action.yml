@@ -18,7 +18,7 @@ inputs:
   fenced-version:
     description: 'Version of Fenced Conformance Suite binary to download or build'
     required: false
-    default: 'v1.3.0'
+    default: 'v1.4.0'
 
 outputs:
   status:

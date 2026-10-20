@@ -2,8 +2,8 @@ apiVersion: v2
 name: fenced
 description: A Helm chart for Fenced - The Agent Operating System Kernel and Control Plane
 type: application
-version: 1.3.0
-appVersion: "1.3.0"
+version: 1.4.0
+appVersion: "1.4.0"
 keywords:
   - fenced
   - ai-agents

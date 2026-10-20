@@ -5,8 +5,8 @@ package version
 
 const (
 	Product             = "Fenced"
-	ProductVersion      = "1.3.0.0"
-	SemVer              = "1.3.0"
+	ProductVersion      = "1.4.0.0"
+	SemVer              = "1.4.0"
 	ReleaseStage        = "GA"
 	Manifest            = "fenced.dev/v1"
 	RuntimeProtocol     = "fenced.runtime.v1"

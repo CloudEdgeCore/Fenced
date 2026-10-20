@@ -432,10 +432,10 @@ Wasmtime binary, SBOMs, checksums, and Sigstore provenance artifacts. See
 assets actually published for a tag.
 
 For a published tag, download its assets and check the checksums. Replace
-`v1.3.0` if using a different version:
+`v1.4.0` if using a different version:
 
 ```shell
-gh release download v1.3.0 --repo CloudEdgeCore/Fenced
+gh release download v1.4.0 --repo CloudEdgeCore/Fenced
 sha256sum -c checksums.txt
 ```
 

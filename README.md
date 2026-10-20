@@ -14,7 +14,7 @@ durable mailboxes, or run with explicit execution budgets.
 [Architecture](#how-it-works) · [Current limits](#current-limits) ·
 [中文使用指南](docs/user-guide.md)
 
-[Apache 2.0](LICENSE) · [Source version: 1.3.0](CHANGELOG.md#130---2026-10-01) ·
+[Apache 2.0](LICENSE) · [Source version: 1.4.0](CHANGELOG.md#140---2026-10-20) ·
 [v1.2 public contract freeze](docs/contracts/v1.2-contract-freeze.md)
 
 ## Try locally

@@ -145,8 +145,8 @@ go build -o bin/fenced-migrate ./cmd/fenced-migrate
 
 验证安装：
 ```bash
-./bin/fenced version   # Fenced 1.3.0.0 (semver v1.3.0, GA)
-./bin/agent version     # agent CLI 1.3.0 (product: Fenced 1.3.0.0, syscall ABI: 1.0.0)
+./bin/fenced version   # Fenced 1.4.0.0 (semver v1.4.0, GA)
+./bin/agent version     # agent CLI 1.4.0 (product: Fenced 1.4.0.0, syscall ABI: 1.0.0)
 ```
 
 ### 2.4 初始化数据库架构

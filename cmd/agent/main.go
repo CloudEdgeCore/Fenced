@@ -53,7 +53,7 @@ func main() {
 }
 
 func printHelp() {
-	fmt.Print(`Fenced Developer Core CLI: agent (v1.3.0)
+	fmt.Print(`Fenced Developer Core CLI: agent (v1.4.0)
 
 Usage:
   agent [command] [flags]

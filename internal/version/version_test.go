@@ -9,7 +9,7 @@ import (
 )
 
 func TestReleaseVersionIsSingleSourceOfTruth(t *testing.T) {
-	if version.ProductVersion != "1.3.0.0" || version.SemVer != "1.3.0" || version.ReleaseStage != "GA" ||
+	if version.ProductVersion != "1.4.0.0" || version.SemVer != "1.4.0" || version.ReleaseStage != "GA" ||
 		version.Manifest != agentversion.ManifestAPIVersion || version.RuntimeInterface != agent.ProtocolVersion ||
 		version.SyscallABI != "1.0.0" || version.IPCProtocol != "fenced.ipc.v1" ||
 		version.ServiceProtocol != "fenced.service.v1" || version.EffectProtocol != "fenced.effect.v1" ||

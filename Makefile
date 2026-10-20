@@ -18,7 +18,7 @@ COMPOSE ?= docker compose
 DEV_COMPOSE := deploy/dev/compose.yaml
 DATABASE_URL ?= postgres://fenced:fenced-dev-only@127.0.0.1:55432/fenced?sslmode=disable
 NATS_URL ?= nats://127.0.0.1:54222
-PRODUCT_VERSION ?= 1.3.0.0
+PRODUCT_VERSION ?= 1.4.0.0
 RUST_TOOLCHAIN ?= 1.97.1
 PG_IMAGE := pgvector/pgvector:pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
 TAKEOVER_CONTAINER := fenced-readme-postgres

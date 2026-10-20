@@ -59,7 +59,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Certify against Fenced
-        uses: CloudEdgeCore/Fenced/.github/actions/conformance@v1.3.0
+        uses: CloudEdgeCore/Fenced/.github/actions/conformance@v1.4.0
         with:
           command: "python server.py --port 0"
 ```

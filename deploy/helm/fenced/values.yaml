@@ -6,7 +6,7 @@ replicaCount: 2
 image:
   repository: ghcr.io/cloudedgecore/fenced
   pullPolicy: IfNotPresent
-  tag: "1.3.0"
+  tag: "1.4.0"
 
 serviceAccount:
   create: true
