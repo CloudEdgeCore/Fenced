@@ -53,27 +53,20 @@ CACHE_FILE="${XDG_CACHE_HOME:-${HOME}/.cache}/fenced/push-host"
 
 CHECK_ONLY=0
 DRY_RUN=0
-REMOTE="origin"
-BRANCH=""
+POSITIONAL=()
 
 log() { printf '%s\n' "$*" >&2; }
-
 for argument in "$@"; do
 	case "$argument" in
 		--check) CHECK_ONLY=1 ;;
 		--dry-run) DRY_RUN=1 ;;
 		--wait=*) DEADLINE="${argument#--wait=}" ;;
 		-*) ;;
-		*)
-			if [ -z "$REMOTE" ] || [ "$REMOTE" = "origin" ]; then
-				REMOTE="$argument"
-			elif [ -z "$BRANCH" ]; then
-				BRANCH="$argument"
-			fi
-			;;
+		*) POSITIONAL+=("$argument") ;;
 	esac
 done
-[ -n "$BRANCH" ] || BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+REMOTE="${POSITIONAL[0]:-origin}"
+BRANCH="${POSITIONAL[1]:-$(git rev-parse --abbrev-ref HEAD)}"
 
 cleanup() {
 	if [ -n "${HOSTS_BACKUP:-}" ] && [ -f "$HOSTS_BACKUP" ]; then
