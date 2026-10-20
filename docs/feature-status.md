@@ -14,8 +14,8 @@ This matrix provides the verified implementation status for all subsystems, prot
 | **AgentService execution** | **Implemented (runtime-dependent)** | v1.2 | `proto/fenced/service/v1` | Each instance runs through a durable Task with normal admission, budgets, placement, leases, and Runtime execution. Every active replica needs a Worker slot; Host and Task execution timeouts still apply. |
 | **Process Supervisor** | **Implemented** | v1.2 | `proto/fenced/service/v1` | Replica reconciliation, restart policy, backoff, and runtime lifecycle tracking. Running reflects Kernel execution state, not application readiness. |
 | **Heartbeat Auto-Reap** | **Implemented** | v1.2 | `proto/fenced/service/v1` | Detects stale instance liveness and requests cancellation/replacement. Physical termination of a non-cooperative runtime requires an isolation-boundary termination hook. |
-| **Rolling Upgrade & Drain** | **Limited** | v1.2 | `proto/fenced/service/v1` | Version and replica convergence with drain deadlines and cooperative task cancellation. Zero-downtime application traffic switching and readiness checks are not certified. |
-| **Automatic Rollback** | **Not verified** | v1.2 | `proto/fenced/service/v1` | Explicit rollback operations exist; automatic rollback triggered by application health failures is not certified. |
+| **Rolling Upgrade & Drain** | **Implemented** | v1.2 | `proto/fenced/service/v1` | Version and replica convergence with drain deadlines and cooperative task cancellation. A serving instance is only replaced after its replacement proved itself healthy (`rollout.minReadyTime`), the rollout state is durable and observable, and the operator API exposes `POST /v1/services/{id}/rollout`. The runtime traffic switch is not version aware: a client may reach either version while the rollout runs. |
+| **Automatic Rollback** | **Implemented** | v1.2 | `proto/fenced/service/v1` | A target version that fails ends the rollout; with `rollout.autoRollback` the service returns to the version it ran before and the reason is recorded in the service status. Without it the service keeps the failed version and the operator decides. |
 
 ---
 

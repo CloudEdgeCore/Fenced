@@ -7,6 +7,29 @@ public protocol versions evolve independently.
 ## Unreleased
 
 ### Added
+- The control plane rolls a service to another agent version without
+  dropping it. A serving instance is only replaced after its replacement
+  proved itself healthy, the rollout state is durable (`PROGRESSING`,
+  `SUCCEEDED`, `FAILED`, `ROLLING_BACK`, `ROLLED_BACK`) and observable, and
+  the operator API gained `POST /v1/services/{id}/rollout`,
+  `POST /v1/services/{id}/rollback` and `GET /v1/services/{id}/rollout`.
+- A rollout that fails now ends the rollout. With `rollout.autoRollback` the
+  service returns to the version it ran before and the reason is recorded.
+  The frozen service contract already carried the field; the kernel now
+  honours it instead of only storing it.
+- The Helm chart upgrades the control plane without downtime: a new replica
+  joins and becomes ready before the old one leaves (`maxUnavailable: 0`),
+  a replica has to stay ready before it counts as available, a voluntary
+  disruption may not take the last replica down (PodDisruptionBudget), and
+  the rollout fails instead of waiting forever.
+- The published Control API contract now describes the service management
+  surface, which was implemented but never published.
+- The operator console shows the supervised services with their rollout
+  state, and rolls a service to another version or back from the console.
+
+### Changed
+- The service status carries the rollout state, and the status message
+  explains a rollout instead of only the replica counts.
 - The operator console is served by the control plane at `GET /console`. It
   is a static document that reads the control plane's own endpoints with the
   operator's bearer token: the task ledger, the approval queue, the audit
