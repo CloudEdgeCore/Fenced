@@ -9,7 +9,7 @@ require (
 	github.com/getkin/kin-openapi v0.149.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
-	github.com/jackc/pgx/v5 v5.10.0
+	github.com/jackc/pgx/v5 v5.11.0
 	github.com/nats-io/nats.go v1.53.1
 	github.com/open-policy-agent/opa v1.21.0
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
