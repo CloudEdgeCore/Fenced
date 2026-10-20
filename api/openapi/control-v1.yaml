@@ -747,6 +747,293 @@ paths:
                     items: { $ref: '#/components/schemas/RuntimePool' }
         '401': { $ref: '#/components/responses/Problem' }
 
+  /v1/services:
+    post:
+      operationId: createService
+      summary: Create a supervised agent service
+      parameters:
+        - $ref: '#/components/parameters/RequestID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateServiceRequest'
+      responses:
+        '201':
+          description: The service was created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentService'
+        '401': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+    get:
+      operationId: listServices
+      summary: List the agent services of the authenticated tenant
+      parameters:
+        - $ref: '#/components/parameters/RequestID'
+        - name: namespace
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: The tenant's services.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [services]
+                properties:
+                  services:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgentService' }
+        '401': { $ref: '#/components/responses/Problem' }
+  /v1/services/{serviceId}:
+    get:
+      operationId: getService
+      summary: Read an agent service of the authenticated tenant
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/RequestID'
+      responses:
+        '200':
+          description: The service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentService'
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+    put:
+      operationId: updateService
+      summary: Replace the specification of an agent service
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/RequestID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateServiceRequest'
+      responses:
+        '200':
+          description: The updated service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentService'
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+    delete:
+      operationId: deleteService
+      summary: Terminate an agent service and its instances
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/RequestID'
+      responses:
+        '200':
+          description: The service was terminated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentService'
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /v1/services/{serviceId}/scale:
+    post:
+      operationId: scaleService
+      summary: Change the number of replicas of an agent service
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/RequestID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScaleServiceRequest'
+      responses:
+        '200':
+          description: The service was scaled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentService'
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /v1/services/{serviceId}/restart:
+    post:
+      operationId: restartService
+      summary: Restart the instances of an agent service
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/RequestID'
+      responses:
+        '200':
+          description: The restart was requested.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentService'
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /v1/services/{serviceId}/stop:
+    post:
+      operationId: stopService
+      summary: Stop an agent service and cancel its running tasks
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/RequestID'
+      responses:
+        '200':
+          description: The stop was requested.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentService'
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /v1/services/{serviceId}/rollout:
+    post:
+      operationId: rolloutService
+      summary: Roll a service to another agent version without dropping it
+      description: >-
+        A serving instance is only replaced after its replacement has proven
+        itself. When the rollout fails and the service asked for an automatic
+        rollback, the service returns to the version it ran before.
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/RequestID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RolloutServiceRequest'
+      responses:
+        '202':
+          description: The rollout was started.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentService'
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+    get:
+      operationId: getServiceRollout
+      summary: Read the rollout of an agent service
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/RequestID'
+      responses:
+        '200':
+          description: The rollout of the service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRollout'
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /v1/services/{serviceId}/rollback:
+    post:
+      operationId: rollbackService
+      summary: Return a service to the version it ran before
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/RequestID'
+      responses:
+        '202':
+          description: The rollback was started.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentService'
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /v1/services/{serviceId}/instances:
+    get:
+      operationId: listServiceInstances
+      summary: List the instances of an agent service
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/RequestID'
+      responses:
+        '200':
+          description: The instances of the service.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [instances]
+                properties:
+                  instances:
+                    type: array
+                    items: { $ref: '#/components/schemas/ServiceInstance' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /v1/services/{serviceId}/instances/{instanceId}/heartbeat:
+    post:
+      operationId: heartbeatServiceInstance
+      summary: Report that an instance of an agent service is alive
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: instanceId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/RequestID'
+      responses:
+        '200':
+          description: The heartbeat was recorded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceInstance'
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -784,6 +1071,196 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
   schemas:
+    CreateServiceRequest:
+      type: object
+      additionalProperties: false
+      required: [namespace, name, agentId, spec]
+      properties:
+        id: { type: string, description: The identifier of the service; the control plane assigns one when it is empty. }
+        namespace: { type: string }
+        name: { type: string }
+        agentId: { type: string }
+        spec: { $ref: '#/components/schemas/ServiceSpec' }
+    UpdateServiceRequest:
+      type: object
+      additionalProperties: false
+      required: [spec]
+      properties:
+        spec: { $ref: '#/components/schemas/ServiceSpec' }
+    ScaleServiceRequest:
+      type: object
+      additionalProperties: false
+      required: [replicas]
+      properties:
+        replicas: { type: integer, minimum: 0 }
+    RolloutServiceRequest:
+      type: object
+      additionalProperties: false
+      required: [newVersion]
+      properties:
+        newVersion: { type: string, description: The agent version the service rolls to. }
+        config:
+          $ref: '#/components/schemas/RolloutConfig'
+    ServiceSpec:
+      type: object
+      additionalProperties: false
+      required: [replicas]
+      properties:
+        replicas: { type: integer, minimum: 0 }
+        agentVersion: { type: string }
+        agentVersionRef: { type: string }
+        runtimeClass: { type: string }
+        restartPolicy:
+          type: string
+          enum: [Always, OnFailure, Never]
+        resources: { $ref: '#/components/schemas/ResourceRequirements' }
+        backoff: { $ref: '#/components/schemas/BackoffConfig' }
+        health: { $ref: '#/components/schemas/HealthConfig' }
+        rollout: { $ref: '#/components/schemas/RolloutConfig' }
+        drainTimeout: { type: integer, format: int64, description: Nanoseconds the instance may take to drain. }
+        autoWake: { type: boolean }
+        scaleToZeroTtl: { type: integer, format: int64 }
+        labels:
+          type: object
+          additionalProperties: { type: string }
+        workloadSpec:
+          type: object
+          description: The task specification the instances of the service run.
+          additionalProperties: true
+    ResourceRequirements:
+      type: object
+      additionalProperties: false
+      properties:
+        cpu: { type: string }
+        memory: { type: string }
+        llmSlots: { type: integer }
+    BackoffConfig:
+      type: object
+      additionalProperties: false
+      properties:
+        initialInterval: { type: integer, format: int64 }
+        maxInterval: { type: integer, format: int64 }
+        factor: { type: number }
+        maxRetries: { type: integer, description: Zero means unlimited retries. }
+    HealthConfig:
+      type: object
+      additionalProperties: false
+      properties:
+        heartbeatTtl: { type: integer, format: int64 }
+        unhealthyThreshold: { type: integer }
+        checkInterval: { type: integer, format: int64 }
+    RolloutConfig:
+      type: object
+      additionalProperties: false
+      properties:
+        maxUnavailable: { type: integer, minimum: 0 }
+        maxSurge: { type: integer, minimum: 0 }
+        minReadyTime:
+          type: integer
+          format: int64
+          description: >-
+            Nanoseconds a replacement instance has to stay healthy before it
+            may take the place of the instance it replaces.
+        autoRollback:
+          type: boolean
+          description: >-
+            Return the service to the version it ran before when the rollout
+            fails. The frozen service contract carries the same field as
+            auto_rollback.
+    ServiceStatus:
+      type: object
+      additionalProperties: false
+      required: [phase, desiredReplicas, currentReplicas, readyReplicas]
+      properties:
+        phase:
+          type: string
+          enum: [Pending, Active, Degraded, Suspended, Draining, Terminated]
+        desiredReplicas: { type: integer }
+        currentReplicas: { type: integer }
+        readyReplicas: { type: integer }
+        updatedReplicas: { type: integer }
+        availableReplicas: { type: integer }
+        activeVersion: { type: string }
+        previousVersion: { type: string }
+        restartCount: { type: integer }
+        lastTransitionAt: { type: string, format: date-time }
+        message: { type: string }
+        rolloutPhase:
+          type: string
+          enum: [PROGRESSING, SUCCEEDED, FAILED, ROLLING_BACK, ROLLED_BACK]
+        rolloutFromVersion: { type: string }
+        rolloutTargetVersion: { type: string }
+        rolloutStartedAt: { type: string, format: date-time }
+        rolloutUpdatedAt: { type: string, format: date-time }
+        rolloutFailureReason: { type: string }
+    AgentService:
+      type: object
+      additionalProperties: false
+      required: [apiVersion, kind, id, tenantId, namespace, name, agentId, spec, status]
+      properties:
+        apiVersion: { type: string, const: fenced.dev/v1 }
+        kind: { type: string, const: AgentService }
+        id: { type: string }
+        tenantId: { type: string }
+        namespace: { type: string }
+        name: { type: string }
+        agentId: { type: string }
+        spec: { $ref: '#/components/schemas/ServiceSpec' }
+        status: { $ref: '#/components/schemas/ServiceStatus' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        traceId: { type: string }
+    ServiceInstance:
+      type: object
+      additionalProperties: false
+      required: [apiVersion, kind, id, serviceId, tenantId, namespace, agentId, address, phase]
+      properties:
+        apiVersion: { type: string, const: fenced.dev/v1 }
+        kind: { type: string, const: ServiceInstance }
+        id: { type: string }
+        serviceId: { type: string }
+        tenantId: { type: string }
+        namespace: { type: string }
+        agentId: { type: string }
+        taskId: { type: string, format: uuid }
+        agentVersion: { type: string }
+        runtimeClass: { type: string }
+        fencingToken: { type: integer, format: int64 }
+        address: { type: string }
+        phase:
+          type: string
+          enum: [Created, Starting, Running, Degraded, Draining, Stopping, Stopped, Failed, Recovering]
+        restartCount: { type: integer }
+        lastHeartbeat: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        exitCode: { type: integer }
+        exitReason: { type: string }
+        traceId: { type: string }
+    ServiceRollout:
+      type: object
+      additionalProperties: false
+      required: [apiVersion, kind, serviceId, tenantId, namespace]
+      properties:
+        apiVersion: { type: string, const: fenced.dev/v1 }
+        kind: { type: string, const: ServiceRollout }
+        serviceId: { type: string }
+        tenantId: { type: string }
+        namespace: { type: string }
+        phase:
+          type: string
+          enum: [PROGRESSING, SUCCEEDED, FAILED, ROLLING_BACK, ROLLED_BACK]
+        fromVersion: { type: string }
+        targetVersion: { type: string }
+        activeVersion: { type: string }
+        previousVersion: { type: string }
+        desiredReplicas: { type: integer }
+        readyReplicas: { type: integer }
+        updatedReplicas: { type: integer }
+        startedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        failureReason: { type: string }
+        message: { type: string }
+        traceId: { type: string }
     RuntimePool:
       type: object
       additionalProperties: false

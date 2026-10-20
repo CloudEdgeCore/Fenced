@@ -32,6 +32,11 @@ type scaleServiceRequest struct {
 	Replicas int `json:"replicas"`
 }
 
+type rolloutServiceRequest struct {
+	NewVersion string                    `json:"newVersion"`
+	Config     *supervisor.RolloutConfig `json:"config,omitempty"`
+}
+
 type serviceResponse struct {
 	APIVersion string                   `json:"apiVersion"`
 	Kind       string                   `json:"kind"`
@@ -61,6 +66,51 @@ func formatServiceResponse(svc *supervisor.Service, traceID string) serviceRespo
 		CreatedAt:  svc.CreatedAt.UTC(),
 		UpdatedAt:  svc.UpdatedAt.UTC(),
 		TraceID:    traceID,
+	}
+}
+
+// rolloutResponse is the wire shape of the rollout of a service.
+type rolloutResponse struct {
+	APIVersion      string                  `json:"apiVersion"`
+	Kind            string                  `json:"kind"`
+	ServiceID       string                  `json:"serviceId"`
+	TenantID        string                  `json:"tenantId"`
+	Namespace       string                  `json:"namespace"`
+	Phase           supervisor.RolloutPhase `json:"phase"`
+	FromVersion     string                  `json:"fromVersion,omitempty"`
+	TargetVersion   string                  `json:"targetVersion,omitempty"`
+	ActiveVersion   string                  `json:"activeVersion,omitempty"`
+	PreviousVersion string                  `json:"previousVersion,omitempty"`
+	DesiredReplicas int                     `json:"desiredReplicas"`
+	ReadyReplicas   int                     `json:"readyReplicas"`
+	UpdatedReplicas int                     `json:"updatedReplicas"`
+	StartedAt       time.Time               `json:"startedAt,omitempty"`
+	UpdatedAt       time.Time               `json:"updatedAt,omitempty"`
+	FailureReason   string                  `json:"failureReason,omitempty"`
+	Message         string                  `json:"message,omitempty"`
+	TraceID         string                  `json:"traceId"`
+}
+
+func formatRolloutResponse(svc *supervisor.Service, traceID string) rolloutResponse {
+	return rolloutResponse{
+		APIVersion:      "fenced.dev/v1",
+		Kind:            "ServiceRollout",
+		ServiceID:       svc.ID,
+		TenantID:        svc.TenantID,
+		Namespace:       svc.Namespace,
+		Phase:           svc.Status.RolloutPhase,
+		FromVersion:     svc.Status.RolloutFromVersion,
+		TargetVersion:   svc.Status.RolloutTargetVersion,
+		ActiveVersion:   svc.Status.ActiveVersion,
+		PreviousVersion: svc.Status.PreviousVersion,
+		DesiredReplicas: svc.Status.DesiredReplicas,
+		ReadyReplicas:   svc.Status.ReadyReplicas,
+		UpdatedReplicas: svc.Status.UpdatedReplicas,
+		StartedAt:       svc.Status.RolloutStartedAt.UTC(),
+		UpdatedAt:       svc.Status.RolloutUpdatedAt.UTC(),
+		FailureReason:   svc.Status.RolloutFailureReason,
+		Message:         svc.Status.Message,
+		TraceID:         traceID,
 	}
 }
 
@@ -368,6 +418,106 @@ func (h *Handler) restartService(writer http.ResponseWriter, request *http.Reque
 
 	svc, _ := h.supervisor.GetService(request.Context(), principal.TenantID, serviceID)
 	writeJSON(writer, http.StatusOK, formatServiceResponse(svc, traceID))
+}
+
+// rolloutService moves a service to another agent version without dropping
+// it (POST /v1/services/{serviceID}/rollout). A serving instance is only
+// replaced after its replacement has proven itself, and a rollout that fails
+// returns the service to the version it ran before when the service asked
+// for an automatic rollback.
+func (h *Handler) rolloutService(writer http.ResponseWriter, request *http.Request) {
+	traceID := traceIDFrom(request.Context())
+	principal, ok := auth.PrincipalFromContext(request.Context())
+	if !ok {
+		h.writeProblem(writer, request, http.StatusUnauthorized, "AUTHENTICATION_REQUIRED", "authenticated principal is required", traceID)
+		return
+	}
+	if h.supervisor == nil {
+		h.writeProblem(writer, request, http.StatusNotFound, "SERVICES_DISABLED", "service supervisor is not configured", traceID)
+		return
+	}
+
+	var body rolloutServiceRequest
+	if err := json.NewDecoder(io.LimitReader(request.Body, 1<<20)).Decode(&body); err != nil {
+		h.writeProblem(writer, request, http.StatusBadRequest, "INVALID_REQUEST", "request body is not a valid rollout request", traceID)
+		return
+	}
+	if strings.TrimSpace(body.NewVersion) == "" {
+		h.writeProblem(writer, request, http.StatusBadRequest, "INVALID_REQUEST", "newVersion is required", traceID)
+		return
+	}
+
+	serviceID := request.PathValue("serviceID")
+	svc, err := h.supervisor.RolloutUpgradeWithConfig(request.Context(), principal.TenantID, serviceID, body.NewVersion, body.Config)
+	if err != nil {
+		h.writeServiceProblem(writer, request, err, traceID)
+		return
+	}
+	writeJSON(writer, http.StatusAccepted, formatServiceResponse(svc, traceID))
+}
+
+// rollbackService returns a service to the version it ran before
+// (POST /v1/services/{serviceID}/rollback).
+func (h *Handler) rollbackService(writer http.ResponseWriter, request *http.Request) {
+	traceID := traceIDFrom(request.Context())
+	principal, ok := auth.PrincipalFromContext(request.Context())
+	if !ok {
+		h.writeProblem(writer, request, http.StatusUnauthorized, "AUTHENTICATION_REQUIRED", "authenticated principal is required", traceID)
+		return
+	}
+	if h.supervisor == nil {
+		h.writeProblem(writer, request, http.StatusNotFound, "SERVICES_DISABLED", "service supervisor is not configured", traceID)
+		return
+	}
+
+	serviceID := request.PathValue("serviceID")
+	svc, err := h.supervisor.RollbackService(request.Context(), principal.TenantID, serviceID)
+	if err != nil {
+		h.writeServiceProblem(writer, request, err, traceID)
+		return
+	}
+	writeJSON(writer, http.StatusAccepted, formatServiceResponse(svc, traceID))
+}
+
+// getServiceRollout reports the rollout of a service
+// (GET /v1/services/{serviceID}/rollout).
+func (h *Handler) getServiceRollout(writer http.ResponseWriter, request *http.Request) {
+	traceID := traceIDFrom(request.Context())
+	principal, ok := auth.PrincipalFromContext(request.Context())
+	if !ok {
+		h.writeProblem(writer, request, http.StatusUnauthorized, "AUTHENTICATION_REQUIRED", "authenticated principal is required", traceID)
+		return
+	}
+	if h.supervisor == nil {
+		h.writeProblem(writer, request, http.StatusNotFound, "SERVICES_DISABLED", "service supervisor is not configured", traceID)
+		return
+	}
+
+	serviceID := request.PathValue("serviceID")
+	svc, err := h.supervisor.GetService(request.Context(), principal.TenantID, serviceID)
+	if err != nil {
+		h.writeServiceProblem(writer, request, err, traceID)
+		return
+	}
+	writeJSON(writer, http.StatusOK, formatRolloutResponse(svc, traceID))
+}
+
+// writeServiceProblem maps a supervisor failure to a problem document.
+func (h *Handler) writeServiceProblem(writer http.ResponseWriter, request *http.Request, err error, traceID string) {
+	switch {
+	case errors.Is(err, supervisor.ErrServiceNotFound):
+		h.writeProblem(writer, request, http.StatusNotFound, "SERVICE_NOT_FOUND", "service not found", traceID)
+	case errors.Is(err, supervisor.ErrRolloutInProgress):
+		h.writeProblem(writer, request, http.StatusConflict, "ROLLOUT_IN_PROGRESS", err.Error(), traceID)
+	case errors.Is(err, supervisor.ErrNoPreviousVersion):
+		h.writeProblem(writer, request, http.StatusConflict, "NO_PREVIOUS_VERSION", err.Error(), traceID)
+	case errors.Is(err, supervisor.ErrInvalidServiceSpec):
+		h.writeProblem(writer, request, http.StatusUnprocessableEntity, "INVALID_SERVICE_SPEC", err.Error(), traceID)
+	case errors.Is(err, supervisor.ErrServiceTerminated):
+		h.writeProblem(writer, request, http.StatusConflict, "SERVICE_TERMINATED", err.Error(), traceID)
+	default:
+		h.writeProblem(writer, request, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error(), traceID)
+	}
 }
 
 // stopService disables autowake and requests cancellation of every active task.

@@ -756,6 +756,21 @@
         <div id="view-governance" class="view-container">
           <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <span style="font-size: 15px; font-weight: 700; text-transform: uppercase;">Services &amp; Rollouts</span>
+              <button class="chip" onclick="loadServices()">Refresh</button>
+            </div>
+            <div style="overflow-x: auto;">
+              <table>
+                <thead>
+                  <tr><th>Service</th><th>Agent</th><th>Version</th><th>Phase</th><th>Rollout</th><th>Ready</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="serviceTableBody"><tr><td colspan="7" style="text-align: center;">No token connected.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
               <span style="font-size: 15px; font-weight: 700; text-transform: uppercase;">Runtime Pools</span>
               <button class="chip" onclick="loadGovernance()">Refresh</button>
             </div>
@@ -1042,6 +1057,8 @@
       /* Governance: pools, publications, workflows, tools          */
       /* ---------------------------------------------------------- */
       function loadGovernance() {
+        loadServices();
+
         api('GET', '/v1/runtime-pools').then(function (document_) {
           var pools = (document_ && document_.runtimePools) || [];
           fill('poolTableBody', pools.map(function (pool) {
@@ -1070,6 +1087,76 @@
             return [tool.name, tool.version, tool.sideEffectRisk];
           }), 3);
         }).catch(fail);
+      }
+
+      /* ---------------------------------------------------------- */
+      /* Services: the supervised fleets and their rollouts         */
+      /* ---------------------------------------------------------- */
+      function loadServices() {
+        api('GET', '/v1/services').then(function (payload) {
+          var services = Array.isArray(payload) ? payload : ((payload && payload.services) || []);
+          var body = document.getElementById('serviceTableBody');
+          body.textContent = '';
+          if (!services.length) {
+            body.appendChild(emptyRow(7, 'no services'));
+            return;
+          }
+          services.forEach(function (service) {
+            var status = service.status || {};
+            var tr = document.createElement('tr');
+            [
+              service.name,
+              service.agentId,
+              status.activeVersion || '—',
+              status.phase || '—',
+              status.rolloutPhase || '—',
+              (status.readyReplicas || 0) + '/' + (status.desiredReplicas || 0)
+            ].forEach(function (value) { tr.appendChild(cell(value)); });
+
+            var actions = document.createElement('td');
+            var roll = document.createElement('button');
+            roll.className = 'chip';
+            roll.textContent = 'Roll out';
+            roll.onclick = function () { promptRollout(service.id); };
+            actions.appendChild(roll);
+            var back = document.createElement('button');
+            back.className = 'chip';
+            back.textContent = 'Roll back';
+            back.onclick = function () { rollbackService(service.id); };
+            actions.appendChild(back);
+            tr.appendChild(actions);
+            body.appendChild(tr);
+          });
+        }).catch(fail);
+      }
+
+      function emptyRow(columns, text) {
+        var tr = document.createElement('tr');
+        var td = document.createElement('td');
+        td.colSpan = columns;
+        td.style.textAlign = 'center';
+        td.textContent = text;
+        tr.appendChild(td);
+        return tr;
+      }
+
+      function promptRollout(serviceID) {
+        var version = window.prompt('Target agent version (name@version):', '');
+        if (!version) { return; }
+        api('POST', '/v1/services/' + encodeURIComponent(serviceID) + '/rollout', {
+          newVersion: version.trim()
+        }).then(function () {
+          loadServices();
+          loadGovernance();
+        }).catch(function (error) { fail(error); });
+      }
+
+      function rollbackService(serviceID) {
+        api('POST', '/v1/services/' + encodeURIComponent(serviceID) + '/rollback')
+          .then(function () {
+            loadServices();
+            loadGovernance();
+          }).catch(function (error) { fail(error); });
       }
 
       /* ---------------------------------------------------------- */
@@ -1124,6 +1211,7 @@
       window.clearToken = clearToken;
       window.loadOverview = loadOverview;
       window.loadGovernance = loadGovernance;
+      window.loadServices = loadServices;
       window.loadAudit = loadAudit;
       window.submitTask = submitTask;
       window.followTask = followTask;
