@@ -126,6 +126,9 @@ func (p *TaskSpawner) PrepareInstance(svc *Service, inst *Instance) {
 	inst.TaskID = &id
 	inst.FencingToken = 0
 	inst.LastHeartbeat = time.Time{}
+	// A new generation has to prove itself again before a rollout may rely
+	// on it.
+	inst.ReadyAt = nil
 	inst.Phase = InstanceStarting
 }
 

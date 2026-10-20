@@ -95,6 +95,18 @@ func (s *Supervisor) RolloutUpgrade(ctx context.Context, tenant, id, version str
 	return result, err
 }
 
+// RolloutUpgradeWithConfig starts a rollout with an explicit configuration.
+// The configuration overrides the rollout settings of the service; the frozen
+// service contract carries the same override in RolloutUpgradeRequest.config.
+func (s *Supervisor) RolloutUpgradeWithConfig(ctx context.Context, tenant, id, version string, config *RolloutConfig) (*Service, error) {
+	var result *Service
+	err := s.withService(ctx, tenant, id, func(scoped *Supervisor) (err error) {
+		result, err = scoped.rolloutUpgradeWithConfig(ctx, tenant, id, version, config)
+		return err
+	})
+	return result, err
+}
+
 func (s *Supervisor) RollbackService(ctx context.Context, tenant, id string) (*Service, error) {
 	var result *Service
 	err := s.withService(ctx, tenant, id, func(scoped *Supervisor) (err error) {

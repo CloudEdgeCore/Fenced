@@ -378,6 +378,13 @@ func (s *Supervisor) drainInstance(ctx context.Context, tenantID, serviceID, ins
 
 // RolloutUpgrade updates the service's target version and triggers rolling reconciliation.
 func (s *Supervisor) rolloutUpgrade(ctx context.Context, tenantID, serviceID, newVersion string) (*Service, error) {
+	return s.rolloutUpgradeWithConfig(ctx, tenantID, serviceID, newVersion, nil)
+}
+
+// rolloutUpgrade starts a rollout. An explicit configuration overrides the
+// rollout settings of the service; the frozen service contract carries the
+// same override in RolloutUpgradeRequest.config.
+func (s *Supervisor) rolloutUpgradeWithConfig(ctx context.Context, tenantID, serviceID, newVersion string, config *RolloutConfig) (*Service, error) {
 	if strings.TrimSpace(newVersion) == "" {
 		return nil, fmt.Errorf("%w: target agent version cannot be empty", ErrInvalidServiceSpec)
 	}
@@ -389,17 +396,25 @@ func (s *Supervisor) rolloutUpgrade(ctx context.Context, tenantID, serviceID, ne
 	if svc.Status.Phase == ServiceTerminated {
 		return nil, ErrServiceTerminated
 	}
+	if svc.Status.RolloutPhase == RolloutPhaseProgressing || svc.Status.RolloutPhase == RolloutPhaseRollingBack {
+		return nil, fmt.Errorf("%w: a rollout to %s is still in progress", ErrRolloutInProgress, svc.Status.RolloutTargetVersion)
+	}
 
 	if svc.Spec.AgentVersion == newVersion {
 		return svc, nil
 	}
 
-	svc.Status.PreviousVersion = svc.Spec.AgentVersion
+	if config != nil {
+		svc.Spec.Rollout = config.normalized()
+	}
+	from := svc.Spec.AgentVersion
+	svc.Status.PreviousVersion = from
 	svc.Spec.AgentVersion = newVersion
 	svc.Spec.AgentVersionRef = newVersion
 	if err := s.validateLaunch(ctx, svc); err != nil {
 		return nil, err
 	}
+	startRollout(svc, from, newVersion, s.clock())
 	svc.UpdatedAt = s.clock()
 
 	if err := s.store.UpdateService(ctx, svc); err != nil {
@@ -434,6 +449,14 @@ func (s *Supervisor) rollbackService(ctx context.Context, tenantID, serviceID st
 		return nil, err
 	}
 	svc.Status.PreviousVersion = curr
+	// The rollback is a movement between versions like any rollout: it is
+	// recorded in the durable status and closes when the service converged.
+	svc.Status.RolloutPhase = RolloutPhaseRollingBack
+	svc.Status.RolloutFromVersion = curr
+	svc.Status.RolloutTargetVersion = prev
+	svc.Status.RolloutStartedAt = s.clock()
+	svc.Status.RolloutUpdatedAt = s.clock()
+	svc.Status.RolloutFailureReason = ""
 	svc.UpdatedAt = s.clock()
 
 	if err := s.store.UpdateService(ctx, svc); err != nil {
@@ -522,6 +545,30 @@ func (s *Supervisor) reconcileService(ctx context.Context, svc *Service) error {
 			}
 		}
 	}
+	// 0b. Readiness bookkeeping: an instance is proven ready once it has been
+	// observed healthy without interruption. A rollout may only replace a
+	// serving instance after its replacement has proven itself.
+	for _, inst := range instances {
+		if inst.Phase == InstanceRunning {
+			if inst.ReadyAt == nil {
+				readyAt := now
+				inst.ReadyAt = &readyAt
+				inst.UpdatedAt = now
+				if err := s.store.UpdateInstance(ctx, inst); err != nil {
+					return err
+				}
+			}
+			continue
+		}
+		if inst.ReadyAt != nil {
+			inst.ReadyAt = nil
+			inst.UpdatedAt = now
+			if err := s.store.UpdateInstance(ctx, inst); err != nil {
+				return err
+			}
+		}
+	}
+
 	// 1. Health inspection: check heartbeats
 	for _, inst := range instances {
 		if inst.Phase == InstanceRunning || inst.Phase == InstanceStarting || inst.Phase == InstanceDegraded {
@@ -571,6 +618,13 @@ func (s *Supervisor) reconcileService(ctx context.Context, svc *Service) error {
 				}
 			}
 		}
+	}
+
+	// 2b. Rollout judgement: a target version that fails ends the rollout.
+	// The check runs before the crash recovery path, so a failed version is
+	// not resurrected by the restart policy before it is judged.
+	if err := s.advanceRollout(ctx, svc, instances, now); err != nil {
+		return err
 	}
 
 	// 3. Crash recovery & restart policy handling
@@ -633,6 +687,9 @@ func (s *Supervisor) reconcileService(ctx context.Context, svc *Service) error {
 					inst.ExitCode = 0
 					inst.ExitReason = ""
 					inst.TerminatedAt = nil
+					// A restarted instance has to prove itself again before a
+					// rollout may rely on it.
+					inst.ReadyAt = nil
 					inst.UpdatedAt = now
 
 					s.prepareLaunch(svc, inst)
@@ -774,6 +831,18 @@ func (s *Supervisor) reconcileService(ctx context.Context, svc *Service) error {
 			}
 			canDrain = updatedReady > 0 && healthyCount-1 >= minAllowedHealthy
 		}
+		// The replacement has to have proven itself before the instance it
+		// replaces is drained. Without this gate a rollout trades a working
+		// replica for one that has never run, and the service goes down.
+		provenUpdated := 0
+		for _, inst := range updatedActiveInstances {
+			if provenReady(inst, svc.Spec.Rollout.MinReadyTime, now) {
+				provenUpdated++
+			}
+		}
+		if provenUpdated == 0 {
+			canDrain = false
+		}
 		if canDrain && len(outdatedActiveInstances) > 0 {
 			instToDrain := outdatedActiveInstances[0]
 			instToDrain.Phase = InstanceDraining
@@ -896,6 +965,21 @@ func (s *Supervisor) reconcileService(ctx context.Context, svc *Service) error {
 			svc.Status.LastTransitionAt = now
 			svc.Status.Message = "No healthy replicas running"
 		}
+	}
+
+	// 8. Rollout completion: a rollout that converged is closed.
+	completeRollout(svc, now)
+	// A rollout explains the service better than the replica counts do. The
+	// operator has to see why the service is where it is.
+	switch svc.Status.RolloutPhase {
+	case RolloutPhaseProgressing:
+		svc.Status.Message = fmt.Sprintf("Rolling update to %s in progress (%d/%d updated)",
+			svc.Status.RolloutTargetVersion, updatedCount, desired)
+	case RolloutPhaseRollingBack:
+		svc.Status.Message = fmt.Sprintf("Rolling back to %s", svc.Status.RolloutFromVersion)
+	case RolloutPhaseFailed:
+		svc.Status.Message = fmt.Sprintf("Rollout to %s failed: %s",
+			svc.Status.RolloutTargetVersion, svc.Status.RolloutFailureReason)
 	}
 
 	svc.UpdatedAt = now

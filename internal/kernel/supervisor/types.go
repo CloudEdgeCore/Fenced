@@ -59,6 +59,26 @@ type RolloutConfig struct {
 	MaxUnavailable int           `json:"maxUnavailable"`
 	MaxSurge       int           `json:"maxSurge"`
 	MinReadyTime   time.Duration `json:"minReadyTime,omitempty"`
+	// AutoRollback returns the service to the version it ran before when the
+	// rollout fails. The frozen service contract carries the same field
+	// (auto_rollback); the kernel now honours it instead of only storing it.
+	AutoRollback bool `json:"autoRollback,omitempty"`
+}
+
+// normalized returns the rollout settings with their defaults applied. A
+// rollout with a zero surge cannot replace an instance without dropping the
+// service, so the default keeps one spare replica.
+func (r RolloutConfig) normalized() RolloutConfig {
+	if r.MaxUnavailable <= 0 {
+		r.MaxUnavailable = 1
+	}
+	if r.MaxSurge <= 0 {
+		r.MaxSurge = 1
+	}
+	if r.MinReadyTime < 0 {
+		r.MinReadyTime = 0
+	}
+	return r
 }
 
 // DefaultRolloutConfig returns default rollout settings (maxUnavailable=1, maxSurge=1).
@@ -196,6 +216,27 @@ func (s *ServiceSpec) Validate() error {
 	return nil
 }
 
+// RolloutPhase is the phase of a version rollout. A rollout is the movement
+// of a service from one agent version to another.
+type RolloutPhase string
+
+const (
+	// RolloutPhaseNone means no rollout was started.
+	RolloutPhaseNone RolloutPhase = ""
+	// RolloutPhaseProgressing means the service is moving to the target version.
+	RolloutPhaseProgressing RolloutPhase = "PROGRESSING"
+	// RolloutPhaseSucceeded means every replica runs the target version.
+	RolloutPhaseSucceeded RolloutPhase = "SUCCEEDED"
+	// RolloutPhaseFailed means the rollout failed and the service kept the
+	// target version; the operator decides what happens next.
+	RolloutPhaseFailed RolloutPhase = "FAILED"
+	// RolloutPhaseRollingBack means the service is returning to the version it
+	// ran before the failed rollout.
+	RolloutPhaseRollingBack RolloutPhase = "ROLLING_BACK"
+	// RolloutPhaseRolledBack means the service is back on its previous version.
+	RolloutPhaseRolledBack RolloutPhase = "ROLLED_BACK"
+)
+
 // ServiceStatus tracks the observed state of an AgentService.
 type ServiceStatus struct {
 	Phase             ServicePhase `json:"phase"`
@@ -209,6 +250,16 @@ type ServiceStatus struct {
 	RestartCount      int          `json:"restartCount"`
 	LastTransitionAt  time.Time    `json:"lastTransitionAt"`
 	Message           string       `json:"message,omitempty"`
+
+	// The rollout fields describe the movement between agent versions. They
+	// are part of the durable status, so a controller restart resumes the
+	// rollout instead of forgetting it.
+	RolloutPhase         RolloutPhase `json:"rolloutPhase,omitempty"`
+	RolloutFromVersion   string       `json:"rolloutFromVersion,omitempty"`
+	RolloutTargetVersion string       `json:"rolloutTargetVersion,omitempty"`
+	RolloutStartedAt     time.Time    `json:"rolloutStartedAt,omitempty"`
+	RolloutUpdatedAt     time.Time    `json:"rolloutUpdatedAt,omitempty"`
+	RolloutFailureReason string       `json:"rolloutFailureReason,omitempty"`
 }
 
 // Service represents a supervised long-running agent daemon.
@@ -267,13 +318,17 @@ type Instance struct {
 	ConsecutiveFailures int              `json:"consecutiveFailures"`
 	NextRestartAt       *time.Time       `json:"nextRestartAt,omitempty"`
 	LastHeartbeat       time.Time        `json:"lastHeartbeat"`
-	DrainingAt          *time.Time       `json:"drainingAt,omitempty"`
-	DrainDeadline       *time.Time       `json:"drainDeadline,omitempty"`
-	CreatedAt           time.Time        `json:"createdAt"`
-	UpdatedAt           time.Time        `json:"updatedAt"`
-	TerminatedAt        *time.Time       `json:"terminatedAt,omitempty"`
-	ExitCode            int              `json:"exitCode,omitempty"`
-	ExitReason          string           `json:"exitReason,omitempty"`
+	// ReadyAt is the moment the instance was first observed healthy in its
+	// current generation. A rollout replaces a serving instance only after
+	// its replacement has proven itself for the configured minimum time.
+	ReadyAt       *time.Time `json:"readyAt,omitempty"`
+	DrainingAt    *time.Time `json:"drainingAt,omitempty"`
+	DrainDeadline *time.Time `json:"drainDeadline,omitempty"`
+	CreatedAt     time.Time  `json:"createdAt"`
+	UpdatedAt     time.Time  `json:"updatedAt"`
+	TerminatedAt  *time.Time `json:"terminatedAt,omitempty"`
+	ExitCode      int        `json:"exitCode,omitempty"`
+	ExitReason    string     `json:"exitReason,omitempty"`
 }
 
 // IsHealthy returns true if the instance is currently running and active.

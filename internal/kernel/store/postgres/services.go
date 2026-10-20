@@ -222,7 +222,8 @@ func (s *Store) ListServices(ctx context.Context, tenantID, namespace string) ([
 const serviceInstanceColumns = `id, service_id, tenant_id, namespace, agent_id, address,
     phase, restart_count, consecutive_failures, next_restart_at,
     last_heartbeat, created_at, updated_at, terminated_at, exit_code, COALESCE(exit_reason, ''),
-    agent_version, runtime_class, fencing_token, task_id, launch_spec, draining_at, drain_deadline`
+    agent_version, runtime_class, fencing_token, task_id, launch_spec, draining_at, drain_deadline,
+    ready_at`
 
 func scanServiceInstance(row scanner) (*supervisor.Instance, error) {
 	var inst supervisor.Instance
@@ -231,7 +232,7 @@ func scanServiceInstance(row scanner) (*supervisor.Instance, error) {
 		&address, &inst.Phase, &inst.RestartCount, &inst.ConsecutiveFailures, &inst.NextRestartAt,
 		&inst.LastHeartbeat, &inst.CreatedAt, &inst.UpdatedAt, &inst.TerminatedAt, &inst.ExitCode,
 		&inst.ExitReason, &inst.AgentVersion, &inst.RuntimeClass, &inst.FencingToken, &inst.TaskID,
-		&inst.LaunchSpec, &inst.DrainingAt, &inst.DrainDeadline); err != nil {
+		&inst.LaunchSpec, &inst.DrainingAt, &inst.DrainDeadline, &inst.ReadyAt); err != nil {
 		return nil, err
 	}
 	if err := json.Unmarshal(address, &inst.Address); err != nil {
@@ -261,14 +262,15 @@ func (s *Store) CreateInstance(ctx context.Context, inst *supervisor.Instance) e
         id, service_id, tenant_id, namespace, agent_id, address,
         phase, restart_count, consecutive_failures, next_restart_at,
         last_heartbeat, created_at, updated_at, terminated_at, exit_code, exit_reason,
-        agent_version, runtime_class, fencing_token, task_id, launch_spec, draining_at, drain_deadline
+        agent_version, runtime_class, fencing_token, task_id, launch_spec, draining_at, drain_deadline,
+        ready_at
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
-        $17, $18, $19, $20, $21, $22, $23)`,
+        $17, $18, $19, $20, $21, $22, $23, $24)`,
 		inst.ID, inst.ServiceID, inst.TenantID, inst.Namespace, inst.AgentID, address,
 		string(inst.Phase), inst.RestartCount, inst.ConsecutiveFailures, inst.NextRestartAt,
 		inst.LastHeartbeat, inst.CreatedAt, inst.UpdatedAt, inst.TerminatedAt, inst.ExitCode, inst.ExitReason,
 		inst.AgentVersion, inst.RuntimeClass, inst.FencingToken, inst.TaskID, inst.LaunchSpec,
-		inst.DrainingAt, inst.DrainDeadline)
+		inst.DrainingAt, inst.DrainDeadline, inst.ReadyAt)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -305,13 +307,13 @@ func (s *Store) UpdateInstance(ctx context.Context, inst *supervisor.Instance) e
             next_restart_at = $5, last_heartbeat = $6, updated_at = $7,
             terminated_at = $8, exit_code = $9, exit_reason = $10,
             agent_version = $11, runtime_class = $12, fencing_token = $13, task_id = $14,
-            launch_spec = $15, draining_at = $16, drain_deadline = $17
-        WHERE tenant_id = $18 AND service_id = $19 AND id = $20`,
+            launch_spec = $15, draining_at = $16, drain_deadline = $17, ready_at = $18
+        WHERE tenant_id = $19 AND service_id = $20 AND id = $21`,
 		address, string(inst.Phase), inst.RestartCount, inst.ConsecutiveFailures,
 		inst.NextRestartAt, inst.LastHeartbeat, inst.UpdatedAt,
 		inst.TerminatedAt, inst.ExitCode, inst.ExitReason,
 		inst.AgentVersion, inst.RuntimeClass, inst.FencingToken, inst.TaskID, inst.LaunchSpec,
-		inst.DrainingAt, inst.DrainDeadline, inst.TenantID, inst.ServiceID, inst.ID)
+		inst.DrainingAt, inst.DrainDeadline, inst.ReadyAt, inst.TenantID, inst.ServiceID, inst.ID)
 	if err != nil {
 		return err
 	}
