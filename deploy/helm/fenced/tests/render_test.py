@@ -85,6 +85,48 @@ class RenderTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("must use HTTPS", result.stderr)
 
+    def test_the_control_plane_upgrades_without_downtime(self):
+        """A rolling upgrade must not take the API away."""
+        documents = self.render()
+        deployment = documents["Deployment"]
+        spec = deployment["spec"]
+
+        # The new replica joins before the old one leaves.
+        self.assertEqual(spec["strategy"]["type"], "RollingUpdate")
+        self.assertEqual(spec["strategy"]["rollingUpdate"]["maxUnavailable"], 0)
+        self.assertEqual(spec["strategy"]["rollingUpdate"]["maxSurge"], 1)
+
+        # A replica counts as available only after it stayed ready.
+        self.assertGreaterEqual(spec["minReadySeconds"], 1)
+
+        # A rollout that cannot finish fails instead of waiting forever.
+        self.assertGreaterEqual(spec["progressDeadlineSeconds"], 60)
+
+        # The old replica may finish its work before it is killed.
+        pod = spec["template"]["spec"]
+        self.assertGreaterEqual(pod["terminationGracePeriodSeconds"], 10)
+
+        # A voluntary disruption may not take the last replica down.
+        budget = documents["PodDisruptionBudget"]
+        self.assertGreaterEqual(budget["spec"]["minAvailable"], 1)
+        self.assertEqual(
+            budget["spec"]["selector"]["matchLabels"],
+            deployment["spec"]["selector"]["matchLabels"],
+        )
+
+    def test_the_upgrade_drain_delay_is_opt_in(self):
+        """The preStop delay needs a cluster with the Sleep handler."""
+        documents = self.render()
+        pod = documents["Deployment"]["spec"]["template"]["spec"]
+        container = pod["containers"][0]
+        self.assertNotIn("lifecycle", container)
+
+        values = copy.deepcopy(PRODUCTION)
+        values["upgrade"] = {"preStopSleepSeconds": 5}
+        documents = self.render(values)
+        container = documents["Deployment"]["spec"]["template"]["spec"]["containers"][0]
+        self.assertEqual(container["lifecycle"]["preStop"]["sleep"]["seconds"], 5)
+
     def test_production_startup_and_https_probes(self):
         documents = self.render()
         pod = documents["Deployment"]["spec"]["template"]["spec"]

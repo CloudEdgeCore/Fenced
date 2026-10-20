@@ -15,6 +15,31 @@ serviceAccount:
   annotations: {}
   automountToken: false
 
+# Rolling upgrade of the control plane. A new replica joins and becomes ready
+# before an old one leaves, so the API stays reachable during the rollout.
+upgrade:
+  # The old replica is only taken away when the new one is serving.
+  maxUnavailable: 0
+  # The number of replicas that may exist above the desired count.
+  maxSurge: 1
+  # A replica has to stay ready for this long before it counts as available.
+  minReadySeconds: 10
+  # The rollout fails when a replica is not ready within this window, instead
+  # of waiting forever.
+  progressDeadlineSeconds: 600
+  # The time a replica may take to finish its work before it is killed. The
+  # control plane stops accepting new work on SIGTERM and finishes what it
+  # has.
+  terminationGracePeriodSeconds: 30
+  # A voluntary disruption (a node drain) may not take the last replica down.
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  # Delay between the removal of the replica from the Service and the
+  # SIGTERM, so in-flight requests are not cut off. Needs a cluster with the
+  # Sleep lifecycle handler (Kubernetes 1.29 or newer); 0 disables it.
+  preStopSleepSeconds: 0
+
 controlPlane:
   port: 8080
   service:

@@ -1,0 +1,19 @@
+{{- if .Values.upgrade.podDisruptionBudget.enabled }}
+{{- /*
+  A voluntary disruption - a node drain, a cluster upgrade - may not take the
+  last replica of the control plane down. The API has to stay reachable
+  while the cluster moves.
+*/ -}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "fenced.fullname" . }}-control
+  labels:
+    app.kubernetes.io/name: fenced-control
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  minAvailable: {{ .Values.upgrade.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "fenced.controlSelectorLabels" . | nindent 6 }}
+{{- end }}

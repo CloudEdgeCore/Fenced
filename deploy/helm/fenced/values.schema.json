@@ -3,89 +3,221 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "nameOverride": {"type": "string"},
-    "fullnameOverride": {"type": "string"},
-    "replicaCount": {"type": "integer", "minimum": 1},
+    "nameOverride": {
+      "type": "string"
+    },
+    "fullnameOverride": {
+      "type": "string"
+    },
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 1
+    },
     "image": {
-      "type": "object", "additionalProperties": false,
+      "type": "object",
+      "additionalProperties": false,
       "properties": {
-        "repository": {"type": "string", "minLength": 1},
-        "tag": {"type": "string", "minLength": 1},
-        "pullPolicy": {"enum": ["Always", "IfNotPresent", "Never"]}
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tag": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pullPolicy": {
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ]
+        }
       }
     },
     "serviceAccount": {
-      "type": "object", "additionalProperties": false,
+      "type": "object",
+      "additionalProperties": false,
       "properties": {
-        "create": {"type": "boolean"},
-        "name": {"type": "string"},
-        "automountToken": {"type": "boolean"},
-        "annotations": {"type": "object", "additionalProperties": {"type": "string"}}
+        "create": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "automountToken": {
+          "type": "boolean"
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
       }
     },
     "controlPlane": {
-      "type": "object", "additionalProperties": false,
+      "type": "object",
+      "additionalProperties": false,
       "properties": {
-        "port": {"type": "integer", "minimum": 1, "maximum": 65535},
-        "resources": {"type": "object"},
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "resources": {
+          "type": "object"
+        },
         "service": {
-          "type": "object", "additionalProperties": false,
+          "type": "object",
+          "additionalProperties": false,
           "properties": {
-            "type": {"enum": ["ClusterIP", "NodePort", "LoadBalancer"]},
-            "port": {"type": "integer", "minimum": 1, "maximum": 65535}
+            "type": {
+              "enum": [
+                "ClusterIP",
+                "NodePort",
+                "LoadBalancer"
+              ]
+            },
+            "port": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            }
           }
         }
       }
     },
     "database": {
-      "type": "object", "additionalProperties": false,
+      "type": "object",
+      "additionalProperties": false,
       "properties": {
-        "existingSecret": {"type": "string"},
-        "secretKey": {"type": "string"}
+        "existingSecret": {
+          "type": "string"
+        },
+        "secretKey": {
+          "type": "string"
+        }
       }
     },
     "security": {
-      "type": "object", "additionalProperties": false,
+      "type": "object",
+      "additionalProperties": false,
       "properties": {
         "oidc": {
-          "type": "object", "additionalProperties": false,
+          "type": "object",
+          "additionalProperties": false,
           "properties": {
-            "issuer": {"type": "string"},
-            "clientID": {"type": "string"},
-            "tenantClaim": {"type": "string"}
+            "issuer": {
+              "type": "string"
+            },
+            "clientID": {
+              "type": "string"
+            },
+            "tenantClaim": {
+              "type": "string"
+            }
           }
         },
         "tls": {
-          "type": "object", "additionalProperties": false,
+          "type": "object",
+          "additionalProperties": false,
           "properties": {
-            "existingSecret": {"type": "string"},
-            "certificateKey": {"type": "string"},
-            "privateKeyKey": {"type": "string"}
+            "existingSecret": {
+              "type": "string"
+            },
+            "certificateKey": {
+              "type": "string"
+            },
+            "privateKeyKey": {
+              "type": "string"
+            }
           }
         },
         "audit": {
-          "type": "object", "additionalProperties": false,
+          "type": "object",
+          "additionalProperties": false,
           "properties": {
-            "existingSecret": {"type": "string"},
-            "privateKeyKey": {"type": "string"},
-            "keyID": {"type": "string"}
+            "existingSecret": {
+              "type": "string"
+            },
+            "privateKeyKey": {
+              "type": "string"
+            },
+            "keyID": {
+              "type": "string"
+            }
           }
         },
         "packageTrust": {
-          "type": "object", "additionalProperties": false,
+          "type": "object",
+          "additionalProperties": false,
           "properties": {
-            "existingSecret": {"type": "string"},
-            "keysKey": {"type": "string"}
+            "existingSecret": {
+              "type": "string"
+            },
+            "keysKey": {
+              "type": "string"
+            }
           }
         }
       }
     },
     "embedding": {
-      "type": "object", "additionalProperties": false,
+      "type": "object",
+      "additionalProperties": false,
       "properties": {
-        "endpoint": {"type": "string"},
-        "tokenSecret": {"type": "string"},
-        "tokenSecretKey": {"type": "string"}
+        "endpoint": {
+          "type": "string"
+        },
+        "tokenSecret": {
+          "type": "string"
+        },
+        "tokenSecretKey": {
+          "type": "string"
+        }
+      }
+    },
+    "upgrade": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxUnavailable": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxSurge": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minReadySeconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "progressDeadlineSeconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "terminationGracePeriodSeconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "podDisruptionBudget": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "minAvailable": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "preStopSleepSeconds": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     }
   }

@@ -92,6 +92,29 @@ Deployment, recreate that Deployment during a planned upgrade: the selectors
 now include the release identity, and Kubernetes Deployment selectors are
 immutable. Separate releases in one namespace no longer share Service selectors.
 
+## Upgrading the control plane without downtime
+
+The chart upgrades the control plane the same way the kernel rolls a service:
+the new replica joins and becomes ready before the old one leaves.
+
+| Value | Default | Meaning |
+| :--- | :--- | :--- |
+| `upgrade.maxUnavailable` | 0 | The old replica is only taken away when the new one serves |
+| `upgrade.maxSurge` | 1 | The new replica joins before the old one leaves |
+| `upgrade.minReadySeconds` | 10 | A replica counts as available only after it stayed ready |
+| `upgrade.progressDeadlineSeconds` | 600 | The rollout fails instead of waiting forever |
+| `upgrade.terminationGracePeriodSeconds` | 30 | The replica may finish its work; the control plane drains on SIGTERM |
+| `upgrade.podDisruptionBudget.enabled` | true | A voluntary disruption may not take the last replica down |
+| `upgrade.podDisruptionBudget.minAvailable` | 1 | The number of replicas that survive a node drain |
+| `upgrade.preStopSleepSeconds` | 0 | Optional delay between the removal from the Service and the SIGTERM; needs the Sleep lifecycle handler (Kubernetes 1.29 or newer) |
+
+The schema of the control plane is migrated forward before the new replica
+starts. Migrations are forward-only and additive, so the old replica keeps
+working against the new schema.
+
+The rollout of an *agent* version is a different operation and lives in the
+Control API: see `docs/operations/rolling-upgrade.md`.
+
 ## Render verification
 
 The render checks require Helm and Python with PyYAML. They never access a

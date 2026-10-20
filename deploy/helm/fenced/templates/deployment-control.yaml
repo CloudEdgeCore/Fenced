@@ -8,6 +8,15 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  # A zero-downtime upgrade: the new replica joins and becomes ready before
+  # the old one is taken away.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.upgrade.maxUnavailable }}
+      maxSurge: {{ .Values.upgrade.maxSurge }}
+  minReadySeconds: {{ .Values.upgrade.minReadySeconds }}
+  progressDeadlineSeconds: {{ .Values.upgrade.progressDeadlineSeconds }}
   selector:
     matchLabels:
       {{- include "fenced.controlSelectorLabels" . | nindent 6 }}
@@ -18,6 +27,7 @@ spec:
     spec:
       serviceAccountName: {{ include "fenced.serviceAccountName" . | quote }}
       automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
+      terminationGracePeriodSeconds: {{ .Values.upgrade.terminationGracePeriodSeconds }}
       containers:
         - name: control
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -62,6 +72,12 @@ spec:
             - name: control-tls
               mountPath: /etc/fenced/tls
               readOnly: true
+          {{- if gt (int .Values.upgrade.preStopSleepSeconds) 0 }}
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: {{ .Values.upgrade.preStopSleepSeconds }}
+          {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz
