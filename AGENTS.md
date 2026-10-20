@@ -192,3 +192,7 @@ introduced.
 - `docs/evidence/` — benchmark, soak and takeover evidence with raw logs
 - `CHANGELOG.md` — release notes; keep the engineering tone
 - `modelcheck/tla/` — the formal model of the core safety invariants
+- `scripts/push-with-fallback.sh` — pushing to GitHub when the route to the
+  git host is down or answered by an intercepting address: it probes the
+  real git endpoint, waits for one that answers, pins it for the push and
+  restores the hosts file afterwards

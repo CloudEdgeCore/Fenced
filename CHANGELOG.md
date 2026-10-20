@@ -83,6 +83,11 @@ public protocol versions evolve independently.
   `POST /v1/services/{id}/stop` endpoint.
 
 ### Added
+- `scripts/push-with-fallback.sh` pushes to GitHub when the route to the git
+  host is down or answered by an intercepting address. It probes the real
+  smart-HTTP endpoint rather than the web page, waits for an address that
+  answers, pins it for the push and restores the hosts file on every exit
+  path.
 - The Agent Runtime Interface now has one written wire contract:
   `sdk/conformance/fixtures/runtime-interface-v1.json` holds the golden
   vectors of every endpoint - the request, the status code, the fields the
