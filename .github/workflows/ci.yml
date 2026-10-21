@@ -124,6 +124,14 @@ jobs:
           (cd sdk/typescript && npm ci)
           (cd sdk/typescript && npm test)
 
+      - name: Verify the management console
+        run: |
+          (cd web && npm ci)
+          (cd web && npm run typecheck)
+          (cd web && npm test)
+          (cd web && npm run build)
+          git diff --exit-code -- internal/control/console/dist
+
       - name: Vet
         run: go vet ./...
 
