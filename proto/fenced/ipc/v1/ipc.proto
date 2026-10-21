@@ -13,6 +13,10 @@ service IPCGatewayService {
   rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
   rpc ReceiveMessages(ReceiveMessagesRequest) returns (ReceiveMessagesResponse);
   rpc AcknowledgeMessage(AcknowledgeMessageRequest) returns (AcknowledgeMessageResponse);
+  // BroadcastMessage delivers one message to every running instance of an
+  // agent version. Added in v1.5: additive - an existing client never calls
+  // it, and the generated Unimplemented server keeps old servers compiling.
+  rpc BroadcastMessage(BroadcastMessageRequest) returns (BroadcastMessageResponse);
 }
 message AttemptIdentity { string tenant_id = 1; string attempt_id = 2; int64 fencing_token = 3; }
 // AgentVersionRef is an immutable reference in agentversion.FormatRef form
@@ -28,3 +32,9 @@ message ReceiveMessagesRequest { AttemptIdentity identity = 1; string agent_vers
 message ReceiveMessagesResponse { repeated IpcMessage messages = 1; }
 message AcknowledgeMessageRequest { AttemptIdentity identity = 1; string agent_version_ref = 2; string consumer_name = 3; repeated string message_ids = 4; }
 message AcknowledgeMessageResponse { repeated string acknowledged_message_ids = 1; repeated string already_acknowledged_message_ids = 2; }
+// BroadcastMessageRequest names an agent version, not a run: the platform
+// resolves every running instance of that version and delivers to each of
+// them. The idempotency key is scoped per instance, so a retried broadcast
+// replays instead of duplicating.
+message BroadcastMessageRequest { AttemptIdentity identity = 1; string agent_version_ref = 2; string to_agent_version_ref = 3; string kind = 4; bytes payload_json = 5; string idempotency_key = 6; string correlation_id = 7; google.protobuf.Timestamp deadline = 8; }
+message BroadcastMessageResponse { int32 delivered = 1; int32 replayed = 2; repeated string message_ids = 3; repeated string run_ids = 4; }

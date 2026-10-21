@@ -215,6 +215,32 @@ func (b *GrpcMailboxBroker) SendMessage(ctx context.Context, identity mcp.Attemp
 // ReceiveMessages drains the calling run's mailbox. No address is sent: the
 // service derives the mailbox from the fenced assignment, so the runtime cannot
 // drain a mailbox other than its own.
+// BroadcastMessage delivers one message to every running instance of an
+// agent version. The gateway resolves the version to its instances; this
+// client only carries the request.
+func (b *GrpcMailboxBroker) BroadcastMessage(ctx context.Context, identity mcp.AttemptContext, in mcp.MailboxBroadcastInput) (mcp.MailboxBroadcastOutcome, error) {
+	request := &ipcv1.BroadcastMessageRequest{
+		Identity:          ipcAttemptIdentity(identity),
+		AgentVersionRef:   identity.AgentVersionRef,
+		ToAgentVersionRef: in.ToAgentVersionRef,
+		Kind:              in.Kind,
+		PayloadJson:       in.PayloadJSON,
+		IdempotencyKey:    in.IdempotencyKey,
+		CorrelationId:     in.CorrelationID,
+	}
+	if !in.Deadline.IsZero() {
+		request.Deadline = timestamppb.New(in.Deadline)
+	}
+	response, err := b.client.BroadcastMessage(ctx, request)
+	if err != nil {
+		return mcp.MailboxBroadcastOutcome{}, err
+	}
+	return mcp.MailboxBroadcastOutcome{
+		Delivered: response.GetDelivered(),
+		Replayed:  response.GetReplayed(),
+	}, nil
+}
+
 func (b *GrpcMailboxBroker) ReceiveMessages(ctx context.Context, identity mcp.AttemptContext, in mcp.MailboxReceiveInput) ([]mcp.MailboxMessage, error) {
 	response, err := b.client.ReceiveMessages(ctx, &ipcv1.ReceiveMessagesRequest{
 		Identity:        ipcAttemptIdentity(identity),

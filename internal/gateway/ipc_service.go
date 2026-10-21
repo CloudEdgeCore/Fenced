@@ -253,6 +253,90 @@ func (s *IPCService) SendMessage(ctx context.Context, request *ipcv1.SendMessage
 	}, nil
 }
 
+// BroadcastMessage stores one message in the mailbox of every running
+// instance of an agent version.
+//
+// A single send reaches one instance; a broadcast reaches the fleet. The
+// target is the version, not a run: the instances of a version are the ones
+// that may take the traffic, and a run id would pin the message to one of
+// them. Each delivery is an ordinary durable message with its own idempotency
+// key, so a retried broadcast replays instead of duplicating.
+func (s *IPCService) BroadcastMessage(ctx context.Context, request *ipcv1.BroadcastMessageRequest) (*ipcv1.BroadcastMessageResponse, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	assignment, err := s.fence(ctx, request.GetIdentity(), request.GetAgentVersionRef())
+	if err != nil {
+		return nil, err
+	}
+	versionRef := strings.TrimSpace(request.GetToAgentVersionRef())
+	if versionRef == "" {
+		return nil, status.Error(codes.InvalidArgument, "a broadcast names the agent version")
+	}
+	if s.resolver == nil {
+		return nil, status.Error(codes.FailedPrecondition, "logical addressing is not configured")
+	}
+	// The authorization runs before the resolution, exactly as it does for a
+	// single send: an unauthorized sender must not learn which runs exist.
+	if err := s.authorizePeer(ctx, assignment, versionRef); err != nil {
+		return nil, err
+	}
+	targets, resolveErr := s.resolver.ResolveServiceInstances(ctx, assignment.Task.TenantID, versionRef)
+	if resolveErr != nil || len(targets) == 0 {
+		return nil, status.Error(codes.FailedPrecondition, "the target is not reachable")
+	}
+
+	payload := request.GetPayloadJson()
+	if len(payload) == 0 {
+		payload = []byte(`{}`)
+	}
+	var deadline time.Time
+	if request.GetDeadline() != nil {
+		deadline = request.GetDeadline().AsTime().UTC()
+	}
+	sentAt := time.Now().UTC()
+
+	response := &ipcv1.BroadcastMessageResponse{
+		MessageIds: make([]string, 0, len(targets)),
+		RunIds:     make([]string, 0, len(targets)),
+	}
+	for _, target := range targets {
+		// The key is scoped per instance, so the message id of each delivery is
+		// stable across retries and distinct across instances.
+		key := request.GetIdempotencyKey() + "#" + target.RunID.String()
+		input := store.AppendIPCMessageInput{
+			TenantID:            assignment.Task.TenantID,
+			ID:                  ipcMessageID(assignment.Task.TenantID, assignment.Task.AgentVersionRef, key),
+			FromAgentVersionRef: assignment.Task.AgentVersionRef,
+			To: store.AgentAddress{
+				AgentVersionRef: target.VersionRef,
+				Instance:        target.RunID.String(),
+			},
+			Kind:           request.GetKind(),
+			Payload:        payload,
+			CorrelationID:  request.GetCorrelationId(),
+			IdempotencyKey: key,
+			SentAt:         sentAt,
+			Deadline:       deadline,
+		}
+		if err := input.Validate(); err != nil {
+			return nil, ipcInputError(err)
+		}
+		result, appendErr := s.mailbox.AppendIPCMessage(ctx, input)
+		if appendErr != nil {
+			return nil, ipcRPCError(appendErr)
+		}
+		if result.Replayed {
+			response.Replayed++
+		} else {
+			response.Delivered++
+		}
+		response.MessageIds = append(response.MessageIds, result.Message.ID.String())
+		response.RunIds = append(response.RunIds, target.RunID.String())
+	}
+	return response, nil
+}
+
 // ReceiveMessages drains the caller's own mailbox. The request carries no
 // address on purpose: the only mailbox a caller may drain is the one owned by
 // its fenced run, so the address is derived from the fenced assignment rather

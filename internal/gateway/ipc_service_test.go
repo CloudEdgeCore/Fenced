@@ -149,6 +149,18 @@ type fakeInstanceResolver struct {
 	refs    []string
 }
 
+func (f *fakeInstanceResolver) ResolveServiceInstances(_ context.Context, _ string, versionRef string) ([]ResolvedInstance, error) {
+	f.calls++
+	f.refs = append(f.refs, versionRef)
+	if f.err != nil {
+		return nil, f.err
+	}
+	if f.runID == uuid.Nil {
+		return nil, nil
+	}
+	return []ResolvedInstance{{RunID: f.runID, VersionRef: f.version}}, nil
+}
+
 func (f *fakeInstanceResolver) ResolveServiceInstance(_ context.Context, _ string, versionRef, _ string) (uuid.UUID, string, error) {
 	f.calls++
 	f.refs = append(f.refs, versionRef)
@@ -844,4 +856,129 @@ func TestIPCSendMessageResolvesALogicalTarget(t *testing.T) {
 			t.Fatal("the target was resolved before the sender was refused")
 		}
 	})
+}
+
+// A broadcast reaches every running instance of the version, and a retry
+// replays instead of duplicating: each delivery carries an idempotency key
+// scoped to its instance, so the message id is stable across retries and
+// distinct across instances.
+func TestIPCBroadcastReachesEveryInstance(t *testing.T) {
+	mailbox := &fakeMailbox{}
+	runOne, runTwo := uuid.New(), uuid.New()
+	resolver := &fakeBroadcastResolver{
+		targets: []ResolvedInstance{
+			{RunID: runOne, VersionRef: "worker@2.0.0"},
+			{RunID: runTwo, VersionRef: "worker@2.0.0"},
+		},
+	}
+	service, assignment := ipcTestServiceWithResolver(t, mailbox, &fakeMailboxScope{}, &fakeFence{},
+		&fakePeerAuthorizer{}, &fakePeerPolicy{allow: true}, resolver)
+
+	request := &ipcv1.BroadcastMessageRequest{
+		Identity: ipcTestIdentity(assignment), AgentVersionRef: "planner@1.0.0",
+		ToAgentVersionRef: "worker@2.0.0", Kind: "handoff", IdempotencyKey: "fan-out-1",
+		PayloadJson: []byte(`{"notice":"restart"}`),
+	}
+	response, err := service.BroadcastMessage(context.Background(), request)
+	if err != nil {
+		t.Fatalf("broadcast: %v", err)
+	}
+	if response.Delivered != 2 || response.Replayed != 0 {
+		t.Fatalf("delivered = %d, replayed = %d", response.Delivered, response.Replayed)
+	}
+	if len(mailbox.appended) != 2 {
+		t.Fatalf("expected two stored messages, got %d", len(mailbox.appended))
+	}
+	if mailbox.appended[0].IdempotencyKey == mailbox.appended[1].IdempotencyKey {
+		t.Fatal("the two deliveries share an idempotency key")
+	}
+	if mailbox.appended[0].ID == mailbox.appended[1].ID {
+		t.Fatal("the two deliveries share a message id")
+	}
+	for _, appended := range mailbox.appended {
+		if appended.To.AgentVersionRef != "worker@2.0.0" {
+			t.Fatalf("a delivery went to %q", appended.To.AgentVersionRef)
+		}
+	}
+
+	// A retry derives the same ids.
+	mailbox.appended = nil
+	again, err := service.BroadcastMessage(context.Background(), request)
+	if err != nil {
+		t.Fatalf("retried broadcast: %v", err)
+	}
+	if len(again.MessageIds) != len(response.MessageIds) {
+		t.Fatalf("the retry derived %d messages, the first %d", len(again.MessageIds), len(response.MessageIds))
+	}
+	for i := range again.MessageIds {
+		if again.MessageIds[i] != response.MessageIds[i] {
+			t.Fatalf("the retry derived a different message id at %d", i)
+		}
+	}
+}
+
+func TestIPCBroadcastRefusesWhatItCannotReach(t *testing.T) {
+	t.Run("no running instance", func(t *testing.T) {
+		resolver := &fakeBroadcastResolver{}
+		service, assignment := ipcTestServiceWithResolver(t, &fakeMailbox{}, &fakeMailboxScope{}, &fakeFence{},
+			&fakePeerAuthorizer{}, &fakePeerPolicy{allow: true}, resolver)
+		_, err := service.BroadcastMessage(context.Background(), &ipcv1.BroadcastMessageRequest{
+			Identity: ipcTestIdentity(assignment), AgentVersionRef: "planner@1.0.0",
+			ToAgentVersionRef: "worker@2.0.0", Kind: "handoff", IdempotencyKey: "k-1",
+		})
+		if got := ipcTestStatus(t, err); got != codes.FailedPrecondition {
+			t.Fatalf("status = %s, want FailedPrecondition", got)
+		}
+	})
+
+	t.Run("a logical target needs a version", func(t *testing.T) {
+		resolver := &fakeBroadcastResolver{targets: []ResolvedInstance{{RunID: uuid.New(), VersionRef: "worker@2.0.0"}}}
+		service, assignment := ipcTestServiceWithResolver(t, &fakeMailbox{}, &fakeMailboxScope{}, &fakeFence{},
+			&fakePeerAuthorizer{}, &fakePeerPolicy{allow: true}, resolver)
+		_, err := service.BroadcastMessage(context.Background(), &ipcv1.BroadcastMessageRequest{
+			Identity: ipcTestIdentity(assignment), AgentVersionRef: "planner@1.0.0",
+			Kind: "handoff", IdempotencyKey: "k-1",
+		})
+		if got := ipcTestStatus(t, err); got != codes.InvalidArgument {
+			t.Fatalf("status = %s, want InvalidArgument", got)
+		}
+		if resolver.calls != 0 {
+			t.Fatal("an unaddressed broadcast was resolved")
+		}
+	})
+
+	t.Run("the authorization runs before the resolution", func(t *testing.T) {
+		resolver := &fakeBroadcastResolver{targets: []ResolvedInstance{{RunID: uuid.New(), VersionRef: "worker@2.0.0"}}}
+		service, assignment := ipcTestServiceWithResolver(t, &fakeMailbox{}, &fakeMailboxScope{}, &fakeFence{},
+			&fakePeerAuthorizer{err: errors.New("not granted")}, &fakePeerPolicy{allow: true}, resolver)
+		_, err := service.BroadcastMessage(context.Background(), &ipcv1.BroadcastMessageRequest{
+			Identity: ipcTestIdentity(assignment), AgentVersionRef: "planner@1.0.0",
+			ToAgentVersionRef: "worker@2.0.0", Kind: "handoff", IdempotencyKey: "k-1",
+		})
+		if got := ipcTestStatus(t, err); got != codes.PermissionDenied {
+			t.Fatalf("status = %s, want PermissionDenied", got)
+		}
+		if resolver.calls != 0 {
+			t.Fatal("the target was resolved before the sender was refused")
+		}
+	})
+}
+
+// fakeBroadcastResolver answers the broadcast path with a fixed fleet.
+type fakeBroadcastResolver struct {
+	targets []ResolvedInstance
+	err     error
+	calls   int
+}
+
+func (f *fakeBroadcastResolver) ResolveServiceInstance(context.Context, string, string, string) (uuid.UUID, string, error) {
+	return uuid.Nil, "", errors.New("not used")
+}
+
+func (f *fakeBroadcastResolver) ResolveServiceInstances(context.Context, string, string) ([]ResolvedInstance, error) {
+	f.calls++
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.targets, nil
 }

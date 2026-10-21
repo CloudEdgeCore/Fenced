@@ -19,6 +19,10 @@ type fakeMailboxBroker struct {
 	sendErr    error
 	sendReply  MailboxSendOutcome
 
+	broadcasts     []MailboxBroadcastInput
+	broadcastErr   error
+	broadcastReply MailboxBroadcastOutcome
+
 	receives   []MailboxReceiveInput
 	receiveErr error
 	receiveOut []MailboxMessage
@@ -42,6 +46,14 @@ func (f *fakeMailboxBroker) SendMessage(_ context.Context, identity AttemptConte
 		reply.AcceptedAt = time.Now().UTC()
 	}
 	return reply, nil
+}
+
+func (f *fakeMailboxBroker) BroadcastMessage(_ context.Context, _ AttemptContext, in MailboxBroadcastInput) (MailboxBroadcastOutcome, error) {
+	f.broadcasts = append(f.broadcasts, in)
+	if f.broadcastErr != nil {
+		return MailboxBroadcastOutcome{}, f.broadcastErr
+	}
+	return f.broadcastReply, nil
 }
 
 func (f *fakeMailboxBroker) ReceiveMessages(_ context.Context, identity AttemptContext, in MailboxReceiveInput) ([]MailboxMessage, error) {
@@ -178,7 +190,7 @@ func TestBrokerIPCSendRejectsArgumentsItCannotUse(t *testing.T) {
 		name      string
 		arguments map[string]any
 	}{
-		{"no recipient run", map[string]any{"toAgentVersionRef": "worker@1.0.0", "kind": "handoff", "idempotencyKey": "k"}},
+		{"no recipient at all", map[string]any{"kind": "handoff", "idempotencyKey": "k"}},
 		{"no kind", map[string]any{"toAgentVersionRef": target["toAgentVersionRef"], "toRunId": target["toRunId"], "idempotencyKey": "k"}},
 		{"no idempotency key", map[string]any{"toAgentVersionRef": target["toAgentVersionRef"], "toRunId": target["toRunId"], "kind": "handoff"}},
 		{"a negative deadline", map[string]any{"toAgentVersionRef": target["toAgentVersionRef"], "toRunId": target["toRunId"], "kind": "handoff", "idempotencyKey": "k", "deadlineSeconds": -1}},
@@ -309,5 +321,84 @@ func TestBrokerIPCFailuresAreToolOutcomes(t *testing.T) {
 	}
 	if document["isError"] != true {
 		t.Fatalf("result is not flagged as an error: %v", document)
+	}
+}
+
+// A peer is addressed by its agent version, not by a run id that changes on
+// every restart. The tool passes the empty run id through, and the gateway
+// resolves a running instance of the version - the same resolution the gRPC
+// path uses.
+func TestBrokerIPCSendAcceptsALogicalTarget(t *testing.T) {
+	mailbox := &fakeMailboxBroker{}
+	broker := newIPCBrokerForTest(t, brokerTestContext(), mailbox)
+
+	result, rpcErr := broker.CallTool(context.Background(), mustJSON(t, map[string]any{
+		"name": SystemIPCSend,
+		"arguments": map[string]any{
+			"toAgentVersionRef": "worker@1.0.0",
+			"kind":              "handoff",
+			"idempotencyKey":    "k-1",
+			"payloadJson":       map[string]any{"goal": "summarize"},
+		},
+	}))
+	if rpcErr != nil {
+		t.Fatalf("a logical send was refused: %v", rpcErr)
+	}
+	if result == nil {
+		t.Fatal("no result")
+	}
+	if len(mailbox.sends) != 1 {
+		t.Fatalf("expected one send, got %d", len(mailbox.sends))
+	}
+	if mailbox.sends[0].ToAgentVersionRef != "worker@1.0.0" || mailbox.sends[0].ToRunID != "" {
+		t.Fatalf("the tool rewrote the target: %+v", mailbox.sends[0])
+	}
+}
+
+// A broadcast names the version and reaches the fleet; nothing about a run
+// id is required, and the reply reports what the fan-out stored.
+func TestBrokerIPCBroadcastReachesTheFleet(t *testing.T) {
+	mailbox := &fakeMailboxBroker{broadcastReply: MailboxBroadcastOutcome{Delivered: 3}}
+	broker := newIPCBrokerForTest(t, brokerTestContext(), mailbox)
+
+	result, rpcErr := broker.CallTool(context.Background(), mustJSON(t, map[string]any{
+		"name": SystemIPCBroadcast,
+		"arguments": map[string]any{
+			"toAgentVersionRef": "worker@2.0.0",
+			"kind":              "notice",
+			"idempotencyKey":    "fan-out-1",
+			"payloadJson":       map[string]any{"notice": "restart"},
+		},
+	}))
+	if rpcErr != nil {
+		t.Fatalf("broadcast: %v", rpcErr)
+	}
+	if len(mailbox.broadcasts) != 1 {
+		t.Fatalf("expected one broadcast, got %d", len(mailbox.broadcasts))
+	}
+	if mailbox.broadcasts[0].ToAgentVersionRef != "worker@2.0.0" {
+		t.Fatalf("the tool rewrote the target: %+v", mailbox.broadcasts[0])
+	}
+	if result == nil {
+		t.Fatal("no result")
+	}
+}
+
+// A broadcast that names no version cannot be resolved, and it is refused
+// before the identity is even resolved.
+func TestBrokerIPCBroadcastRequiresAVersion(t *testing.T) {
+	mailbox := &fakeMailboxBroker{}
+	broker := newIPCBrokerForTest(t, brokerTestContext(), mailbox)
+	if _, rpcErr := broker.CallTool(context.Background(), mustJSON(t, map[string]any{
+		"name": SystemIPCBroadcast,
+		"arguments": map[string]any{
+			"kind":           "notice",
+			"idempotencyKey": "fan-out-1",
+		},
+	})); rpcErr == nil {
+		t.Fatal("a broadcast without a target version was accepted")
+	}
+	if len(mailbox.broadcasts) != 0 {
+		t.Fatal("an unaddressed broadcast reached the broker")
 	}
 }

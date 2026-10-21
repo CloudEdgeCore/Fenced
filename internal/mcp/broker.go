@@ -32,12 +32,13 @@ const (
 	SystemMemorySearch = "fenced.memory.search"
 	SystemTaskSpawn    = "fenced.task.spawn"
 	SystemIPCSend      = "fenced.ipc.send"
+	SystemIPCBroadcast = "fenced.ipc.broadcast"
 	SystemIPCReceive   = "fenced.ipc.receive"
 	SystemIPCAck       = "fenced.ipc.ack"
 	// systemToolsRevision is the version advertised in every system tool
 	// description. It moves whenever the set or the contract of the advertised
 	// tools changes, so an agent that caches tools/list can tell.
-	systemToolsRevision = "v1.5"
+	systemToolsRevision = "v1.6"
 )
 
 // Bounds of the tool-contract surface an agent may attach to one model call:
@@ -128,6 +129,9 @@ func (k KernelMemoryBroker) Search(ctx context.Context, identity AttemptContext,
 // A drain may wait for a bounded time, which is a poll, not a push.
 type MailboxBroker interface {
 	SendMessage(context.Context, AttemptContext, MailboxSendInput) (MailboxSendOutcome, error)
+	// BroadcastMessage delivers to every running instance of an agent
+	// version, not to one mailbox.
+	BroadcastMessage(context.Context, AttemptContext, MailboxBroadcastInput) (MailboxBroadcastOutcome, error)
 	ReceiveMessages(context.Context, AttemptContext, MailboxReceiveInput) ([]MailboxMessage, error)
 	AcknowledgeMessages(context.Context, AttemptContext, MailboxAckInput) (MailboxAckOutcome, error)
 }
@@ -158,6 +162,27 @@ type MailboxSendOutcome struct {
 	// earlier attempt had already stored.
 	Replayed   bool
 	AcceptedAt time.Time
+}
+
+// MailboxBroadcastInput is one broadcast with the sender taken from the
+// fenced identity. The target is the version: the instances of a version are
+// the ones that may take the traffic, and a run id would pin the message to
+// one of them.
+type MailboxBroadcastInput struct {
+	ToAgentVersionRef string
+	Kind              string
+	PayloadJSON       json.RawMessage
+	IdempotencyKey    string
+	CorrelationID     string
+	Deadline          time.Time
+}
+
+// MailboxBroadcastOutcome reports what the fan-out stored.
+type MailboxBroadcastOutcome struct {
+	// Delivered counts the messages stored by this call.
+	Delivered int32
+	// Replayed counts the deliveries the idempotency key had already stored.
+	Replayed int32
 }
 
 type MailboxReceiveInput struct {
@@ -261,14 +286,29 @@ type spawnToolInput struct {
 // ipcSendToolInput names the receiving mailbox by its two parts rather than by
 // the canonical "ref#run" form: the separator is an internal encoding, and an
 // agent should not have to know it.
+//
+// The run id is optional. A run id changes with every restart, so an agent
+// that addresses a peer by run would have to track it; naming the agent
+// version is enough, and the platform resolves a running instance of it. A
+// service that runs two versions during a rollout only offers the version
+// the address names.
 type ipcSendToolInput struct {
 	ToAgentVersionRef string          `json:"toAgentVersionRef" required:"true"`
-	ToRunID           string          `json:"toRunId" required:"true"`
+	ToRunID           string          `json:"toRunId,omitempty"`
 	Kind              string          `json:"kind" required:"true"`
 	PayloadJSON       json.RawMessage `json:"payloadJson,omitempty"`
 	IdempotencyKey    string          `json:"idempotencyKey" required:"true"`
 	CorrelationID     string          `json:"correlationId,omitempty"`
 	ReplyToMessageID  string          `json:"replyToMessageId,omitempty"`
+	DeadlineSeconds   int32           `json:"deadlineSeconds,omitempty"`
+}
+
+type ipcBroadcastToolInput struct {
+	ToAgentVersionRef string          `json:"toAgentVersionRef" required:"true"`
+	Kind              string          `json:"kind" required:"true"`
+	PayloadJSON       json.RawMessage `json:"payloadJson,omitempty"`
+	IdempotencyKey    string          `json:"idempotencyKey" required:"true"`
+	CorrelationID     string          `json:"correlationId,omitempty"`
 	DeadlineSeconds   int32           `json:"deadlineSeconds,omitempty"`
 }
 
@@ -314,9 +354,17 @@ func systemToolDeclarations(models ModelBroker, memories MemoryBroker, spawner W
 		declarations = append(declarations,
 			systemTool{
 				name: SystemIPCSend,
-				description: "Send one durable message to another run's mailbox in this tenant (the mailbox follows the run, so it survives an attempt failure; " +
-					"delivery is at-least-once and idempotencyKey decides whether a retry replays the stored message)",
+				description: "Send one durable message to another agent in this tenant (the mailbox follows the run, so it survives an attempt failure; " +
+					"delivery is at-least-once and idempotencyKey decides whether a retry replays the stored message). " +
+					"ToRunId may be empty: the platform then resolves a running instance of toAgentVersionRef, so a peer is addressed by its version rather than by a run id that changes on every restart",
 				schema: schemaFor[ipcSendToolInput](),
+			},
+			systemTool{
+				name: SystemIPCBroadcast,
+				description: "Deliver one durable message to every running instance of an agent version (a single send reaches one peer; " +
+					"a broadcast reaches the fleet of a version, which is what a notice or a fan-out needs). The target is the version, not a run; " +
+					"idempotencyKey is scoped per instance, so a retried broadcast replays the stored messages instead of duplicating them",
+				schema: schemaFor[ipcBroadcastToolInput](),
 			},
 			systemTool{
 				name: SystemIPCReceive,
@@ -396,6 +444,11 @@ func (b *Broker) CallTool(ctx context.Context, params json.RawMessage) (any, *Er
 			return nil, invalidParams("agent mailboxes are not configured on this runtime")
 		}
 		return b.sendIPCMessage(ctx, call.Arguments)
+	case SystemIPCBroadcast:
+		if b.mailbox == nil {
+			return nil, invalidParams("agent mailboxes are not configured on this runtime")
+		}
+		return b.broadcastIPCMessage(ctx, call.Arguments)
 	case SystemIPCReceive:
 		if b.mailbox == nil {
 			return nil, invalidParams("agent mailboxes are not configured on this runtime")
@@ -668,8 +721,8 @@ func (b *Broker) sendIPCMessage(ctx context.Context, params json.RawMessage) (an
 	if err := strictDecode(params, &call); err != nil {
 		return nil, invalidParams(err.Error())
 	}
-	if strings.TrimSpace(call.ToAgentVersionRef) == "" || strings.TrimSpace(call.ToRunID) == "" {
-		return nil, invalidParams("toAgentVersionRef and toRunId are required")
+	if strings.TrimSpace(call.ToAgentVersionRef) == "" {
+		return nil, invalidParams("toAgentVersionRef is required: it names the agent, and the platform resolves a running instance of it")
 	}
 	if strings.TrimSpace(call.Kind) == "" {
 		return nil, invalidParams("kind is required")
@@ -703,6 +756,53 @@ func (b *Broker) sendIPCMessage(ctx context.Context, params json.RawMessage) (an
 		"messageId":  outcome.MessageID,
 		"replayed":   outcome.Replayed,
 		"acceptedAt": outcome.AcceptedAt.UTC().Format(time.RFC3339),
+	})
+	return textResult(document, false), nil
+}
+
+// broadcastIPCMessage stores one message in the mailbox of every running
+// instance of an agent version.
+func (b *Broker) broadcastIPCMessage(ctx context.Context, params json.RawMessage) (any, *Error) {
+	var call ipcBroadcastToolInput
+	if err := strictDecode(params, &call); err != nil {
+		return nil, invalidParams(err.Error())
+	}
+	if strings.TrimSpace(call.ToAgentVersionRef) == "" {
+		return nil, invalidParams("toAgentVersionRef is required: a broadcast names the agent version, not a run")
+	}
+	if strings.TrimSpace(call.Kind) == "" {
+		return nil, invalidParams("kind is required")
+	}
+	if strings.TrimSpace(call.IdempotencyKey) == "" {
+		return nil, invalidParams("idempotencyKey is required: it is what makes a retried broadcast replay the stored messages")
+	}
+	if len(call.PayloadJSON) > store.IPCPayloadLimit {
+		return nil, invalidParams("payloadJson exceeds 256 KiB; send a reference to the content instead")
+	}
+	if call.DeadlineSeconds < 0 {
+		return nil, invalidParams("deadlineSeconds must not be negative")
+	}
+	identity, err := b.resolveIdentity(ctx)
+	if err != nil {
+		return toolErrorResult("no fenced attempt identity"), nil
+	}
+	input := MailboxBroadcastInput{
+		ToAgentVersionRef: call.ToAgentVersionRef,
+		Kind:              call.Kind,
+		PayloadJSON:       call.PayloadJSON,
+		IdempotencyKey:    call.IdempotencyKey,
+		CorrelationID:     call.CorrelationID,
+	}
+	if call.DeadlineSeconds > 0 {
+		input.Deadline = time.Now().Add(time.Duration(call.DeadlineSeconds) * time.Second)
+	}
+	outcome, broadcastErr := b.mailbox.BroadcastMessage(ctx, identity, input)
+	if broadcastErr != nil {
+		return toolErrorResult("ipc broadcast failed: " + boundedMessage(broadcastErr)), nil
+	}
+	document, _ := json.Marshal(map[string]any{
+		"delivered": outcome.Delivered,
+		"replayed":  outcome.Replayed,
 	})
 	return textResult(document, false), nil
 }

@@ -27,6 +27,16 @@ type ServiceInstanceResolver interface {
 	// traffic over the instances of the version; the same key always picks
 	// the same instance, so a retried message lands in the same mailbox.
 	ResolveServiceInstance(ctx context.Context, tenantID, versionRef, key string) (uuid.UUID, string, error)
+
+	// ResolveServiceInstances returns every running instance of the version,
+	// in a stable order. A broadcast delivers one message to each of them.
+	ResolveServiceInstances(ctx context.Context, tenantID, versionRef string) ([]ResolvedInstance, error)
+}
+
+// ResolvedInstance is one run that a logical target resolved to.
+type ResolvedInstance struct {
+	RunID      uuid.UUID
+	VersionRef string
 }
 
 // ServiceInstanceStore is the narrow read surface the resolver needs.
@@ -45,15 +55,40 @@ func NewServiceInstanceResolver(store ServiceInstanceStore) ServiceInstanceResol
 }
 
 func (r *storeInstanceResolver) ResolveServiceInstance(ctx context.Context, tenantID, versionRef, key string) (uuid.UUID, string, error) {
-	namespace, name, _, err := agentversion.ParseRef(strings.TrimSpace(versionRef))
-	if err != nil {
-		return uuid.Nil, "", fmt.Errorf("logical target: %w", err)
-	}
-	instances, err := r.store.ListServiceInstancesByAgent(ctx, tenantID, namespace, name)
+	candidates, err := r.candidates(ctx, tenantID, versionRef)
 	if err != nil {
 		return uuid.Nil, "", err
 	}
+	if len(candidates) == 0 {
+		return uuid.Nil, "", fmt.Errorf("no instance of %s is running", versionRef)
+	}
+	chosen := candidates[instanceIndex(key, len(candidates))]
+	return *chosen.TaskID, chosen.AgentVersion, nil
+}
 
+func (r *storeInstanceResolver) ResolveServiceInstances(ctx context.Context, tenantID, versionRef string) ([]ResolvedInstance, error) {
+	candidates, err := r.candidates(ctx, tenantID, versionRef)
+	if err != nil {
+		return nil, err
+	}
+	resolved := make([]ResolvedInstance, 0, len(candidates))
+	for _, candidate := range candidates {
+		resolved = append(resolved, ResolvedInstance{RunID: *candidate.TaskID, VersionRef: candidate.AgentVersion})
+	}
+	return resolved, nil
+}
+
+// candidates returns the instances that may take traffic for a version, in a
+// stable order.
+func (r *storeInstanceResolver) candidates(ctx context.Context, tenantID, versionRef string) ([]*supervisor.Instance, error) {
+	namespace, name, _, err := agentversion.ParseRef(strings.TrimSpace(versionRef))
+	if err != nil {
+		return nil, fmt.Errorf("logical target: %w", err)
+	}
+	instances, err := r.store.ListServiceInstancesByAgent(ctx, tenantID, namespace, name)
+	if err != nil {
+		return nil, err
+	}
 	candidates := make([]*supervisor.Instance, 0, len(instances))
 	for _, inst := range instances {
 		// A running instance is one that may take traffic. A draining or
@@ -66,14 +101,10 @@ func (r *storeInstanceResolver) ResolveServiceInstance(ctx context.Context, tena
 		}
 		candidates = append(candidates, inst)
 	}
-	if len(candidates) == 0 {
-		return uuid.Nil, "", fmt.Errorf("no instance of %s is running", versionRef)
-	}
 	slices.SortFunc(candidates, func(left, right *supervisor.Instance) int {
 		return strings.Compare(left.ID, right.ID)
 	})
-	chosen := candidates[instanceIndex(key, len(candidates))]
-	return *chosen.TaskID, chosen.AgentVersion, nil
+	return candidates, nil
 }
 
 // instanceIndex spreads the traffic over the instances of a version.

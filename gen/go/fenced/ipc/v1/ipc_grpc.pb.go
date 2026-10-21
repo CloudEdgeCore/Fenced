@@ -22,6 +22,7 @@ const (
 	IPCGatewayService_SendMessage_FullMethodName        = "/fenced.ipc.v1.IPCGatewayService/SendMessage"
 	IPCGatewayService_ReceiveMessages_FullMethodName    = "/fenced.ipc.v1.IPCGatewayService/ReceiveMessages"
 	IPCGatewayService_AcknowledgeMessage_FullMethodName = "/fenced.ipc.v1.IPCGatewayService/AcknowledgeMessage"
+	IPCGatewayService_BroadcastMessage_FullMethodName   = "/fenced.ipc.v1.IPCGatewayService/BroadcastMessage"
 )
 
 // IPCGatewayServiceClient is the client API for IPCGatewayService service.
@@ -35,6 +36,10 @@ type IPCGatewayServiceClient interface {
 	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error)
 	ReceiveMessages(ctx context.Context, in *ReceiveMessagesRequest, opts ...grpc.CallOption) (*ReceiveMessagesResponse, error)
 	AcknowledgeMessage(ctx context.Context, in *AcknowledgeMessageRequest, opts ...grpc.CallOption) (*AcknowledgeMessageResponse, error)
+	// BroadcastMessage delivers one message to every running instance of an
+	// agent version. Added in v1.5: additive - an existing client never calls
+	// it, and the generated Unimplemented server keeps old servers compiling.
+	BroadcastMessage(ctx context.Context, in *BroadcastMessageRequest, opts ...grpc.CallOption) (*BroadcastMessageResponse, error)
 }
 
 type iPCGatewayServiceClient struct {
@@ -75,6 +80,16 @@ func (c *iPCGatewayServiceClient) AcknowledgeMessage(ctx context.Context, in *Ac
 	return out, nil
 }
 
+func (c *iPCGatewayServiceClient) BroadcastMessage(ctx context.Context, in *BroadcastMessageRequest, opts ...grpc.CallOption) (*BroadcastMessageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BroadcastMessageResponse)
+	err := c.cc.Invoke(ctx, IPCGatewayService_BroadcastMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IPCGatewayServiceServer is the server API for IPCGatewayService service.
 // All implementations must embed UnimplementedIPCGatewayServiceServer
 // for forward compatibility.
@@ -86,6 +101,10 @@ type IPCGatewayServiceServer interface {
 	SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error)
 	ReceiveMessages(context.Context, *ReceiveMessagesRequest) (*ReceiveMessagesResponse, error)
 	AcknowledgeMessage(context.Context, *AcknowledgeMessageRequest) (*AcknowledgeMessageResponse, error)
+	// BroadcastMessage delivers one message to every running instance of an
+	// agent version. Added in v1.5: additive - an existing client never calls
+	// it, and the generated Unimplemented server keeps old servers compiling.
+	BroadcastMessage(context.Context, *BroadcastMessageRequest) (*BroadcastMessageResponse, error)
 	mustEmbedUnimplementedIPCGatewayServiceServer()
 }
 
@@ -104,6 +123,9 @@ func (UnimplementedIPCGatewayServiceServer) ReceiveMessages(context.Context, *Re
 }
 func (UnimplementedIPCGatewayServiceServer) AcknowledgeMessage(context.Context, *AcknowledgeMessageRequest) (*AcknowledgeMessageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AcknowledgeMessage not implemented")
+}
+func (UnimplementedIPCGatewayServiceServer) BroadcastMessage(context.Context, *BroadcastMessageRequest) (*BroadcastMessageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BroadcastMessage not implemented")
 }
 func (UnimplementedIPCGatewayServiceServer) mustEmbedUnimplementedIPCGatewayServiceServer() {}
 func (UnimplementedIPCGatewayServiceServer) testEmbeddedByValue()                           {}
@@ -180,6 +202,24 @@ func _IPCGatewayService_AcknowledgeMessage_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IPCGatewayService_BroadcastMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BroadcastMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IPCGatewayServiceServer).BroadcastMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IPCGatewayService_BroadcastMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IPCGatewayServiceServer).BroadcastMessage(ctx, req.(*BroadcastMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // IPCGatewayService_ServiceDesc is the grpc.ServiceDesc for IPCGatewayService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -198,6 +238,10 @@ var IPCGatewayService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AcknowledgeMessage",
 			Handler:    _IPCGatewayService_AcknowledgeMessage_Handler,
+		},
+		{
+			MethodName: "BroadcastMessage",
+			Handler:    _IPCGatewayService_BroadcastMessage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

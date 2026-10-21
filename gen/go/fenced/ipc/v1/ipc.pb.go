@@ -762,6 +762,178 @@ func (x *AcknowledgeMessageResponse) GetAlreadyAcknowledgedMessageIds() []string
 	return nil
 }
 
+// BroadcastMessageRequest names an agent version, not a run: the platform
+// resolves every running instance of that version and delivers to each of
+// them. The idempotency key is scoped per instance, so a retried broadcast
+// replays instead of duplicating.
+type BroadcastMessageRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Identity          *AttemptIdentity       `protobuf:"bytes,1,opt,name=identity,proto3" json:"identity,omitempty"`
+	AgentVersionRef   string                 `protobuf:"bytes,2,opt,name=agent_version_ref,json=agentVersionRef,proto3" json:"agent_version_ref,omitempty"`
+	ToAgentVersionRef string                 `protobuf:"bytes,3,opt,name=to_agent_version_ref,json=toAgentVersionRef,proto3" json:"to_agent_version_ref,omitempty"`
+	Kind              string                 `protobuf:"bytes,4,opt,name=kind,proto3" json:"kind,omitempty"`
+	PayloadJson       []byte                 `protobuf:"bytes,5,opt,name=payload_json,json=payloadJson,proto3" json:"payload_json,omitempty"`
+	IdempotencyKey    string                 `protobuf:"bytes,6,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	CorrelationId     string                 `protobuf:"bytes,7,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
+	Deadline          *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=deadline,proto3" json:"deadline,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *BroadcastMessageRequest) Reset() {
+	*x = BroadcastMessageRequest{}
+	mi := &file_fenced_ipc_v1_ipc_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BroadcastMessageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BroadcastMessageRequest) ProtoMessage() {}
+
+func (x *BroadcastMessageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_fenced_ipc_v1_ipc_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BroadcastMessageRequest.ProtoReflect.Descriptor instead.
+func (*BroadcastMessageRequest) Descriptor() ([]byte, []int) {
+	return file_fenced_ipc_v1_ipc_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *BroadcastMessageRequest) GetIdentity() *AttemptIdentity {
+	if x != nil {
+		return x.Identity
+	}
+	return nil
+}
+
+func (x *BroadcastMessageRequest) GetAgentVersionRef() string {
+	if x != nil {
+		return x.AgentVersionRef
+	}
+	return ""
+}
+
+func (x *BroadcastMessageRequest) GetToAgentVersionRef() string {
+	if x != nil {
+		return x.ToAgentVersionRef
+	}
+	return ""
+}
+
+func (x *BroadcastMessageRequest) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *BroadcastMessageRequest) GetPayloadJson() []byte {
+	if x != nil {
+		return x.PayloadJson
+	}
+	return nil
+}
+
+func (x *BroadcastMessageRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *BroadcastMessageRequest) GetCorrelationId() string {
+	if x != nil {
+		return x.CorrelationId
+	}
+	return ""
+}
+
+func (x *BroadcastMessageRequest) GetDeadline() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Deadline
+	}
+	return nil
+}
+
+type BroadcastMessageResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Delivered     int32                  `protobuf:"varint,1,opt,name=delivered,proto3" json:"delivered,omitempty"`
+	Replayed      int32                  `protobuf:"varint,2,opt,name=replayed,proto3" json:"replayed,omitempty"`
+	MessageIds    []string               `protobuf:"bytes,3,rep,name=message_ids,json=messageIds,proto3" json:"message_ids,omitempty"`
+	RunIds        []string               `protobuf:"bytes,4,rep,name=run_ids,json=runIds,proto3" json:"run_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BroadcastMessageResponse) Reset() {
+	*x = BroadcastMessageResponse{}
+	mi := &file_fenced_ipc_v1_ipc_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BroadcastMessageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BroadcastMessageResponse) ProtoMessage() {}
+
+func (x *BroadcastMessageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_fenced_ipc_v1_ipc_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BroadcastMessageResponse.ProtoReflect.Descriptor instead.
+func (*BroadcastMessageResponse) Descriptor() ([]byte, []int) {
+	return file_fenced_ipc_v1_ipc_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *BroadcastMessageResponse) GetDelivered() int32 {
+	if x != nil {
+		return x.Delivered
+	}
+	return 0
+}
+
+func (x *BroadcastMessageResponse) GetReplayed() int32 {
+	if x != nil {
+		return x.Replayed
+	}
+	return 0
+}
+
+func (x *BroadcastMessageResponse) GetMessageIds() []string {
+	if x != nil {
+		return x.MessageIds
+	}
+	return nil
+}
+
+func (x *BroadcastMessageResponse) GetRunIds() []string {
+	if x != nil {
+		return x.RunIds
+	}
+	return nil
+}
+
 var File_fenced_ipc_v1_ipc_proto protoreflect.FileDescriptor
 
 const file_fenced_ipc_v1_ipc_proto_rawDesc = "" +
@@ -834,11 +1006,27 @@ const file_fenced_ipc_v1_ipc_proto_rawDesc = "" +
 	"messageIds\"\x9f\x01\n" +
 	"\x1aAcknowledgeMessageResponse\x128\n" +
 	"\x18acknowledged_message_ids\x18\x01 \x03(\tR\x16acknowledgedMessageIds\x12G\n" +
-	" already_acknowledged_message_ids\x18\x02 \x03(\tR\x1dalreadyAcknowledgedMessageIds2\xb6\x02\n" +
+	" already_acknowledged_message_ids\x18\x02 \x03(\tR\x1dalreadyAcknowledgedMessageIds\"\xf1\x02\n" +
+	"\x17BroadcastMessageRequest\x12:\n" +
+	"\bidentity\x18\x01 \x01(\v2\x1e.fenced.ipc.v1.AttemptIdentityR\bidentity\x12*\n" +
+	"\x11agent_version_ref\x18\x02 \x01(\tR\x0fagentVersionRef\x12/\n" +
+	"\x14to_agent_version_ref\x18\x03 \x01(\tR\x11toAgentVersionRef\x12\x12\n" +
+	"\x04kind\x18\x04 \x01(\tR\x04kind\x12!\n" +
+	"\fpayload_json\x18\x05 \x01(\fR\vpayloadJson\x12'\n" +
+	"\x0fidempotency_key\x18\x06 \x01(\tR\x0eidempotencyKey\x12%\n" +
+	"\x0ecorrelation_id\x18\a \x01(\tR\rcorrelationId\x126\n" +
+	"\bdeadline\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\bdeadline\"\x8e\x01\n" +
+	"\x18BroadcastMessageResponse\x12\x1c\n" +
+	"\tdelivered\x18\x01 \x01(\x05R\tdelivered\x12\x1a\n" +
+	"\breplayed\x18\x02 \x01(\x05R\breplayed\x12\x1f\n" +
+	"\vmessage_ids\x18\x03 \x03(\tR\n" +
+	"messageIds\x12\x17\n" +
+	"\arun_ids\x18\x04 \x03(\tR\x06runIds2\x9b\x03\n" +
 	"\x11IPCGatewayService\x12T\n" +
 	"\vSendMessage\x12!.fenced.ipc.v1.SendMessageRequest\x1a\".fenced.ipc.v1.SendMessageResponse\x12`\n" +
 	"\x0fReceiveMessages\x12%.fenced.ipc.v1.ReceiveMessagesRequest\x1a&.fenced.ipc.v1.ReceiveMessagesResponse\x12i\n" +
-	"\x12AcknowledgeMessage\x12(.fenced.ipc.v1.AcknowledgeMessageRequest\x1a).fenced.ipc.v1.AcknowledgeMessageResponseB<Z:github.com/CloudEdgeCore/Fenced/gen/go/fenced/ipc/v1;ipcv1b\x06proto3"
+	"\x12AcknowledgeMessage\x12(.fenced.ipc.v1.AcknowledgeMessageRequest\x1a).fenced.ipc.v1.AcknowledgeMessageResponse\x12c\n" +
+	"\x10BroadcastMessage\x12&.fenced.ipc.v1.BroadcastMessageRequest\x1a'.fenced.ipc.v1.BroadcastMessageResponseB<Z:github.com/CloudEdgeCore/Fenced/gen/go/fenced/ipc/v1;ipcv1b\x06proto3"
 
 var (
 	file_fenced_ipc_v1_ipc_proto_rawDescOnce sync.Once
@@ -852,7 +1040,7 @@ func file_fenced_ipc_v1_ipc_proto_rawDescGZIP() []byte {
 	return file_fenced_ipc_v1_ipc_proto_rawDescData
 }
 
-var file_fenced_ipc_v1_ipc_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_fenced_ipc_v1_ipc_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_fenced_ipc_v1_ipc_proto_goTypes = []any{
 	(*AttemptIdentity)(nil),            // 0: fenced.ipc.v1.AttemptIdentity
 	(*AgentAddress)(nil),               // 1: fenced.ipc.v1.AgentAddress
@@ -864,32 +1052,38 @@ var file_fenced_ipc_v1_ipc_proto_goTypes = []any{
 	(*ReceiveMessagesResponse)(nil),    // 7: fenced.ipc.v1.ReceiveMessagesResponse
 	(*AcknowledgeMessageRequest)(nil),  // 8: fenced.ipc.v1.AcknowledgeMessageRequest
 	(*AcknowledgeMessageResponse)(nil), // 9: fenced.ipc.v1.AcknowledgeMessageResponse
-	(*timestamppb.Timestamp)(nil),      // 10: google.protobuf.Timestamp
+	(*BroadcastMessageRequest)(nil),    // 10: fenced.ipc.v1.BroadcastMessageRequest
+	(*BroadcastMessageResponse)(nil),   // 11: fenced.ipc.v1.BroadcastMessageResponse
+	(*timestamppb.Timestamp)(nil),      // 12: google.protobuf.Timestamp
 }
 var file_fenced_ipc_v1_ipc_proto_depIdxs = []int32{
 	1,  // 0: fenced.ipc.v1.IpcMessage.to:type_name -> fenced.ipc.v1.AgentAddress
-	10, // 1: fenced.ipc.v1.IpcMessage.sent_at:type_name -> google.protobuf.Timestamp
-	10, // 2: fenced.ipc.v1.IpcMessage.deadline:type_name -> google.protobuf.Timestamp
+	12, // 1: fenced.ipc.v1.IpcMessage.sent_at:type_name -> google.protobuf.Timestamp
+	12, // 2: fenced.ipc.v1.IpcMessage.deadline:type_name -> google.protobuf.Timestamp
 	2,  // 3: fenced.ipc.v1.IpcMessage.attachments:type_name -> fenced.ipc.v1.MessageAttachment
 	0,  // 4: fenced.ipc.v1.SendMessageRequest.identity:type_name -> fenced.ipc.v1.AttemptIdentity
 	1,  // 5: fenced.ipc.v1.SendMessageRequest.to:type_name -> fenced.ipc.v1.AgentAddress
-	10, // 6: fenced.ipc.v1.SendMessageRequest.deadline:type_name -> google.protobuf.Timestamp
+	12, // 6: fenced.ipc.v1.SendMessageRequest.deadline:type_name -> google.protobuf.Timestamp
 	2,  // 7: fenced.ipc.v1.SendMessageRequest.attachments:type_name -> fenced.ipc.v1.MessageAttachment
-	10, // 8: fenced.ipc.v1.SendMessageResponse.accepted_at:type_name -> google.protobuf.Timestamp
+	12, // 8: fenced.ipc.v1.SendMessageResponse.accepted_at:type_name -> google.protobuf.Timestamp
 	0,  // 9: fenced.ipc.v1.ReceiveMessagesRequest.identity:type_name -> fenced.ipc.v1.AttemptIdentity
 	3,  // 10: fenced.ipc.v1.ReceiveMessagesResponse.messages:type_name -> fenced.ipc.v1.IpcMessage
 	0,  // 11: fenced.ipc.v1.AcknowledgeMessageRequest.identity:type_name -> fenced.ipc.v1.AttemptIdentity
-	4,  // 12: fenced.ipc.v1.IPCGatewayService.SendMessage:input_type -> fenced.ipc.v1.SendMessageRequest
-	6,  // 13: fenced.ipc.v1.IPCGatewayService.ReceiveMessages:input_type -> fenced.ipc.v1.ReceiveMessagesRequest
-	8,  // 14: fenced.ipc.v1.IPCGatewayService.AcknowledgeMessage:input_type -> fenced.ipc.v1.AcknowledgeMessageRequest
-	5,  // 15: fenced.ipc.v1.IPCGatewayService.SendMessage:output_type -> fenced.ipc.v1.SendMessageResponse
-	7,  // 16: fenced.ipc.v1.IPCGatewayService.ReceiveMessages:output_type -> fenced.ipc.v1.ReceiveMessagesResponse
-	9,  // 17: fenced.ipc.v1.IPCGatewayService.AcknowledgeMessage:output_type -> fenced.ipc.v1.AcknowledgeMessageResponse
-	15, // [15:18] is the sub-list for method output_type
-	12, // [12:15] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	0,  // 12: fenced.ipc.v1.BroadcastMessageRequest.identity:type_name -> fenced.ipc.v1.AttemptIdentity
+	12, // 13: fenced.ipc.v1.BroadcastMessageRequest.deadline:type_name -> google.protobuf.Timestamp
+	4,  // 14: fenced.ipc.v1.IPCGatewayService.SendMessage:input_type -> fenced.ipc.v1.SendMessageRequest
+	6,  // 15: fenced.ipc.v1.IPCGatewayService.ReceiveMessages:input_type -> fenced.ipc.v1.ReceiveMessagesRequest
+	8,  // 16: fenced.ipc.v1.IPCGatewayService.AcknowledgeMessage:input_type -> fenced.ipc.v1.AcknowledgeMessageRequest
+	10, // 17: fenced.ipc.v1.IPCGatewayService.BroadcastMessage:input_type -> fenced.ipc.v1.BroadcastMessageRequest
+	5,  // 18: fenced.ipc.v1.IPCGatewayService.SendMessage:output_type -> fenced.ipc.v1.SendMessageResponse
+	7,  // 19: fenced.ipc.v1.IPCGatewayService.ReceiveMessages:output_type -> fenced.ipc.v1.ReceiveMessagesResponse
+	9,  // 20: fenced.ipc.v1.IPCGatewayService.AcknowledgeMessage:output_type -> fenced.ipc.v1.AcknowledgeMessageResponse
+	11, // 21: fenced.ipc.v1.IPCGatewayService.BroadcastMessage:output_type -> fenced.ipc.v1.BroadcastMessageResponse
+	18, // [18:22] is the sub-list for method output_type
+	14, // [14:18] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_fenced_ipc_v1_ipc_proto_init() }
@@ -903,7 +1097,7 @@ func file_fenced_ipc_v1_ipc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_fenced_ipc_v1_ipc_proto_rawDesc), len(file_fenced_ipc_v1_ipc_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
