@@ -114,7 +114,7 @@ The Syscall ABI provides a strongly-typed, POSIX-modeled interface separating ag
 ### 2.3 Durable IPC Mailbox Subsystem
 
 The IPC Subsystem resolves inter-agent communication challenges across process and network boundaries:
-1. **Addressing**: Target addresses bind to `AgentAddress { agent_version_ref, instance }`. The mailbox is anchored to the logical `Run`, allowing messages to survive attempt failures.
+1. **Addressing**: Target addresses bind to `AgentAddress { agent_version_ref, instance }`. The mailbox is anchored to the logical `Run`, allowing messages to survive attempt failures. An address may name the version without the run: the platform resolves the run of that version that may take the traffic, so a service that runs two versions during a rollout only serves the version the message addressed.
 2. **At-Least-Once Delivery & Deduplication**: Messages are persisted in durable storage. Receivers track message IDs via mailbox receipts, ensuring exactly-once application semantics.
 3. **Multi-Tenant Isolation**: Mailbox access is partitioned strictly by `tenant_id`. Cross-tenant delivery requires explicit federation policy.
 

@@ -7,6 +7,17 @@ public protocol versions evolve independently.
 ## Unreleased
 
 ### Added
+- The traffic follows the version. The address carries the agent version -
+  the frozen IPC contract already named it `agent_version_ref`, and the Go
+  address had dropped it - and the routing only offers the instances of the
+  addressed version. A task that was admitted against one version of an agent
+  no longer has its messages delivered to an instance of another one, which
+  is what a rollout in flight looks like.
+- A message may now name the agent version instead of the run. The platform
+  resolves the run that may take the traffic, and the resolution is version
+  aware: during a rollout it only offers the instances of the addressed
+  version. The authorization still runs before the resolution, so an
+  unauthorized sender cannot learn which runs exist.
 - The management console is a built product now: React, TypeScript and
   esbuild in `web/`, the bundle embedded in the control plane and served at
   `/console`. An operator who administers several tenants holds one token
