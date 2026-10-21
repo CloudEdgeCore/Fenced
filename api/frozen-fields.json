@@ -1,0 +1,91 @@
+{
+  "_comment": [
+    "The frozen contracts promise fields. This ledger records the ones the",
+    "implementation does not honor under their own name, and the hand-written",
+    "types that mirror a frozen message. The check is",
+    "internal/platform/contractcheck: a field is honored when a hand-written",
+    "type carries it and the code uses it, or when it is listed here.",
+    "A mirror must carry every field of the message it mirrors, modulo the",
+    "divergences listed below."
+  ],
+  "mirrors": {
+    "fenced.ipc.v1.AgentAddress": "internal/kernel/ipc.AgentAddress",
+    "fenced.service.v1.AgentService": "internal/kernel/supervisor.Service",
+    "fenced.service.v1.ServiceSpec": "internal/kernel/supervisor.ServiceSpec",
+    "fenced.service.v1.ServiceStatus": "internal/kernel/supervisor.ServiceStatus",
+    "fenced.service.v1.ServiceInstance": "internal/kernel/supervisor.Instance",
+    "fenced.service.v1.RolloutConfig": "internal/kernel/supervisor.RolloutConfig",
+    "fenced.service.v1.HealthConfig": "internal/kernel/supervisor.HealthConfig"
+  },
+  "fields": {
+    "fenced.service.v1.RolloutConfig.min_ready_seconds": {
+      "status": "divergent",
+      "go": "MinReadyTime",
+      "reason": "The kernel names the minimum ready time what it is."
+    },
+    "fenced.service.v1.ServiceInstance.last_heartbeat_at": {
+      "status": "divergent",
+      "go": "LastHeartbeat",
+      "reason": "The kernel instance carries the heartbeat as a timestamp."
+    },
+    "fenced.service.v1.DeleteServiceResponse.deleted": {
+      "status": "pending",
+      "reason": "The ServiceManagementService gRPC server is not served; deletion answers through the Control API, which returns the terminated service."
+    },
+    "fenced.service.v1.DrainInstanceResponse.draining": {
+      "status": "pending",
+      "reason": "The ServiceManagementService gRPC server is not served; the supervisor drains an instance but no RPC answers for it."
+    },
+    "fenced.syscall.v1.HandshakeRequest.client_abi_version": {
+      "status": "pending",
+      "reason": "The frozen SyscallService has no gRPC server. The ABI version is a kernel constant, and the runtime boundary is the Runtime Interface."
+    },
+    "fenced.syscall.v1.HandshakeRequest.runtime_framework": {
+      "status": "pending",
+      "reason": "The frozen SyscallService has no gRPC server; the Runtime Interface carries no handshake."
+    },
+    "fenced.syscall.v1.HandshakeRequest.runtime_version": {
+      "status": "pending",
+      "reason": "The frozen SyscallService has no gRPC server; the Runtime Interface carries no handshake."
+    },
+    "fenced.syscall.v1.HandshakeRequest.supported_syscalls": {
+      "status": "pending",
+      "reason": "The frozen SyscallService has no gRPC server; syscall support is declared by the runtime binding table instead."
+    },
+    "fenced.syscall.v1.HandshakeResponse.enabled_syscalls": {
+      "status": "pending",
+      "reason": "The frozen SyscallService has no gRPC server; syscall support is declared by the runtime binding table instead."
+    },
+    "fenced.syscall.v1.HandshakeResponse.kernel_abi_version": {
+      "status": "pending",
+      "reason": "The frozen SyscallService has no gRPC server. The ABI version is a kernel constant, and the runtime boundary is the Runtime Interface."
+    },
+    "fenced.syscall.v1.HandshakeResponse.rejection_reason": {
+      "status": "pending",
+      "reason": "The frozen SyscallService has no gRPC server; nothing can reject a handshake that is never offered."
+    },
+    "fenced.service.v1.RolloutConfig.drain_timeout": {
+      "status": "divergent",
+      "go": "DrainTimeout",
+      "reason": "The kernel keeps the drain timeout on the spec, next to the rollout settings it applies to."
+    },
+    "fenced.service.v1.ServiceInstance.started_at": {
+      "status": "pending",
+      "reason": "The kernel instance records when it was created and when it last reported in; the moment the runtime started it is not tracked."
+    },
+    "fenced.service.v1.ServiceSpec.env": {
+      "status": "pending",
+      "reason": "The kernel passes the environment through the workload spec; the service spec has no environment of its own."
+    },
+    "fenced.service.v1.ServiceSpec.metadata": {
+      "status": "divergent",
+      "go": "Labels",
+      "reason": "The kernel calls the service metadata labels."
+    },
+    "fenced.service.v1.ServiceStatus.target_version": {
+      "status": "divergent",
+      "go": "RolloutTargetVersion",
+      "reason": "The status names the target version as part of the rollout state."
+    }
+  }
+}

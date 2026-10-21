@@ -7,6 +7,30 @@ public protocol versions evolve independently.
 ## Unreleased
 
 ### Added
+- The frozen contracts are checked against the implementation. Every field of
+  the four frozen protos is either honored under its own name, implemented
+  under another one, or listed as pending in `api/frozen-fields.json` with a
+  reason. `internal/platform/contractcheck` parses the protos and the
+  hand-written code and fails when a mirror type drops a field, when a ledger
+  entry names something that no longer exists, or when a divergence points at
+  a Go name nothing carries.
+
+### Fixed
+- The check found what a reader could not: `ipc.AgentAddress` had dropped
+  `agent_version_ref` (the Go address lost the version the frozen contract
+  names), `supervisor.RolloutConfig` had no drain timeout though the frozen
+  config has one, `ServiceInstance` had no start time, and `ServiceSpec` had
+  neither an environment nor metadata under those names. The first was fixed
+  in this release; the rest are recorded as divergences or pending, each with
+  the reason it stays that way.
+- `docs/contracts/v1.2-contract-freeze.md` now says which frozen contracts
+  are actually served: `fenced.ipc.v1` and `fenced.effect.v1` are, while
+  `fenced.service.v1` (ServiceManagementService) and `fenced.syscall.v1`
+  (SyscallService) have no gRPC server - their semantics run through the
+  Control API and the in-process dispatcher, and the frozen wire stays a
+  promise to the clients, not a description of a running server.
+
+### Added
 - The capability matrix is mechanical. Every row of `docs/feature-status.md`
   names its proof - a test that must exist and pass, a command that must
   succeed, or the evidence artifact that records the run - and
