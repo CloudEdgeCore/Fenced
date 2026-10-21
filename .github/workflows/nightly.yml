@@ -130,7 +130,7 @@ jobs:
 
       - name: Upload capacity evidence log
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: capacity-baseline-evidence
           path: /tmp/capacity-evidence.txt
@@ -167,7 +167,7 @@ jobs:
           go test -tags=integration -count=1 -timeout 1080m -run 'TestControlPlanePipelineCapacityBaseline' -v ./internal/kernel/store/postgres/ 2>&1 | tee /tmp/capacity-evidence.txt
       - name: Upload capacity evidence log
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: capacity-baseline-1m-evidence
           path: /tmp/capacity-evidence.txt
@@ -344,7 +344,7 @@ jobs:
 
       - name: Upload live evidence bundle
         if: steps.credentials.outputs.configured == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: research-live-evidence
           path: artifacts/research-live/*.json
