@@ -19,7 +19,7 @@ import (
 
 func runService(args []string, stdout, stderr io.Writer) error {
 	if len(args) == 0 {
-		return errors.New("usage: fenced service <create|list|get|scale|restart|stop|delete|instances> [flags]")
+		return errors.New("usage: fenced service <create|list|get|scale|restart|stop|delete|instances|rollout|rollback> [flags]")
 	}
 	switch args[0] {
 	case "create":
@@ -38,6 +38,10 @@ func runService(args []string, stdout, stderr io.Writer) error {
 		return runServiceDelete(args[1:], stdout, stderr)
 	case "instances":
 		return runServiceInstances(args[1:], stdout, stderr)
+	case "rollout":
+		return runServiceRollout(args[1:], stdout, stderr)
+	case "rollback":
+		return runServiceRollback(args[1:], stdout, stderr)
 	default:
 		return fmt.Errorf("unknown service command %q", args[0])
 	}
@@ -241,6 +245,98 @@ func runServiceScale(args []string, stdout, stderr io.Writer) error {
 	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("scale service failed (%d): %s", resp.StatusCode, string(body))
+	}
+	fmt.Fprintf(stdout, "%s\n", string(body))
+	return nil
+}
+
+// runServiceRollout moves a service to another agent version without
+// dropping it: a serving instance is only replaced after its replacement has
+// proven itself, and a failed rollout returns to the previous version when
+// the service asked for it.
+func runServiceRollout(args []string, stdout, stderr io.Writer) error {
+	flags := flag.NewFlagSet("service rollout", flag.ContinueOnError)
+	flags.SetOutput(stderr)
+	endpoint := flags.String("endpoint", "http://127.0.0.1:8080", "Control API endpoint")
+	toVersion := flags.String("to", "", "Target agent version, in [namespace/]name@version form")
+	autoRollback := flags.Bool("auto-rollback", false, "Return to the previous version when the rollout fails")
+	maxSurge := flags.Int("max-surge", 0, "Replicas that may exist above the desired count (0 uses the service setting)")
+	maxUnavailable := flags.Int("max-unavailable", 0, "Replicas that may be unavailable (0 uses the service setting)")
+	minReadyTime := flags.Duration("min-ready-time", 0, "How long a replacement must stay healthy before it may replace an instance")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if flags.NArg() < 1 {
+		return errors.New("usage: fenced service rollout <serviceId> -to <version> [-auto-rollback] [-max-surge n] [-max-unavailable n] [-min-ready-time 30s]")
+	}
+	if strings.TrimSpace(*toVersion) == "" {
+		return errors.New("-to is required: a rollout names the version it moves to")
+	}
+	serviceID := flags.Arg(0)
+
+	payload := map[string]any{"newVersion": *toVersion}
+	config := map[string]any{}
+	if *autoRollback {
+		config["autoRollback"] = true
+	}
+	if *maxSurge > 0 {
+		config["maxSurge"] = *maxSurge
+	}
+	if *maxUnavailable > 0 {
+		config["maxUnavailable"] = *maxUnavailable
+	}
+	if *minReadyTime > 0 {
+		config["minReadyTime"] = int64(*minReadyTime)
+	}
+	if len(config) > 0 {
+		payload["config"] = config
+	}
+	raw, _ := json.Marshal(payload)
+
+	url := fmt.Sprintf("%s/v1/services/%s/rollout", strings.TrimRight(*endpoint, "/"), serviceID)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, bytes.NewReader(raw))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	return postServiceAction(req, "rollout", stdout)
+}
+
+// runServiceRollback returns a service to the version it ran before.
+func runServiceRollback(args []string, stdout, stderr io.Writer) error {
+	flags := flag.NewFlagSet("service rollback", flag.ContinueOnError)
+	flags.SetOutput(stderr)
+	endpoint := flags.String("endpoint", "http://127.0.0.1:8080", "Control API endpoint")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if flags.NArg() < 1 {
+		return errors.New("usage: fenced service rollback <serviceId>")
+	}
+	serviceID := flags.Arg(0)
+
+	url := fmt.Sprintf("%s/v1/services/%s/rollback", strings.TrimRight(*endpoint, "/"), serviceID)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, nil)
+	if err != nil {
+		return err
+	}
+	return postServiceAction(req, "rollback", stdout)
+}
+
+// postServiceAction sends one service action and prints what the control
+// plane answered.
+func postServiceAction(req *http.Request, action string, stdout io.Writer) error {
+	setBearer(req)
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+		return fmt.Errorf("%s service failed (%d): %s", action, resp.StatusCode, string(body))
 	}
 	fmt.Fprintf(stdout, "%s\n", string(body))
 	return nil

@@ -118,6 +118,38 @@ The IPC Subsystem resolves inter-agent communication challenges across process a
 2. **At-Least-Once Delivery & Deduplication**: Messages are persisted in durable storage. Receivers track message IDs via mailbox receipts, ensuring exactly-once application semantics.
 3. **Multi-Tenant Isolation**: Mailbox access is partitioned strictly by `tenant_id`. Cross-tenant delivery requires explicit federation policy.
 
+### 2.3b How agents collaborate
+
+Three primitives, each of them enforced, compose into multi-agent work. The
+kernel does not ship a "team" object: a team is what these three express.
+
+| Primitive | Surface | Enforced by |
+| :--- | :--- | :--- |
+| **Message** | `fenced.ipc.send` / `fenced.ipc.receive` / `fenced.ipc.ack` (MCP) and `SendMessage` / `ReceiveMessages` / `AcknowledgeMessage` (gRPC) | The durable mailbox: at-least-once delivery, a receipt per receiver, the tenant boundary, and a two-layer grant (`capabilities.peers` on the sending publication, `allowed_peers` on the tenant) |
+| **Broadcast** | `fenced.ipc.broadcast` (MCP) and `BroadcastMessage` (gRPC, added in v1.5) | The version resolver: one durable message per running instance of the addressed version, each with its own idempotency key |
+| **Delegate** | `fenced.task.spawn` (MCP) | `capabilities.spawnTasks` and `capabilities.childAgents`, plus the spawn caps (depth, steps, tokens, cost). The child task is an ordinary governed task: admission, budget, leases, audit |
+| **Coordinate** | The workflow DAG | The kernel dispatches steps, joins dynamic groups, applies workflow budgets and deadlines, and parks for human approvals |
+
+The address is the agent *version*, not a run. A run id changes with every
+restart, so a peer that was addressed by run would have to be tracked; the
+version is stable, and the platform resolves a running instance of it. When a
+service runs two versions during a rollout, the resolution only offers the
+version the address names.
+
+The limits are as deliberate as the primitives:
+
+- **No push.** The mailbox is drained by the receiver on its own schedule.
+  There is no channel into a running agent beyond the lease it holds, so a
+  one-shot task is never interrupted by a message. A *service* can be woken
+  when its mailbox has mail (`autoWake`), because a service is a replica set
+  the supervisor may reconcile.
+- **No group object.** There is no agent group, shared blackboard or
+  consensus primitive. Shared knowledge goes through the memory gateway
+  (tenant-scoped, sensitivity-filtered); membership is the set of peers a
+  publication grants plus the children it may spawn.
+- **No cross-tenant collaboration.** Peer grants and tenant policy stop at the
+  tenant boundary.
+
 ### 2.4 External Side-Effect Engine
 
 External side-effects (third-party API calls, transactions, webhooks) require transactional discipline:

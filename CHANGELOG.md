@@ -7,6 +7,25 @@ public protocol versions evolve independently.
 ## Unreleased
 
 ### Added
+- A peer is addressed by its agent version, not by a run id. The sandboxed
+  agent's `fenced.ipc.send` no longer requires `toRunId`: an empty run
+  resolves to a running instance of the named version, the same resolution
+  the gRPC path uses. A run id changes with every restart, so a collaborating
+  agent had to track the run of its peer; the version is what a peer is.
+- `fenced.ipc.broadcast` and the additive `BroadcastMessage` RPC deliver one
+  durable message to every running instance of an agent version. Each
+  delivery carries an idempotency key scoped to its instance, so a retried
+  broadcast replays the stored messages instead of duplicating them.
+- `fenced service rollout` and `fenced service rollback`: the rollout surface
+  the Control API has had since v1.5 is reachable from the CLI the operations
+  team runs.
+- `docs/architecture/ARCHITECTURE.md` has a section on how agents collaborate:
+  the four primitives (message, broadcast, delegate, coordinate) and the three
+  deliberate limits (no push into a one-shot task, no group object, no
+  cross-tenant collaboration). `docs/feature-status.md` gains the matching
+  row, proved by the ecosystem test and the new broadcast tests.
+
+### Added
 - The frozen contracts are checked against the implementation. Every field of
   the four frozen protos is either honored under its own name, implemented
   under another one, or listed as pending in `api/frozen-fields.json` with a

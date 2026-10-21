@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestServiceCreateSubmitsPublishedVersionAndWorkload(t *testing.T) {
@@ -150,6 +151,8 @@ func TestServiceCommandsForwardBearerToken(t *testing.T) {
 		{"stop", []string{"svc-1"}, http.MethodPost, "/v1/services/svc-1/stop", http.StatusOK},
 		{"delete", []string{"svc-1"}, http.MethodDelete, "/v1/services/svc-1", http.StatusNoContent},
 		{"instances", []string{"svc-1"}, http.MethodGet, "/v1/services/svc-1/instances", http.StatusOK},
+		{"rollout", []string{"-to", "worker@2.0.0", "-auto-rollback", "svc-1"}, http.MethodPost, "/v1/services/svc-1/rollout", http.StatusAccepted},
+		{"rollback", []string{"svc-1"}, http.MethodPost, "/v1/services/svc-1/rollback", http.StatusAccepted},
 	} {
 		t.Run(tc.command, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -172,5 +175,37 @@ func TestServiceCommandsForwardBearerToken(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+// The rollout command carries the target version and the rollout settings
+// the operator chose; a service without settings keeps its own.
+func TestServiceRolloutSendsTheTargetAndTheConfig(t *testing.T) {
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Errorf("decode rollout body: %v", err)
+		}
+		w.WriteHeader(http.StatusAccepted)
+		_, _ = io.WriteString(w, `{}`)
+	}))
+	defer server.Close()
+
+	if err := run([]string{"service", "rollout", "-endpoint", server.URL, "-to", "worker@2.0.0",
+		"-auto-rollback", "-max-surge", "2", "-min-ready-time", "30s", "svc-1"}, io.Discard, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	if body["newVersion"] != "worker@2.0.0" {
+		t.Fatalf("newVersion = %v", body["newVersion"])
+	}
+	config, ok := body["config"].(map[string]any)
+	if !ok {
+		t.Fatalf("config = %v", body["config"])
+	}
+	if config["autoRollback"] != true || config["maxSurge"] != float64(2) {
+		t.Fatalf("config = %v", config)
+	}
+	if config["minReadyTime"] != float64(int64(30*time.Second)) {
+		t.Fatalf("minReadyTime = %v", config["minReadyTime"])
 	}
 }
