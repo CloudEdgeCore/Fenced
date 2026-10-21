@@ -7,6 +7,12 @@ public protocol versions evolve independently.
 ## Unreleased
 
 ### Added
+- The capability matrix is mechanical. Every row of `docs/feature-status.md`
+  names its proof - a test that must exist and pass, a command that must
+  succeed, or the evidence artifact that records the run - and
+  `scripts/check-capability-proofs.py` runs it. A **GA** row without a
+  passing test fails the build.
+
 - The traffic follows the version. The address carries the agent version -
   the frozen IPC contract already named it `agent_version_ref`, and the Go
   address had dropped it - and the routing only offers the instances of the
@@ -73,6 +79,14 @@ public protocol versions evolve independently.
 - The console document no longer loads Google Fonts: a control plane that
   phones a font host on every page view is not self-contained, and the
   operator workstation may be offline.
+
+### Fixed
+- Five framework adapters (LangGraph, AutoGen, CrewAI, OpenAI Agents SDK,
+  Custom) claimed GA and "Conformance Certified: Yes" while no test
+  exercises them. They now say `Implemented (unverified)`, their conformance
+  column says No, and the matrix states what is missing: the adapter
+  compiles and implements the Runtime Interface, and nothing proves the
+  behavior end to end.
 
 ## 1.4.0 - 2026-10-20
 

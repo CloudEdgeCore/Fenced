@@ -135,6 +135,9 @@ jobs:
       - name: Verify the documentation policy
         run: python3 scripts/check-docs-policy.py
 
+      - name: Verify that the capability matrix is proved
+        run: python3 scripts/check-capability-proofs.py --strict
+
       - name: Vet
         run: go vet ./...
 

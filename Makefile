@@ -27,7 +27,7 @@ TAKEOVER_URL := postgres://fenced:fenced-readme-only@127.0.0.1:$(TAKEOVER_PORT)/
 
 .DEFAULT_GOAL := help
 .PHONY: help build fmt fmt-check vet lint vuln test test-race test-integration \
-	python-test python-wheel ts-test web-build web-test web-verify docs-verify proto rust-build rust-lint rust-test \
+	python-test python-wheel ts-test web-build web-test web-verify docs-verify capability-verify capability-verify-strict proto rust-build rust-lint rust-test \
 	version-check conformance dev-up dev-down dev-migrate dev-reset \
 	takeover-check verify verify-ci clean
 
@@ -99,6 +99,12 @@ web-verify: ## Verify the committed console bundle matches its sources
 
 docs-verify: ## Check that every document is either published or local
 	$(PYTHON) scripts/check-docs-policy.py
+
+capability-verify: ## Run the proof of every capability the matrix claims
+	$(PYTHON) scripts/check-capability-proofs.py
+
+capability-verify-strict: ## The proof check CI runs: a tool that cannot run is a failure
+	$(PYTHON) scripts/check-capability-proofs.py --strict
 
 ##@ Contracts
 
@@ -186,6 +192,7 @@ verify-ci: ## Everything CI runs that is available on this machine
 	$(MAKE) web-test
 	$(MAKE) web-verify
 	$(MAKE) docs-verify
+	$(MAKE) capability-verify-strict
 	$(MAKE) version-check
 	@command -v buf >/dev/null && $(MAKE) proto || echo "skip proto: buf is not installed"
 	@command -v cargo >/dev/null && $(MAKE) rust-lint rust-test || echo "skip rust: cargo is not installed"

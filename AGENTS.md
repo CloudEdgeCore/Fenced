@@ -133,12 +133,16 @@ Invariants worth knowing before you touch the kernel:
 4. **Keep the documentation honest.** `docs/feature-status.md` distinguishes
    GA, Implemented, Limited and Not verified. If a change does not move a row
    to a stronger status, say so. Do not describe an untested path as certified.
-5. **A migration is forward-only and additive.** Add `db/migrations/NNNNNN_*.up.sql`;
+5. **A capability row names its proof.** `docs/feature-status.md` is checked:
+   every row names a test, a command or an evidence artifact, and a **GA**
+   row must name a test that passes. A capability added without a proof is
+   added without GA. The check is `make capability-verify`.
+6. **A migration is forward-only and additive.** Add `db/migrations/NNNNNN_*.up.sql`;
    never edit an applied migration.
-6. **Credentials never cross a boundary.** Provider keys are read from the
+7. **Credentials never cross a boundary.** Provider keys are read from the
    configured environment variable per request, and secret handles are injected
    into the executor, never returned to the agent.
-7. **A security policy has one implementation.** The transport policy of the
+8. **A security policy has one implementation.** The transport policy of the
    Runtime Interface lives in `internal/runtime/bindings` (`EndpointPolicy`,
    `IsLoopbackHost`). A command line, a provider or a tool that needs the
    same rule calls it; a second copy of the rule is a second boundary that
