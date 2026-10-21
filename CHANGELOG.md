@@ -7,6 +7,14 @@ public protocol versions evolve independently.
 ## Unreleased
 
 ### Added
+- The management console is a built product now: React, TypeScript and
+  esbuild in `web/`, the bundle embedded in the control plane and served at
+  `/console`. An operator who administers several tenants holds one token
+  per tenant; the console keeps them apart and shows the tenants side by
+  side in the fleet view. The kernel's tenant boundary is untouched - the
+  aggregation happens in the browser. The console loads no external asset
+  and its content security policy allows no inline script and no inline
+  style.
 - The control plane rolls a service to another agent version without
   dropping it. A serving instance is only replaced after its replacement
   proved itself healthy, the rollout state is durable (`PROGRESSING`,

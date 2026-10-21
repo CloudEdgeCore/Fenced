@@ -41,7 +41,7 @@ control plane run without a model account or an API key.
 | `internal/platform/` | SPIFFE, outbox, projectors, artifact store, migrate, OTel, redaction |
 | `internal/security/` | The negative test suite (no production code): secret leak, approval binding, tenant escape, fencing replay |
 | `cmd/` | 18 binaries (`fenced-control`, `fenced-controller`, `fenced-gateway`, …) |
-| `cmd/agent/` | The developer CLI and its console: `ui.go` (entry), `ui_handlers.go` (HTTP handlers), `ui_assets/dashboard.html` (the embedded console document) |
+| `cmd/agent/` | The developer CLI: `ui.go` points at the console of the configured control plane |
 | `runtime/wasm/` | The Rust Wasmtime provider |
 | `sdk/agent` | The canonical Runtime Interface contract (Go, standard library only) |
 | `sdk/python`, `sdk/typescript` | The other SDKs; they mirror `sdk/agent` |

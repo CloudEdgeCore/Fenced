@@ -166,17 +166,32 @@ outside execution windows). A real model-backed Python agent lives at
 
 These commands use a fixed development tenant, loopback plaintext connections, and development executors. They are only safe for local development. Production mode rejects these downgraded settings.
 
-### The operator console
+### The management console
 
-The control plane serves the operator console at `/console`:
+The control plane serves the management console at `/console`:
 
 ```bash
 curl -s http://127.0.0.1:8080/console/ | head -5
 ```
 
-It is a static document that reads the control plane's own endpoints, so it
-needs the operator's bearer token: open it, paste a token, and press Connect.
-The token stays in the browser session and is only ever sent as a header.
+It is a built application that reads the control plane's own endpoints, so it
+needs the operator's bearer token: open it, add the tenant and its token, and
+press Connect. The token stays in the browser session and is only ever sent as
+a header.
+
+The sources live in `web/`:
+
+```bash
+cd web
+npm ci
+npm run typecheck
+npm test
+npm run build          # the bundle lands in internal/control/console/dist
+```
+
+The bundle is committed and embedded in the control plane binary, so no node
+runtime is needed in production. `make web-verify` rebuilds it and fails when
+the committed artifact differs from the one the sources produce.
 
 ### CLI workflows
 
