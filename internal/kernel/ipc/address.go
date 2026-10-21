@@ -5,16 +5,24 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/agentversion"
 )
 
 // AgentAddress is the unified address of an agent in the Fenced kernel.
 // It supports both logical agent addressing (InstanceID is empty) and
 // specific instance addressing (InstanceID is non-empty).
+//
+// The address carries the agent version. The frozen IPC contract names it
+// agent_version_ref (field 1 of AgentAddress): without it an address names
+// an agent, and during a rollout the agent runs two versions at once - the
+// address would not say which one a message belongs to.
 type AgentAddress struct {
-	TenantID   string `json:"tenant_id"`
-	Namespace  string `json:"namespace"`
-	AgentID    string `json:"agent_id"`
-	InstanceID string `json:"instance_id,omitempty"`
+	TenantID        string `json:"tenant_id"`
+	Namespace       string `json:"namespace"`
+	AgentID         string `json:"agent_id"`
+	AgentVersionRef string `json:"agent_version_ref,omitempty"`
+	InstanceID      string `json:"instance_id,omitempty"`
 }
 
 // NewAddress creates a logical AgentAddress.
@@ -29,6 +37,15 @@ func NewAddress(tenantID, namespace, agentID string) AgentAddress {
 	}
 }
 
+// NewVersionedAddress creates a logical AgentAddress that names the agent
+// version it belongs to. A logical address without a version names an agent
+// that may run several versions at once, which is not a delivery target.
+func NewVersionedAddress(tenantID, namespace, agentID, versionRef string) AgentAddress {
+	address := NewAddress(tenantID, namespace, agentID)
+	address.AgentVersionRef = strings.TrimSpace(versionRef)
+	return address
+}
+
 // NewInstanceAddress creates an instance-specific AgentAddress.
 func NewInstanceAddress(tenantID, namespace, agentID, instanceID string) AgentAddress {
 	if namespace == "" {
@@ -40,6 +57,51 @@ func NewInstanceAddress(tenantID, namespace, agentID, instanceID string) AgentAd
 		AgentID:    strings.TrimSpace(agentID),
 		InstanceID: strings.TrimSpace(instanceID),
 	}
+}
+
+// NewInstanceAddressForVersion creates an instance-specific AgentAddress that
+// names the agent version the instance runs.
+func NewInstanceAddressForVersion(tenantID, namespace, agentID, versionRef, instanceID string) AgentAddress {
+	address := NewInstanceAddress(tenantID, namespace, agentID, instanceID)
+	address.AgentVersionRef = strings.TrimSpace(versionRef)
+	return address
+}
+
+// VersionPart returns the version part of an agent version reference: the
+// "2.0.0" of "reports@2.0.0". The name and the namespace are part of the
+// address path, so the URI carries them there.
+func VersionPart(ref string) string {
+	trimmed := strings.TrimSpace(ref)
+	if at := strings.LastIndex(trimmed, "@"); at >= 0 {
+		return trimmed[at+1:]
+	}
+	return ""
+}
+
+// SameVersion reports whether two agent version references name the same
+// version. The namespace is part of the identity of a version: "prod/reports@1"
+// and "default/reports@1" are two different publications. A reference without
+// a namespace names the default one.
+func SameVersion(left, right string) bool {
+	leftKey, rightKey := canonicalVersion(left), canonicalVersion(right)
+	if leftKey == "" || rightKey == "" {
+		return leftKey == rightKey
+	}
+	return leftKey == rightKey
+}
+
+// canonicalVersion normalizes an agent version reference to the form the
+// kernel publishes: the namespace is dropped when it is the default one.
+func canonicalVersion(ref string) string {
+	trimmed := strings.TrimSpace(ref)
+	if trimmed == "" {
+		return ""
+	}
+	namespace, name, version, err := agentversion.ParseRef(trimmed)
+	if err != nil {
+		return trimmed
+	}
+	return agentversion.FormatRef(namespace, name, version)
 }
 
 // Validate checks that the address has all required fields and valid characters.
@@ -63,6 +125,9 @@ func (a AgentAddress) Validate() error {
 	if strings.ContainsAny(a.InstanceID, " /#?@") {
 		return fmt.Errorf("%w: instance_id contains invalid characters", ErrInvalidAddress)
 	}
+	if strings.ContainsAny(a.AgentVersionRef, " /#?") {
+		return fmt.Errorf("%w: agent_version_ref contains invalid characters", ErrInvalidAddress)
+	}
 	return nil
 }
 
@@ -74,12 +139,14 @@ func (a AgentAddress) EffectiveNamespace() string {
 	return a.Namespace
 }
 
-// Logical returns the logical address with InstanceID cleared.
+// Logical returns the logical address with InstanceID cleared. The version
+// stays: it is what tells the versions of an agent apart.
 func (a AgentAddress) Logical() AgentAddress {
 	return AgentAddress{
-		TenantID:  a.TenantID,
-		Namespace: a.EffectiveNamespace(),
-		AgentID:   a.AgentID,
+		TenantID:        a.TenantID,
+		Namespace:       a.EffectiveNamespace(),
+		AgentID:         a.AgentID,
+		AgentVersionRef: a.AgentVersionRef,
 	}
 }
 
@@ -105,18 +172,28 @@ func (a AgentAddress) Matches(target AgentAddress) bool {
 	if a.InstanceID != "" && target.InstanceID != "" && a.InstanceID != target.InstanceID {
 		return false
 	}
+	if a.AgentVersionRef != "" && target.AgentVersionRef != "" && !SameVersion(a.AgentVersionRef, target.AgentVersionRef) {
+		return false
+	}
 	return true
 }
 
 // String returns the canonical, stably serializable URI representation:
 //
-//	agent://<tenant>/<namespace>/<agent>[/<instance>]
+//	agent://<tenant>/<namespace>/<agent>[@<version>][/<instance>]
+//
+// The version is the comparable part of the version reference: the namespace
+// is already part of the path.
 func (a AgentAddress) String() string {
 	ns := a.EffectiveNamespace()
-	if a.InstanceID != "" {
-		return fmt.Sprintf("agent://%s/%s/%s/%s", a.TenantID, ns, a.AgentID, a.InstanceID)
+	agent := a.AgentID
+	if version := VersionPart(a.AgentVersionRef); version != "" {
+		agent += "@" + version
 	}
-	return fmt.Sprintf("agent://%s/%s/%s", a.TenantID, ns, a.AgentID)
+	if a.InstanceID != "" {
+		return fmt.Sprintf("agent://%s/%s/%s/%s", a.TenantID, ns, agent, a.InstanceID)
+	}
+	return fmt.Sprintf("agent://%s/%s/%s", a.TenantID, ns, agent)
 }
 
 // MarshalText implements encoding.TextMarshaler for stable serialization.
@@ -189,11 +266,11 @@ func (a *AgentAddress) UnmarshalJSON(data []byte) error {
 
 // ParseAddress parses a canonical agent address string in either:
 //
-//	agent://<tenant>/<namespace>/<agent>[/<instance>]
+//	agent://<tenant>/<namespace>/<agent>[@<version>][/<instance>]
 //
 // or slash-delimited format:
 //
-//	<tenant>/<namespace>/<agent>[/<instance>]
+//	<tenant>/<namespace>/<agent>[@<version>][/<instance>]
 func ParseAddress(raw string) (AgentAddress, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -209,13 +286,20 @@ func ParseAddress(raw string) (AgentAddress, error) {
 
 	parts := strings.Split(trimmed, "/")
 	if len(parts) < 3 || len(parts) > 4 {
-		return AgentAddress{}, fmt.Errorf("%w: expected tenant/namespace/agent[/instance], got %q", ErrInvalidAddress, raw)
+		return AgentAddress{}, fmt.Errorf("%w: expected tenant/namespace/agent[@version][/instance], got %q", ErrInvalidAddress, raw)
 	}
 
 	addr := AgentAddress{
 		TenantID:  parts[0],
 		Namespace: parts[1],
 		AgentID:   parts[2],
+	}
+	// The agent segment may carry the version: "name@version". The namespace
+	// of the version is the namespace of the path.
+	if at := strings.LastIndex(addr.AgentID, "@"); at > 0 {
+		name, version := addr.AgentID[:at], addr.AgentID[at+1:]
+		addr.AgentID = name
+		addr.AgentVersionRef = agentversion.FormatRef(addr.Namespace, name, version)
 	}
 	if len(parts) == 4 {
 		addr.InstanceID = parts[3]

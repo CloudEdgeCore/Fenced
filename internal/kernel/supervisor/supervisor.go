@@ -787,7 +787,7 @@ func (s *Supervisor) reconcileService(ctx context.Context, svc *Service) error {
 			}
 			for i := 0; i < toSpawn; i++ {
 				instID := fmt.Sprintf("%s-%s", svc.ID, s.idGen()[:6])
-				instAddr := ipc.NewInstanceAddress(svc.TenantID, svc.Namespace, svc.AgentID, instID)
+				instAddr := ipc.NewInstanceAddressForVersion(svc.TenantID, svc.Namespace, svc.AgentID, targetVersion, instID)
 				newInstance := &Instance{
 					ID:            instID,
 					ServiceID:     svc.ID,
@@ -865,7 +865,7 @@ func (s *Supervisor) reconcileService(ctx context.Context, svc *Service) error {
 			needed := desired - allocated
 			for i := 0; i < needed; i++ {
 				instID := fmt.Sprintf("%s-%s", svc.ID, s.idGen()[:6])
-				instAddr := ipc.NewInstanceAddress(svc.TenantID, svc.Namespace, svc.AgentID, instID)
+				instAddr := ipc.NewInstanceAddressForVersion(svc.TenantID, svc.Namespace, svc.AgentID, targetVersion, instID)
 				newInstance := &Instance{
 					ID:            instID,
 					ServiceID:     svc.ID,
