@@ -319,8 +319,13 @@ func main() {
 	// SendMessage is gated twice: the sending AgentVersion's immutable peer
 	// grant, then the tenant's allowed_peers. Receive and acknowledge are not
 	// gated: they can only ever reach the caller's own fenced run's mailbox.
+	// A logical target names the agent version; the resolver finds the run of
+	// that version that may take the traffic. The resolution is version
+	// aware, so a service that runs two versions during a rollout only offers
+	// the instances of the addressed one.
 	ipcService := gateway.NewIPCService(
 		repository, repository, repository, allowedTenant, capabilityAuthorizer, policyEngine,
+		gateway.NewServiceInstanceResolver(repository),
 	)
 	gatewayv1.RegisterToolGatewayServiceServer(server, toolService)
 	gatewayv1.RegisterMemoryGatewayServiceServer(server, memoryService)

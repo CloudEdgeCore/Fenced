@@ -9,6 +9,7 @@ import (
 
 	ipcv1 "github.com/CloudEdgeCore/Fenced/gen/go/fenced/ipc/v1"
 	"github.com/CloudEdgeCore/Fenced/internal/kernel/capability"
+	"github.com/CloudEdgeCore/Fenced/internal/kernel/ipc"
 	"github.com/CloudEdgeCore/Fenced/internal/kernel/policy"
 	"github.com/CloudEdgeCore/Fenced/internal/kernel/store"
 	"github.com/google/uuid"
@@ -94,6 +95,7 @@ type IPCService struct {
 	fences        RuntimeFence
 	capabilities  PeerAuthorizer
 	peerPolicy    PeerPolicy
+	resolver      ServiceInstanceResolver
 	allowedTenant string
 }
 
@@ -104,10 +106,12 @@ func NewIPCService(
 	allowedTenant string,
 	capabilities PeerAuthorizer,
 	peerPolicy PeerPolicy,
+	resolver ServiceInstanceResolver,
 ) *IPCService {
 	return &IPCService{
 		mailbox: mailbox, scopes: scopes, fences: fences,
 		capabilities: capabilities, peerPolicy: peerPolicy, allowedTenant: allowedTenant,
+		resolver: resolver,
 	}
 }
 
@@ -120,28 +124,61 @@ func (s *IPCService) SendMessage(ctx context.Context, request *ipcv1.SendMessage
 	if err != nil {
 		return nil, err
 	}
-	to := store.AgentAddress{
-		AgentVersionRef: request.GetTo().GetAgentVersionRef(),
-		Instance:        request.GetTo().GetInstance(),
+	// The wire address may be logical: it names the agent version and the
+	// platform resolves the run that may take the traffic. A target that
+	// names a run has to name a real one - the address grammar is bounded, and
+	// without this check a well-formed but non-UUID instance would reach the
+	// mailbox as an address nothing resolves.
+	targetVersion := strings.TrimSpace(request.GetTo().GetAgentVersionRef())
+	targetInstance := strings.TrimSpace(request.GetTo().GetInstance())
+	logical := targetInstance == ""
+	if logical && targetVersion == "" {
+		return nil, status.Error(codes.InvalidArgument, "a logical target must name the agent version")
 	}
-	if err := to.Validate(); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-	// Instance is the receiving run id, so it has to parse as one. Validation
-	// above only bounds the address grammar; without this check a well-formed
-	// but non-UUID instance would reach the mailbox as an address nothing
-	// resolves.
-	toRunID, parseErr := uuid.Parse(to.Instance)
-	if parseErr != nil {
-		return nil, status.Error(codes.InvalidArgument, "mailbox instance must be the receiving run id")
+	var toRunID uuid.UUID
+	if !logical {
+		parsed, parseErr := uuid.Parse(targetInstance)
+		if parseErr != nil {
+			return nil, status.Error(codes.InvalidArgument, "mailbox instance must be the receiving run id")
+		}
+		toRunID = parsed
 	}
 	// Authorization runs before the mailbox is resolved, and the order is
 	// deliberate. Resolving the run distinguishes "no such run" from "that run
 	// belongs to a different version", which would let an unauthorized sender
 	// probe which run ids exist by reading the error code. Denying first makes
 	// every unauthorized address look the same.
-	if err := s.authorizePeer(ctx, assignment, to.AgentVersionRef); err != nil {
+	if err := s.authorizePeer(ctx, assignment, targetVersion); err != nil {
 		return nil, err
+	}
+	// The message id is derived from the send's identity, so it is known
+	// before the mailbox is resolved. It spreads the traffic of a logical
+	// target over the instances of the version, and a retried send resolves
+	// to the same instance.
+	messageID := ipcMessageID(assignment.Task.TenantID, assignment.Task.AgentVersionRef, request.GetIdempotencyKey())
+	if logical {
+		if s.resolver == nil {
+			return nil, status.Error(codes.FailedPrecondition, "logical addressing is not configured")
+		}
+		resolvedRun, resolvedVersion, resolveErr := s.resolver.ResolveServiceInstance(
+			ctx, assignment.Task.TenantID, targetVersion, messageID.String())
+		if resolveErr != nil {
+			// A target that does not exist and a target that is not reachable
+			// look the same: the sender must not learn which runs exist.
+			return nil, status.Error(codes.FailedPrecondition, "the target is not reachable")
+		}
+		toRunID = resolvedRun
+		targetInstance = resolvedRun.String()
+		targetVersion = resolvedVersion
+	}
+	// The stored address names a run: the mailbox is addressed by the
+	// version reference and the run.
+	to := store.AgentAddress{
+		AgentVersionRef: targetVersion,
+		Instance:        targetInstance,
+	}
+	if err := to.Validate(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	// A mailbox is addressed by (version reference, run id). Resolving the run
 	// is what turns a mistyped instance, or a run paired with a version
@@ -151,7 +188,7 @@ func (s *IPCService) SendMessage(ctx context.Context, request *ipcv1.SendMessage
 	if scopeErr != nil {
 		return nil, ipcRPCError(scopeErr)
 	}
-	if scope.AgentVersionRef != to.AgentVersionRef {
+	if !ipc.SameVersion(scope.AgentVersionRef, to.AgentVersionRef) {
 		return nil, status.Error(codes.InvalidArgument, "mailbox names a run that does not belong to that agent version reference")
 	}
 
@@ -167,7 +204,6 @@ func (s *IPCService) SendMessage(ctx context.Context, request *ipcv1.SendMessage
 	// identity instead. (tenant, sender, idempotency key) is exactly what the
 	// store's idempotency index is keyed by, so a retried send derives the same
 	// id, collides with the row the first attempt stored, and replays it.
-	messageID := ipcMessageID(assignment.Task.TenantID, assignment.Task.AgentVersionRef, request.GetIdempotencyKey())
 	sentAt := time.Now().UTC()
 	var deadline time.Time
 	if request.GetDeadline() != nil {
@@ -175,10 +211,11 @@ func (s *IPCService) SendMessage(ctx context.Context, request *ipcv1.SendMessage
 	}
 	var replyTo uuid.UUID
 	if request.GetReplyToMessageId() != "" {
-		replyTo, parseErr = uuid.Parse(request.GetReplyToMessageId())
+		parsed, parseErr := uuid.Parse(request.GetReplyToMessageId())
 		if parseErr != nil {
 			return nil, status.Error(codes.InvalidArgument, "reply target must be a message id")
 		}
+		replyTo = parsed
 	}
 	input := store.AppendIPCMessageInput{
 		TenantID:            assignment.Task.TenantID,

@@ -139,6 +139,25 @@ func (f *fakePeerPolicy) EvaluatePeer(_ context.Context, _ string, peer policy.P
 	return policy.Decision{DenyReasons: []string{f.reason}}
 }
 
+// fakeInstanceResolver stands in for the version aware resolution of a
+// logical target.
+type fakeInstanceResolver struct {
+	runID   uuid.UUID
+	version string
+	err     error
+	calls   int
+	refs    []string
+}
+
+func (f *fakeInstanceResolver) ResolveServiceInstance(_ context.Context, _ string, versionRef, _ string) (uuid.UUID, string, error) {
+	f.calls++
+	f.refs = append(f.refs, versionRef)
+	if f.err != nil {
+		return uuid.Nil, "", f.err
+	}
+	return f.runID, f.version, nil
+}
+
 // ipcTestService wires the service to fakes whose fenced assignment is a live
 // attempt, which is the only state any RPC accepts. Authorization is permitted
 // by default; use ipcTestServiceWith to exercise a denial.
@@ -148,6 +167,13 @@ func ipcTestService(t *testing.T, mailbox *fakeMailbox, scope *fakeMailboxScope,
 }
 
 func ipcTestServiceWith(t *testing.T, mailbox *fakeMailbox, scope *fakeMailboxScope, fence *fakeFence, authorizer PeerAuthorizer, peerPolicy PeerPolicy) (*IPCService, store.RuntimeAssignment) {
+	t.Helper()
+	// Without a resolver the service has no logical addressing: a target has
+	// to name its run.
+	return ipcTestServiceWithResolver(t, mailbox, scope, fence, authorizer, peerPolicy, nil)
+}
+
+func ipcTestServiceWithResolver(t *testing.T, mailbox *fakeMailbox, scope *fakeMailboxScope, fence *fakeFence, authorizer PeerAuthorizer, peerPolicy PeerPolicy, resolver ServiceInstanceResolver) (*IPCService, store.RuntimeAssignment) {
 	t.Helper()
 	taskID, runID, attemptID := uuid.New(), uuid.New(), uuid.New()
 	assignment := store.RuntimeAssignment{
@@ -164,7 +190,7 @@ func ipcTestServiceWith(t *testing.T, mailbox *fakeMailbox, scope *fakeMailboxSc
 	}
 	// A fixed tenant is the isolated-development wiring; the peer-bound "*" form
 	// needs a verified SPIFFE peer in the context, which a unit test has not got.
-	return NewIPCService(mailbox, scope, fence, ipcTestTenant, authorizer, peerPolicy), fence.assignment
+	return NewIPCService(mailbox, scope, fence, ipcTestTenant, authorizer, peerPolicy, resolver), fence.assignment
 }
 
 func ipcTestIdentity(assignment store.RuntimeAssignment) *ipcv1.AttemptIdentity {
@@ -230,7 +256,7 @@ func TestIPCSendMessageResolvesTheRecipientMailbox(t *testing.T) {
 		}
 	})
 
-	t.Run("an unscoped mailbox has no instance", func(t *testing.T) {
+	t.Run("a logical target needs a resolver", func(t *testing.T) {
 		mailbox := &fakeMailbox{}
 		service, assignment := ipcTestService(t, mailbox, &fakeMailboxScope{}, &fakeFence{})
 		_, err := service.SendMessage(context.Background(), &ipcv1.SendMessageRequest{
@@ -238,8 +264,8 @@ func TestIPCSendMessageResolvesTheRecipientMailbox(t *testing.T) {
 			To:   &ipcv1.AgentAddress{AgentVersionRef: "worker@1.0.0"},
 			Kind: "handoff", IdempotencyKey: "key-1",
 		})
-		if got := ipcTestStatus(t, err); got != codes.InvalidArgument {
-			t.Fatalf("status = %s, want InvalidArgument", got)
+		if got := ipcTestStatus(t, err); got != codes.FailedPrecondition {
+			t.Fatalf("status = %s, want FailedPrecondition", got)
 		}
 		if len(mailbox.appended) != 0 {
 			t.Fatal("an address with no instance reached the store")
@@ -551,7 +577,7 @@ func TestIPCAcknowledgeRejectsABatchItCannotApply(t *testing.T) {
 }
 
 func TestIPCGatewayIsNotConfiguredWithoutItsDependencies(t *testing.T) {
-	service := NewIPCService(nil, nil, nil, ipcTestTenant, nil, nil)
+	service := NewIPCService(nil, nil, nil, ipcTestTenant, nil, nil, nil)
 	_, err := service.ReceiveMessages(context.Background(), &ipcv1.ReceiveMessagesRequest{
 		Identity:        &ipcv1.AttemptIdentity{TenantId: ipcTestTenant, AttemptId: uuid.New().String(), FencingToken: 1},
 		AgentVersionRef: "planner@1.0.0",
@@ -729,4 +755,93 @@ func TestIPCRPCMappingKeepsStorageDetailInside(t *testing.T) {
 			t.Fatalf("internal status echoed the storage detail: %v", mapped)
 		}
 	}
+}
+
+// A logical target names the agent version; the platform resolves the run
+// that may take the traffic. The resolution is version aware, and it runs
+// after the authorization: an unauthorized sender must not be able to learn
+// which runs exist.
+func TestIPCSendMessageResolvesALogicalTarget(t *testing.T) {
+	t.Run("the run of the addressed version takes the message", func(t *testing.T) {
+		mailbox := &fakeMailbox{}
+		scope := &fakeMailboxScope{scope: store.RunMailboxScope{AgentVersionRef: "worker@2.0.0"}}
+		resolver := &fakeInstanceResolver{runID: uuid.New(), version: "worker@2.0.0"}
+		service, assignment := ipcTestServiceWithResolver(t, mailbox, scope, &fakeFence{},
+			&fakePeerAuthorizer{}, &fakePeerPolicy{allow: true}, resolver)
+		_, err := service.SendMessage(context.Background(), &ipcv1.SendMessageRequest{
+			Identity: ipcTestIdentity(assignment), AgentVersionRef: "planner@1.0.0",
+			To:   &ipcv1.AgentAddress{AgentVersionRef: "worker@2.0.0"},
+			Kind: "handoff", IdempotencyKey: "key-1",
+		})
+		if err != nil {
+			t.Fatalf("send to a logical target: %v", err)
+		}
+		if len(mailbox.appended) != 1 {
+			t.Fatalf("expected one stored message, got %d", len(mailbox.appended))
+		}
+		if mailbox.appended[0].To.Instance != resolver.runID.String() {
+			t.Fatalf("the message went to %q, want the resolved run %q",
+				mailbox.appended[0].To.Instance, resolver.runID)
+		}
+		if len(resolver.refs) != 1 || resolver.refs[0] != "worker@2.0.0" {
+			t.Fatalf("the resolver saw %v", resolver.refs)
+		}
+	})
+
+	t.Run("a logical target without a version is refused", func(t *testing.T) {
+		mailbox := &fakeMailbox{}
+		resolver := &fakeInstanceResolver{runID: uuid.New(), version: "worker@1.0.0"}
+		service, assignment := ipcTestServiceWithResolver(t, mailbox, &fakeMailboxScope{}, &fakeFence{},
+			&fakePeerAuthorizer{}, &fakePeerPolicy{allow: true}, resolver)
+		_, err := service.SendMessage(context.Background(), &ipcv1.SendMessageRequest{
+			Identity: ipcTestIdentity(assignment), AgentVersionRef: "planner@1.0.0",
+			To:   &ipcv1.AgentAddress{},
+			Kind: "handoff", IdempotencyKey: "key-1",
+		})
+		if got := ipcTestStatus(t, err); got != codes.InvalidArgument {
+			t.Fatalf("status = %s, want InvalidArgument", got)
+		}
+		if resolver.calls != 0 {
+			t.Fatal("the target was resolved before it was refused")
+		}
+		if len(mailbox.appended) != 0 {
+			t.Fatal("a message without a target reached the store")
+		}
+	})
+
+	t.Run("a target that cannot be resolved is not reachable", func(t *testing.T) {
+		mailbox := &fakeMailbox{}
+		resolver := &fakeInstanceResolver{err: errors.New("no instance of worker@2.0.0 is running")}
+		service, assignment := ipcTestServiceWithResolver(t, mailbox, &fakeMailboxScope{}, &fakeFence{},
+			&fakePeerAuthorizer{}, &fakePeerPolicy{allow: true}, resolver)
+		_, err := service.SendMessage(context.Background(), &ipcv1.SendMessageRequest{
+			Identity: ipcTestIdentity(assignment), AgentVersionRef: "planner@1.0.0",
+			To:   &ipcv1.AgentAddress{AgentVersionRef: "worker@2.0.0"},
+			Kind: "handoff", IdempotencyKey: "key-1",
+		})
+		if got := ipcTestStatus(t, err); got != codes.FailedPrecondition {
+			t.Fatalf("status = %s, want FailedPrecondition", got)
+		}
+		if len(mailbox.appended) != 0 {
+			t.Fatal("a message for an unreachable target reached the store")
+		}
+	})
+
+	t.Run("the authorization runs before the resolution", func(t *testing.T) {
+		mailbox := &fakeMailbox{}
+		resolver := &fakeInstanceResolver{runID: uuid.New(), version: "worker@2.0.0"}
+		service, assignment := ipcTestServiceWithResolver(t, mailbox, &fakeMailboxScope{}, &fakeFence{},
+			&fakePeerAuthorizer{err: errors.New("the peer is not granted")}, &fakePeerPolicy{allow: true}, resolver)
+		_, err := service.SendMessage(context.Background(), &ipcv1.SendMessageRequest{
+			Identity: ipcTestIdentity(assignment), AgentVersionRef: "planner@1.0.0",
+			To:   &ipcv1.AgentAddress{AgentVersionRef: "worker@2.0.0"},
+			Kind: "handoff", IdempotencyKey: "key-1",
+		})
+		if got := ipcTestStatus(t, err); got != codes.PermissionDenied {
+			t.Fatalf("status = %s, want PermissionDenied", got)
+		}
+		if resolver.calls != 0 {
+			t.Fatal("the target was resolved before the sender was refused")
+		}
+	})
 }

@@ -364,3 +364,23 @@ func (s *Store) ListAllInstances(ctx context.Context, tenantID string) ([]*super
 	return s.listServiceInstances(ctx, `SELECT `+serviceInstanceColumns+` FROM agent_service_instances
         WHERE tenant_id = $1 ORDER BY created_at, id`, tenantID)
 }
+
+// ListServiceInstancesByAgent lists the instances of every supervised service
+// of an agent. The version aware routing resolves a logical target through
+// this: the target names an agent and a version, and the instances of that
+// version are the ones that may take the traffic.
+func (s *Store) ListServiceInstancesByAgent(ctx context.Context, tenantID, namespace, agentID string) ([]*supervisor.Instance, error) {
+	// The columns are listed with their alias: the expressions in them (the
+	// COALESCE) must not be split apart.
+	const columns = `i.id, i.service_id, i.tenant_id, i.namespace, i.agent_id, i.address,
+        i.phase, i.restart_count, i.consecutive_failures, i.next_restart_at,
+        i.last_heartbeat, i.created_at, i.updated_at, i.terminated_at, i.exit_code,
+        COALESCE(i.exit_reason, ''), i.agent_version, i.runtime_class, i.fencing_token,
+        i.task_id, i.launch_spec, i.draining_at, i.drain_deadline, i.ready_at`
+	query := `SELECT ` + columns + `
+        FROM agent_service_instances i
+        JOIN agent_services s ON s.id = i.service_id
+        WHERE i.tenant_id = $1 AND s.namespace = $2 AND s.agent_id = $3
+        ORDER BY i.created_at, i.id`
+	return s.listServiceInstances(ctx, query, tenantID, namespace, agentID)
+}
