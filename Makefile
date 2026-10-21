@@ -27,7 +27,7 @@ TAKEOVER_URL := postgres://fenced:fenced-readme-only@127.0.0.1:$(TAKEOVER_PORT)/
 
 .DEFAULT_GOAL := help
 .PHONY: help build fmt fmt-check vet lint vuln test test-race test-integration \
-	python-test python-wheel ts-test web-build web-test web-verify proto rust-build rust-lint rust-test \
+	python-test python-wheel ts-test web-build web-test web-verify docs-verify proto rust-build rust-lint rust-test \
 	version-check conformance dev-up dev-down dev-migrate dev-reset \
 	takeover-check verify verify-ci clean
 
@@ -96,6 +96,9 @@ web-test: ## Test the management console
 web-verify: ## Verify the committed console bundle matches its sources
 	cd web && $(NPM) ci && $(NPM) run build
 	git diff --exit-code -- internal/control/console/dist
+
+docs-verify: ## Check that every document is either published or local
+	$(PYTHON) scripts/check-docs-policy.py
 
 ##@ Contracts
 
@@ -182,6 +185,7 @@ verify-ci: ## Everything CI runs that is available on this machine
 	$(MAKE) ts-test
 	$(MAKE) web-test
 	$(MAKE) web-verify
+	$(MAKE) docs-verify
 	$(MAKE) version-check
 	@command -v buf >/dev/null && $(MAKE) proto || echo "skip proto: buf is not installed"
 	@command -v cargo >/dev/null && $(MAKE) rust-lint rust-test || echo "skip rust: cargo is not installed"

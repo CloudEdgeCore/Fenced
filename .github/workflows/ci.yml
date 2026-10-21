@@ -132,6 +132,9 @@ jobs:
           (cd web && npm run build)
           git diff --exit-code -- internal/control/console/dist
 
+      - name: Verify the documentation policy
+        run: python3 scripts/check-docs-policy.py
+
       - name: Vet
         run: go vet ./...
 

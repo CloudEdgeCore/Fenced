@@ -34,6 +34,8 @@ __pycache__/
 !/docs/ecosystem/**
 !/docs/releases/
 !/docs/releases/**
+!/docs/operations/
+!/docs/operations/**
 !/docs/feature-status.md
 !/docs/user-guide.md
 !/docs/development.md
